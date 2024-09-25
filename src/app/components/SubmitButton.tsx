@@ -6,8 +6,9 @@ export default function SubmitButton() {
     return (
         <button type="submit" aria-disabled={pending}
             className="bg-slate-50
-                py-2
-                px-4
+                px-5
+                py-3
+                my-7
                 rounded
                 text-black
                 hover:bg-alpbGreen
@@ -16,7 +17,7 @@ export default function SubmitButton() {
                 duration-100
                 "
         >
-            Submit
+            Register
         </button>
     );
 }

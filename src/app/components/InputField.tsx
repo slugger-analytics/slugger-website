@@ -5,7 +5,7 @@ type InputProps = {
     label: string,
     type: string,
     required: boolean,
-    placeholder?: string
+    placeholder?: string,
 }
 
 // TODO maybe add seperate component for checkbox
@@ -19,7 +19,8 @@ export default function TextInput({ id, label, type, required, placeholder}: Inp
               name={id}
               required={required}
               placeholder={placeholder}
-              className="border 
+              className={`
+                border 
                 border-gray-300 
                 rounded 
                 p-2
@@ -27,7 +28,7 @@ export default function TextInput({ id, label, type, required, placeholder}: Inp
                 text-sm
                 font-normal
                 w-full
-                "
+                `}
           />
       </div>
   )
