@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from 'next/navigation'; 
 import InputField from "./components/InputField";
 import TextareaInput from "./components/TextareaInput";
 import SubmitButton from "./components/SubmitButton";
@@ -14,6 +15,7 @@ const initialState = {
 export function Form() {
     // update state based on res. of form action
     const [state, setState] = useState(initialState);
+    const router = useRouter();
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -25,7 +27,7 @@ export function Form() {
         })
 
         console.log(data); // TODO: process/upload data to DB
-
+        router.push('/form-submitted');
         setState({ message: "Form submitted!" });
     };
 
@@ -34,7 +36,7 @@ export function Form() {
             <InputField 
                 id='email'
                 label='Email'
-                type='text'
+                type='email'
                 required={true}
                 placeholder="your@email.com"
             />
@@ -48,7 +50,7 @@ export function Form() {
             <TextareaInput
                 id='description'
                 label='Description'
-                required={true}
+                required={false}
                 placeholder="A widget description"
             />
             <InputField
