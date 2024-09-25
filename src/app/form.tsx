@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import InputField from "./components/InputField";
 import TextareaInput from "./components/TextareaInput";
 import SubmitButton from "./components/SubmitButton";
+import SelectField from "./components/SelectField";
 
 const initialState = {
     message: "",
@@ -32,7 +33,7 @@ export function Form() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col items-center w-2/5">
+        <form onSubmit={handleSubmit} className="flex flex-col items-center w-80">
             <InputField 
                 id='email'
                 label='Email'
@@ -53,11 +54,14 @@ export function Form() {
                 required={false}
                 placeholder="A widget description"
             />
-            <InputField
-                id='private'
-                label='Private?'
-                type='checkbox'
-                required={false}
+            <SelectField
+                id='visibility'
+                label='Visibility'
+                required={true}
+                options={[
+                    'Private',
+                    'Public'
+                ]}
             />
             <SubmitButton />
             <p aria-live="polite" className="sr-only" role="status">
