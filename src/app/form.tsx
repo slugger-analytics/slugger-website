@@ -2,17 +2,12 @@
 
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
+import InputField from "./components/InputField";
+import TextareaInput from "./components/TextareaInput";
 
 const initialState = {
     message: "",
 };
-
-type InputField = {
-    id: string;
-    label: string;
-    type: string;
-    required: boolean;
-}
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -29,12 +24,6 @@ function SubmitButton() {
 export function Form() {
     // update state based on res. of form action
     const [state, setState] = useState(initialState);
-    // TODO: 
-    const inputs: InputField[] = [
-        { id: 'name', label: 'Name', type: 'text', required: true },
-        { id: 'description', label: 'Description', type: 'text', required: false },
-        { id: 'team', label: 'Team', type: 'text', required: false }
-    ]
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -52,18 +41,29 @@ export function Form() {
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col items-center">
-            {inputs.map(({ id, label, type, required }) => (
-                <div key={id} className="mb-5">
-                    <label htmlFor={id} className="block mb-1">{label}</label>
-                    <input
-                        type={type}
-                        id={id}
-                        name={id}
-                        required={required}
-                        className="border border-gray-300 rounded py-2 px-3 text-black"
-                    />
-                </div>
-            ))}
+            <InputField 
+                id='email'
+                label='Username'
+                type='text'
+                required={true}
+            />
+            <InputField
+                id='widget-name'
+                label='Widget Name'
+                type='text'
+                required={true}
+            />
+            <TextareaInput
+                id='description'
+                label='Description'
+                required={true}
+            />
+            <InputField
+                id='private'
+                label='Private'
+                type='checkbox'
+                required={true}
+            />
             <SubmitButton />
             <p aria-live="polite" className="sr-only" role="status">
                 {state?.message}
