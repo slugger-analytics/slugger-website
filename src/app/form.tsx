@@ -1,25 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useFormStatus } from "react-dom";
 import InputField from "./components/InputField";
 import TextareaInput from "./components/TextareaInput";
+import SubmitButton from "./components/SubmitButton";
 
 const initialState = {
     message: "",
 };
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
 
-    return (
-        <button type="submit" aria-disabled={pending}
-            className="bg-slate-50 py-2 px-4 rounded text-black"
-        >
-            Submit
-        </button>
-    );
-}
 
 export function Form() {
     // update state based on res. of form action
@@ -40,29 +30,32 @@ export function Form() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col items-center">
+        <form onSubmit={handleSubmit} className="flex flex-col items-center w-2/5">
             <InputField 
                 id='email'
-                label='Username'
+                label='Email'
                 type='text'
                 required={true}
+                placeholder="your@email.com"
             />
             <InputField
                 id='widget-name'
-                label='Widget Name'
+                label='Widget name'
                 type='text'
                 required={true}
+                placeholder='Your widget name'
             />
             <TextareaInput
                 id='description'
                 label='Description'
                 required={true}
+                placeholder="A widget description"
             />
             <InputField
                 id='private'
-                label='Private'
+                label='Private?'
                 type='checkbox'
-                required={true}
+                required={false}
             />
             <SubmitButton />
             <p aria-live="polite" className="sr-only" role="status">
