@@ -11,6 +11,10 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        alpbGreen: '#4bb252',
+        alpbBlue:  '#384e93',
+        alpbRed: '#384e93',
+        
       },
     },
   },
