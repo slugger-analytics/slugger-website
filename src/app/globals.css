@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  h1 {
+    @apply text-4xl m-10;
+  }
+}
+
 body {
   @apply text-slate-950 font-medium text-xl;
 }
