@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import InputField from "./InputField";
-import SubmitButton from "./SubmitButton";
+import InputField from "../components/InputField";
+import SubmitButton from "../components/SubmitButton";
 
 const initialState = {
     message: "",
@@ -11,7 +11,7 @@ const initialState = {
 
 
 
-export function LoginForm() {
+export function SignupForm() {
     // update state based on res. of form action
     const [state, setState] = useState(initialState);
     const router = useRouter();
@@ -26,7 +26,7 @@ export function LoginForm() {
         })
 
         console.log(data); // TODO: process/upload data to DB
-        router.push('/form-submitted');
+        router.push('/home');
         setState({ message: "Form submitted!" });
     };
 
@@ -45,7 +45,7 @@ export function LoginForm() {
                 type='password'
                 required={true}
             />
-            <SubmitButton btnText="Sign in"/>
+            <SubmitButton btnText="Sign in" />
             <p aria-live="polite" className="sr-only" role="status">
                 {state?.message}
             </p>

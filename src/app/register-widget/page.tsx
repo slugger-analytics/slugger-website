@@ -1,5 +1,5 @@
 // import { sql } from '@vercel/postgres';
-import { WidgetForm } from '../components/widget-form';
+import { WidgetForm } from '../components/WidgetForm';
 import Navbar from '../components/navbar/Navbar';
 
 export default function Home() {
