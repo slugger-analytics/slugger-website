@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from 'next/navigation'; 
-import InputField from "./components/InputField";
-import TextareaInput from "./components/TextareaInput";
-import SubmitButton from "./components/SubmitButton";
-import SelectField from "./components/SelectField";
+import InputField from "./InputField";
+import TextareaInput from "./TextareaInput";
+import SubmitButton from "./SubmitButton";
+import SelectField from "./SelectField";
 
 const initialState = {
     message: "",
@@ -40,6 +40,7 @@ export function Form() {
                 type='email'
                 required={true}
                 placeholder="your@email.com"
+                subtext="You'll recieve updates about your widget through this email."
             />
             <InputField
                 id='widget-name'
@@ -52,21 +53,24 @@ export function Form() {
                 id='description'
                 label='Description'
                 required={false}
-                placeholder="A widget description"
+                placeholder="A brief description"
             />
             <SelectField
                 id='visibility'
                 label='Visibility'
                 required={true}
                 options={[
-                    'Private',
+                    'Your team only - Hagerstown Flying Boxcars',
+                    'Custom - Analytics Group 1',
                     'Public'
                 ]}
+                subtext='You can change this option later.'
             />
             <SubmitButton />
             <p aria-live="polite" className="sr-only" role="status">
                 {state?.message}
             </p>
+            
         </form>
     )
 }
