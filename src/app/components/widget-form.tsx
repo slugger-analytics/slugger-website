@@ -13,7 +13,7 @@ const initialState = {
 
 
 
-export function Form() {
+export function WidgetForm() {
     // update state based on res. of form action
     const [state, setState] = useState(initialState);
     const router = useRouter();
@@ -33,6 +33,7 @@ export function Form() {
     };
 
     return (
+        
         <form onSubmit={handleSubmit} className="flex flex-col items-center w-80">
             <InputField 
                 id='email'
@@ -66,7 +67,7 @@ export function Form() {
                 ]}
                 subtext='You can change this option later.'
             />
-            <SubmitButton />
+            <SubmitButton btnText="Register"/>
             <p aria-live="polite" className="sr-only" role="status">
                 {state?.message}
             </p>

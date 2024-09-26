@@ -4,7 +4,7 @@ import MenuButton from './MenuButton'
 import Image from 'next/image'
 
 type InputProps = {
-    initials: string
+    initials?: string
 }
 
 export default function Navbar({ initials } : InputProps) {
@@ -22,7 +22,12 @@ export default function Navbar({ initials } : InputProps) {
         </div>
 
       <div className='flex-grow' />
-        <ProfileButton initials={initials}/>
+      {initials ? (
+        <ProfileButton initials={initials} />
+      ) : (
+        <div className='size-10 mx-5'></div>
+      )}
+        
     </div>
   )
 }
