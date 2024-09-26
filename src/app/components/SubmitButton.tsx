@@ -1,6 +1,10 @@
 import { useFormStatus } from "react-dom";
 
-export default function SubmitButton() {
+type InputProps = {
+    btnText: string,
+}
+
+export default function SubmitButton({ btnText } : InputProps) {
     const { pending } = useFormStatus();
 
     return (
@@ -17,7 +21,7 @@ export default function SubmitButton() {
                 duration-100
                 "
         >
-            Register
+            {btnText}
         </button>
     );
 }
