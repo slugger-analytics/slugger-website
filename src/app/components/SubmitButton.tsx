@@ -11,7 +11,7 @@ export default function SubmitButton() {
                 my-7
                 rounded
                 text-black
-                hover:bg-alpbGreen
+                hover:bg-alpbBlue
                 hover:text-white
                 transition
                 duration-100

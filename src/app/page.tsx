@@ -1,5 +1,5 @@
 // import { sql } from '@vercel/postgres';
-import { Form } from '@/app/form';
+import { Form } from '@/app/components/form';
 import Navbar from './components/navbar/Navbar';
 
 export default function Home() {

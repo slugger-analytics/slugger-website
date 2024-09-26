@@ -4,15 +4,17 @@ type InputProps = {
     id: string,
     label: string,
     required: boolean,
-    options: string[]
+    options: string[],
+    subtext?: string
 }
 
-export default function SelectField({ id, label, required, options }: InputProps) {
+export default function SelectField({ id, label, required, options, subtext }: InputProps) {
 
 
     return (
         <div key={id} className="mb-5 w-full">
-            <label htmlFor={id} className="block mb-1 text-m ">{label}</label>
+            <label htmlFor={id} className="block mb-1 text-m">{label}</label>
+            
             <select
                 id={id}
                 name={id}
@@ -28,6 +30,8 @@ export default function SelectField({ id, label, required, options }: InputProps
                     </option>
                 )}
             </select>
+            {subtext ? <div className="text-sm text-gray-500 mt-1">{subtext}</div> : null}
+            
         </div>
     )
 }
