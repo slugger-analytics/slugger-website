@@ -2,19 +2,23 @@
 
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import InputField from "./InputField";
-import SubmitButton from "./SubmitButton";
+import InputField from "../components/InputField";
+import SubmitButton from "../components/SubmitButton";
 
-const initialState = {
+const initialSubmitStatus = {
     message: "",
+    textClass: "black",
 };
-
-
 
 export function LoginForm() {
     // update state based on res. of form action
-    const [state, setState] = useState(initialState);
+    const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
     const router = useRouter();
+
+    // TODO: implement actual authentication
+    const authenticate = () => {
+        return true;
+    }
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -25,9 +29,16 @@ export function LoginForm() {
             data[key] = value as string; // TODO: some input may not be a string
         })
 
-        console.log(data); // TODO: process/upload data to DB
-        router.push('/home');
-        setState({ message: "Form submitted!" });
+        if (authenticate()) {
+            console.log(data); // TODO: process/upload data to DB
+            router.push('/');
+        } else {
+            console.log("Error submitting form");
+            setSubmitStatus({
+                message: "Error submitting form",
+                textClass: "text-red-500",
+            });
+        }
     };
 
     return (
@@ -46,8 +57,8 @@ export function LoginForm() {
                 required={true}
             />
             <SubmitButton btnText="Sign in"/>
-            <p aria-live="polite" className="sr-only" role="status">
-                {state?.message}
+            <p aria-live="polite" className={`mb-2 ${submitStatus?.textClass}`} role="status">
+                {submitStatus?.message}
             </p>
 
         </form>
