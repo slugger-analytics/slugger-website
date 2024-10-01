@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import InputField from "../components/InputField";
-import SubmitButton from "../components/SubmitButton";
+import InputField from "../components/input/InputField";
+import SubmitButton from "../components/input/SubmitButton";
 
 const initialSubmitStatus = {
     message: "",

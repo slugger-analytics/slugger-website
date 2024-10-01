@@ -2,18 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
-import InputField from "../components/InputField";
-import SubmitButton from "../components/SubmitButton";
-import SelectField from "../components/SelectField";
+import InputField from "../components/input/InputField";
+import SubmitButton from "../components/input/SubmitButton";
+import SelectField from "../components/input/SelectField";
 
-const initialState = {
+const initialSubmitStatus = {
     message: "",
-    textColor: "black",
+    textClass: "text-black",
 };
 
 export function SignupForm() {
     // update state based on res. of form action
-    const [state, setState] = useState(initialState);
+    const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
     const router = useRouter();
 
     const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -22,24 +22,24 @@ export function SignupForm() {
         const data: Record<string, string> = {};
 
         formData.forEach((value, key) => {
-            data[key] = value as string; // TODO: some input may not be a string
+            data[key] = value as string;
         })
 
+        // Verify that password match
         if (data["password"] != data["confirm-password"]) {
-            setState({ 
+            setSubmitStatus({ 
                 message: "Error: password don't match",
-                textColor: "text-red-500",
+                textClass: "text-red-500",
             });
             return;
         } else {
-            setState({
+            setSubmitStatus({
                 message: "",
-                textColor: "black"
+                textClass: "text-black"
             })
+            console.log(data); // TODO: process/upload data to DB
+            router.push('/');
         }
-
-        console.log(data); // TODO: process/upload data to DB
-        router.push('/home');
     };
 
     return (
@@ -75,7 +75,7 @@ export function SignupForm() {
                 id="confirm-password"
                 label="Confirm password"
                 type="Password"
-                required={true} // TODO add logic to confirm password
+                required={true}
             />
             <SelectField
                 id='account-type'
@@ -87,8 +87,8 @@ export function SignupForm() {
                 ]}
             />
             <SubmitButton btnText="Sign up" />
-            <p className={`${state.textColor} mb-5`} role="status">
-                {state?.message}
+            <p className={`${submitStatus?.textClass} mb-5`} role="status">
+                {submitStatus?.message}
             </p>
 
         </form>
