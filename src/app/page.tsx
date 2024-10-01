@@ -1,30 +1,17 @@
-import { LoginForm } from './components/LoginForm';
+"use client"
+
 import Navbar from './components/navbar/Navbar';
 import Link from 'next/link';
 
+// Currently: auto-redirects to sign in.
 export default function Home() {
     return (
         <body>
             <Navbar />
-            <div className='w-full flex justify-center'>
-                <div className='bg-gray-100 w-1/2 max-w-lg px-10 my-10 shadow-md rounded-lg'>
-                    <div className='flex justify-center'>
-                        <h1>Sign in</h1>
-                    </div>
-
-                    <main className='flex justify-center w-full'>
-                        <LoginForm />
-                        
-                    </main>
-                    <div>
-                        <p className="text-sm flex justify-center mb-5">Don't have an account?<Link href='/register-account' className='text-blue-600 ml-3'>Register</Link></p>
-                        
-                    </div>
-
-                </div>
+            <div className='w-full flex flex-col justify-center items-center'>
+                <p className='m-0'>Hello from Home</p>
+                <Link href="/sign-in" className='text-blue-600'>Sign in</Link>
             </div>
-
-
         </body>
     )
 }
