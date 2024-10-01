@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from 'next/navigation'; 
-import InputField from "./InputField";
-import TextareaInput from "./TextareaInput";
-import SubmitButton from "./SubmitButton";
-import SelectField from "./SelectField";
+import InputField from "./input/InputField";
+import TextareaInput from "./input/TextareaInput";
+import SubmitButton from "./input/SubmitButton";
+import SelectField from "./input/SelectField";
 
 const initialState = {
     message: "",
