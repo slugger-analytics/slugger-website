@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import InputField from "../components/input/InputField";
 import SubmitButton from "../components/input/SubmitButton";
 import SelectField from "../components/input/SelectField";
+import { signUpUser } from '../../api/auth'; // Now importing from api/auth
 
 const initialSubmitStatus = {
     message: "",
@@ -12,33 +13,60 @@ const initialSubmitStatus = {
 };
 
 export function SignupForm() {
-    // update state based on res. of form action
     const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
     const router = useRouter();
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const formData = new FormData(event.currentTarget); // event form data -> key-value pairs
+        const formData = new FormData(event.currentTarget);
         const data: Record<string, string> = {};
 
         formData.forEach((value, key) => {
             data[key] = value as string;
-        })
+        });
 
-        // Verify that password match
-        if (data["password"] != data["confirm-password"]) {
-            setSubmitStatus({ 
-                message: "Error: password don't match",
+        // Verify that passwords match
+        if (data["password"] !== data["confirm-password"]) {
+            setSubmitStatus({
+                message: "Error: passwords don't match",
                 textClass: "text-red-500",
             });
             return;
-        } else {
+        }
+
+        // Call the API to sign up the user
+        try {
+            const userData = {
+                email: data["email"],
+                password: data["password"],
+                firstName: data["first-name"],
+                lastName: data["last-name"],
+                role: data["account-type"]
+            };
+
+            await signUpUser(userData); // This will now call your backend
+            console.log(userData)
             setSubmitStatus({
-                message: "",
-                textClass: "text-black"
-            })
-            console.log(data); // TODO: process/upload data to DB
-            router.push('/');
+                message: "Sign up successful! Redirecting...",
+                textClass: "text-green-500",
+            });
+
+            // Redirect to the confirmation page
+            setTimeout(() => router.push('/confirm'), 200);
+        } catch (error: unknown) {
+            // Properly handle the error type
+            if (error instanceof Error) {
+                setSubmitStatus({
+                    message: error.message || "Sign up failed. Please try again.",
+                    textClass: "text-red-500",
+                });
+            } else {
+                setSubmitStatus({
+                    message: "Sign up failed. Please try again.",
+                    textClass: "text-red-500",
+                });
+            }
+            console.error('Sign up error:', error);
         }
     };
 
@@ -74,7 +102,7 @@ export function SignupForm() {
             <InputField
                 id="confirm-password"
                 label="Confirm password"
-                type="Password"
+                type="password"
                 required={true}
             />
             <SelectField
@@ -84,13 +112,15 @@ export function SignupForm() {
                 options={[
                     'Widget Developer',
                     'Other (player, coach, etc.)',
+                    'master'
                 ]}
             />
             <SubmitButton btnText="Sign up" />
             <p className={`${submitStatus?.textClass} mb-5`} role="status">
                 {submitStatus?.message}
             </p>
-
         </form>
-    )
+    );
 }
+
+
