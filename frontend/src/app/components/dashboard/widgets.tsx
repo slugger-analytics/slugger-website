@@ -87,7 +87,7 @@ export default function Widgets() {
     md:grid-cols-1
     lg:grid-cols-2
     xl:grid-cols-3
-    2xl:grid-cols-4
+    3xl:grid-cols-4
     "
     >
       {widgets.map(

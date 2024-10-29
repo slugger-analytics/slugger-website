@@ -48,16 +48,13 @@ export default function Widget({
         </div>
       </CardHeader>
       <div className="flex justify-center bg-gray-50 w-full mb-5">
-          <div className="h-[175px] py-5 flex justify-center items-center">
-            {imageUrl ? (
-              <Image
-                src={imageUrl}
-                alt={imageUrl}
-                width="150"
-                height="150"
-              />
-              ) : <AngleIcon className="size-10 fill-current text-gray-400"/>}
-          </div>
+        <div className="h-[175px] py-5 flex justify-center items-center">
+          {imageUrl ? (
+            <Image src={imageUrl} alt={imageUrl} width="150" height="150" />
+          ) : (
+            <AngleIcon className="size-10 fill-current text-gray-400" />
+          )}
+        </div>
       </div>
       <CardContent>
         <CardTitle className="mb-3">{widgetName}</CardTitle>
