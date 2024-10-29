@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from 'next/navigation';
-import { confirmSignUp } from '../../services/authService'; // You'll implement this function
+import { useRouter } from "next/navigation";
+import { confirmSignUp } from "../../services/authService"; // You'll implement this function
 import SubmitButton from "../components/input/SubmitButton";
 
 export function ConfirmSignUpForm() {
-  const [email, setEmail] = useState('');
-  const [confirmationCode, setConfirmationCode] = useState('');
-  const [submitStatus, setSubmitStatus] = useState({ message: '', textClass: 'black' });
+  const [email, setEmail] = useState("");
+  const [confirmationCode, setConfirmationCode] = useState("");
+  const [submitStatus, setSubmitStatus] = useState({
+    message: "",
+    textClass: "black",
+  });
   const router = useRouter();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -18,14 +21,15 @@ export function ConfirmSignUpForm() {
       // Call the confirmSignUp function to verify the account
       await confirmSignUp(email, confirmationCode);
       setSubmitStatus({
-        message: 'Account confirmed! Redirecting to login...',
-        textClass: 'text-green-500',
+        message: "Account confirmed! Redirecting to login...",
+        textClass: "text-green-500",
       });
-      setTimeout(() => router.push('/sign-in'), 200); // Redirect to login after successful confirmation
+      setTimeout(() => router.push("/sign-in"), 200); // Redirect to login after successful confirmation
     } catch (error: unknown) {
       setSubmitStatus({
-        message: error instanceof Error ? error.message : 'Confirmation failed.',
-        textClass: 'text-red-500',
+        message:
+          error instanceof Error ? error.message : "Confirmation failed.",
+        textClass: "text-red-500",
       });
     }
   };
@@ -49,7 +53,11 @@ export function ConfirmSignUpForm() {
         required
       />
       <SubmitButton btnText="Confirm Sign Up" />
-      <p aria-live="polite" className={`mb-2 ${submitStatus.textClass}`} role="status">
+      <p
+        aria-live="polite"
+        className={`mb-2 ${submitStatus.textClass}`}
+        role="status"
+      >
         {submitStatus.message}
       </p>
     </form>

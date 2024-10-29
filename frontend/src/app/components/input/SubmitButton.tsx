@@ -1,15 +1,17 @@
 import { useFormStatus } from "react-dom";
 
 type InputProps = {
-    btnText: string,
-}
+  btnText: string;
+};
 
-export default function SubmitButton({ btnText } : InputProps) {
-    const { pending } = useFormStatus();
+export default function SubmitButton({ btnText }: InputProps) {
+  const { pending } = useFormStatus();
 
-    return (
-        <button type="submit" aria-disabled={pending}
-            className="bg-slate-50
+  return (
+    <button
+      type="submit"
+      aria-disabled={pending}
+      className="bg-slate-50
                 px-5
                 py-3
                 my-7
@@ -20,8 +22,8 @@ export default function SubmitButton({ btnText } : InputProps) {
                 transition
                 duration-100
                 "
-        >
-            {btnText}
-        </button>
-    );
+    >
+      {btnText}
+    </button>
+  );
 }
