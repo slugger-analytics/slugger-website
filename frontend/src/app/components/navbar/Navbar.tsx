@@ -9,7 +9,7 @@ type InputProps = {
 
 export default function Navbar({ initials }: InputProps) {
   return (
-    <div className="w-full sticky top-0 h-20 bg-alpbBlue flex items-center">
+    <div className="w-full sticky top-0 h-20 bg-alpbBlue flex items-center z-50">
       <MenuButton />
       <div className="flex-grow" />
       <LogoButton />

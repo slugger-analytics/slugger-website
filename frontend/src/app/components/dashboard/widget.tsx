@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "../ui/button";
 import Image from "next/image";
-import { HeartIcon, HeartFilledIcon } from "@radix-ui/react-icons";
+import { HeartIcon, HeartFilledIcon, AngleIcon } from "@radix-ui/react-icons";
 import {
   Card,
   CardContent,
@@ -14,7 +14,7 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/app/components/ui/avatar"
+} from "@/app/components/ui/avatar";
 
 type WidgetProps = {
   developerName: string;
@@ -24,17 +24,18 @@ type WidgetProps = {
   widgetName: string;
   description: string;
   isFavorite: boolean;
+  widgetId: string;
 };
 
-export default function WidgetCard({
+export default function Widget({
   developerName,
   developerId,
   imageUrl,
   widgetName,
   description,
   isFavorite,
+  widgetId,
 }: WidgetProps) {
-
   return (
     <Card className="w-[350px]">
       <CardHeader>
@@ -45,37 +46,31 @@ export default function WidgetCard({
           </Avatar>
           <CardTitle>{developerName}</CardTitle>
         </div>
-
       </CardHeader>
-        <div className="flex justify-center bg-gray-50 w-full mb-5">
-          {
-            imageUrl ?
-            <Image
-              src={imageUrl}
-              alt="ALPB logo"
-              width="150"
-              height="150"
-              className="py-5"
-            />
-            : <div className="h-[150px] py-5"></div>
-          }
-        </div>
+      <div className="flex justify-center bg-gray-50 w-full mb-5">
+          <div className="h-[175px] py-5 flex justify-center items-center">
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={imageUrl}
+                width="150"
+                height="150"
+              />
+              ) : <AngleIcon className="size-10 fill-current text-gray-400"/>}
+          </div>
+      </div>
       <CardContent>
+        <CardTitle className="mb-3">{widgetName}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardContent>
       <CardFooter className="flex justify-between">
         <Button variant="outline">Edit</Button>
         <div>
           <Button className="ml-3">Launch</Button>
-          <Button variant="ghost" >
-            {
-              isFavorite ? <HeartFilledIcon />
-              : <HeartIcon />
-            }
-
+          <Button variant="ghost">
+            {isFavorite ? <HeartFilledIcon /> : <HeartIcon />}
           </Button>
         </div>
-
       </CardFooter>
     </Card>
   );
