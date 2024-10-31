@@ -157,11 +157,19 @@ async function getPendingWidgets() {
     const query = `
         SELECT * FROM requests`;
     const result = await db.query(query);
+    return result.rows;
+}
+
+async function getAllWidgets() {
+    const query = `
+        SELECT * FROM widgets`;
+    const result = await db.query(query);
     console.log(result)
-    console.log(result.rows)
     return result.rows;
 }
 
 
-module.exports = { generateApiKeyForUser, getPendingWidgets, registerWidget, getRequestData, getUserData, createApprovedWidget, createUserWidgetRelation, removeRequest};
+
+
+module.exports = { generateApiKeyForUser, getPendingWidgets, registerWidget, getRequestData, getUserData, createApprovedWidget, createUserWidgetRelation, removeRequest, getAllWidgets};
 
