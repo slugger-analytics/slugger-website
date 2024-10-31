@@ -25,6 +25,7 @@ type WidgetProps = {
   description: string;
   isFavorite: boolean;
   widgetId: string;
+  redirectUrl: string
 };
 
 export default function Widget({
@@ -35,7 +36,14 @@ export default function Widget({
   description,
   isFavorite,
   widgetId,
+  redirectUrl
 }: WidgetProps) {
+
+  const redirect = () => {
+    // TODO implement this bryan
+  }
+
+
   return (
     <Card className="w-[350px]">
       <CardHeader>
@@ -63,7 +71,7 @@ export default function Widget({
       <CardFooter className="flex justify-between">
         <Button variant="outline">Edit</Button>
         <div>
-          <Button className="ml-3">Launch</Button>
+          <Button className="ml-3" onClick={redirect}>Launch</Button>
           <Button variant="ghost">
             {isFavorite ? <HeartFilledIcon /> : <HeartIcon />}
           </Button>
