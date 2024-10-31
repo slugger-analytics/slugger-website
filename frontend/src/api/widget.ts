@@ -104,3 +104,16 @@ export const declineWidget = async (requestId: string): Promise<string> => {
     throw error;
   }
 };
+
+export const fetchWidgets = async (): Promise<Request[]> => {
+  try {
+    const response = await fetch("http://localhost:3001/api/fetch-widgets");
+    if (!response.ok) {
+      throw new Error(`Error: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching pending widgets:", error);
+    throw error;
+  }
+};
