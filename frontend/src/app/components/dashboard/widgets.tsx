@@ -1,106 +1,73 @@
-import React from "react";
+"use client"
+import React, { useEffect, useState } from "react";
 import Widget from "./widget";
+import { fetchWidgets } from "../../../api/widget"; // Adjust path if needed
+
+interface WidgetData {
+  developerName: string;
+  developerId: string;
+  widgetId: string;
+  widgetName: string;
+  description: string;
+  isFavorite: boolean;
+  imageUrl?: string;
+}
 
 export default function Widgets() {
-  // Sample static widgets
-  const widgets = [
-    {
-      developerName: "Widget Team 1",
-      developerId: "123",
-      widgetId: "12345",
-      widgetName: "Heatmap",
-      description:
-        "This widget provides amazing insights for many baseball players.",
-      isFavorite: true,
-      imageUrl: "/alpb-logo.png",
-    },
-    {
-      developerName: "Team2",
-      developerId: "234",
-      widgetId: "12546",
-      widgetName: "Pitch Stats",
-      description: "Lorem ipsum etcetera.",
-      isFavorite: false,
-    },
-    {
-      developerName: "Analysis Crew",
-      developerId: "345",
-      widgetId: "23456",
-      widgetName: "Strike Zone Tracker",
-      description: "Tracks strike zone metrics in real-time.",
-      isFavorite: true,
-    },
-    {
-      developerName: "Stat Lab",
-      developerId: "456",
-      widgetId: "34567",
-      widgetName: "Swing Analyzer",
-      description: "Analyzes the dynamics of each swing.",
-      isFavorite: false,
-    },
-    {
-      developerName: "Widget Innovators",
-      developerId: "567",
-      widgetId: "45678",
-      widgetName: "Pitch Speed Heatmap",
-      description: "Displays heatmaps based on pitch speed.",
-      isFavorite: true,
-    },
-    {
-      developerName: "Data Pros",
-      developerId: "678",
-      widgetId: "56789",
-      widgetName: "Batting Average Calculator",
-      description: "Calculates the average of recent batting performances.",
-      isFavorite: false,
-    },
-    {
-      developerName: "Game Insights",
-      developerId: "789",
-      widgetId: "67890",
-      widgetName: "Home Run Probability",
-      description: "Predicts the probability of a home run for each pitch.",
-      isFavorite: true,
-    },
-    {
-      developerName: "Metrics Team",
-      developerId: "890",
-      widgetId: "78901",
-      widgetName: "Defensive Positioning",
-      description: "Suggests optimal player positions based on game data.",
-      isFavorite: false,
-    },
-    {
-      developerName: "Performance Analytics",
-      developerId: "901",
-      widgetId: "89012",
-      widgetName: "Game Replay",
-      description: "Visualizes game replay data and highlights.",
-      isFavorite: true,
-    },
-  ];
-
-  return (
-    <div
-      className="grid gap-10 p-4
-    sm:grid-cols-1
-    md:grid-cols-1
-    lg:grid-cols-2
-    xl:grid-cols-3
-    3xl:grid-cols-4
-    "
-    >
-      {widgets.map(
-        ({
-          developerName,
-          developerId,
-          widgetId,
-          widgetName,
-          description,
-          isFavorite,
-          imageUrl,
-        }) => {
-          return (
+    const [widgets, setWidgets] = useState<WidgetData[]>([]);
+    const [loading, setLoading] = useState(true);
+  
+    useEffect(() => {
+      // Fetch widgets from backend
+      const loadWidgets = async () => {
+        try {
+          const data = await fetchWidgets();
+          
+          // Map backend data to WidgetData format if needed
+          const widgetData: WidgetData[] = data.map((item: any) => ({
+            developerName: item.developer_name || "Unknown",
+            developerId: item.developer_id || "",
+            widgetId: item.widget_id || "",
+            widgetName: item.widget_name || "Unnamed Widget",
+            description: item.description || "",
+            isFavorite: item.is_favorite || false,
+            imageUrl: item.image_url || undefined,
+          }));
+    
+          setWidgets(widgetData);
+        } catch (error) {
+          console.error("Error fetching widgets:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+    
+      loadWidgets();
+    }, []);
+  
+    if (loading) {
+      return <p>Loading widgets...</p>;
+    }
+  
+    return (
+      <div
+        className="grid gap-10 p-4
+        sm:grid-cols-1
+        md:grid-cols-1
+        lg:grid-cols-2
+        xl:grid-cols-3
+        3xl:grid-cols-4"
+      >
+        {widgets.map(
+          ({
+            developerName,
+            developerId,
+            widgetId,
+            widgetName,
+            description,
+            isFavorite,
+            imageUrl,
+          }) => (
             <Widget
               key={widgetId}
               developerName={developerName}
@@ -111,9 +78,8 @@ export default function Widgets() {
               isFavorite={isFavorite}
               {...(imageUrl && { imageUrl })}
             />
-          );
-        },
-      )}
-    </div>
-  );
-}
+          ),
+        )}
+      </div>
+    );
+  }
