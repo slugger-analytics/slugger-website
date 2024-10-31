@@ -4,7 +4,6 @@ import ProtectedRoute from "../components/ProtectedRoutes";
 
 export default function Home() {
   return (
-    <ProtectedRoute>
     <body>
     <Navbar />
       <div className="w-full flex justify-center">
@@ -19,6 +18,5 @@ export default function Home() {
         </div>
       </div>
     </body>
-    </ProtectedRoute>
   );
 }
