@@ -6,9 +6,11 @@ import Search from "../components/dashboard/search";
 import ProtectedRoute from "../components/ProtectedRoutes";
 
 export default function Dashboard() {
+
   return (
     <ProtectedRoute>
       {/* <Search /> */}
+      <Navbar />
       <div className="flex justify-center">
         <Widgets />
       </div>
