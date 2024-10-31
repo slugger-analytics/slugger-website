@@ -8,6 +8,7 @@ const registerUserRoute = require('./api/register-user');
 const loginUserRoute = require('./api/login-user');
 const pendingWidgets = require('./api/pending-widgets');
 const declineRequestRoute = require('./api/decline-widget')
+const fetchAllWidgetRoute = require ('./api/fetch-widgets')
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api/register-user', registerUserRoute);
 app.use('/api/login-user', loginUserRoute);
 app.use('/api/pending-widgets', pendingWidgets)
 app.use('/api/decline-widget', declineRequestRoute)
+app.use('/api/fetch-widgets', fetchAllWidgetRoute)
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
