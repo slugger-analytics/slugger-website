@@ -2,10 +2,11 @@
 
 import Navbar from "./components/navbar/Navbar";
 import Link from "next/link";
+import { AuthProvider } from './contexts/AuthContext';
 
 export default function Home() {
   return (
-    <body>
+    <AuthProvider>
       <Navbar />
       <div className="bg-white shadow-lg rounded-lg p-10 flex flex-col items-center space-y-8">
         <h1 className="text-4xl font-extrabold text-gray-800 mb-4">
@@ -25,6 +26,6 @@ export default function Home() {
           </button>
         </Link>
       </div>
-    </body>
+    </AuthProvider>
   );
 }

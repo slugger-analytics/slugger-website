@@ -1,10 +1,11 @@
 // import { sql } from '@vercel/postgres';
 import { WidgetForm } from "./WidgetForm";
 import Navbar from "../components/navbar/Navbar";
+import ProtectedRoute from "../components/ProtectedRoutes";
 
 export default function Home() {
   return (
-    // TODO: Navbar initials are hardcoded right now. Update them based on account info.
+    <ProtectedRoute>
     <div>
       <Navbar initials={"DB"} />
       <div className="w-full flex justify-center">
@@ -18,5 +19,6 @@ export default function Home() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
