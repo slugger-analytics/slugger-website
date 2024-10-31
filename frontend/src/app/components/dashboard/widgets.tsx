@@ -11,6 +11,7 @@ interface WidgetData {
   description: string;
   isFavorite: boolean;
   imageUrl?: string;
+  redirectUrl: string;
 }
 
 export default function Widgets() {
@@ -36,6 +37,7 @@ export default function Widgets() {
             description: item.description || "",
             isFavorite: item.is_favorite || false,
             imageUrl: item.image_url || undefined,
+            redirectUrl: item.redirect_link || undefined,
           }));
     
           setWidgets(widgetData);
@@ -81,6 +83,7 @@ export default function Widgets() {
           description,
           isFavorite,
           imageUrl,
+          redirectUrl
         }) => (
             <Widget
               key={widgetId}
@@ -90,6 +93,7 @@ export default function Widgets() {
               widgetName={widgetName}
               description={description}
               isFavorite={isFavorite}
+              redirectUrl={redirectUrl}
               {...(imageUrl && { imageUrl })}
             />
         ),
