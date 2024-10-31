@@ -1,7 +1,17 @@
 import React from "react";
 import Widget from "./widget";
+import { useState, useEffect } from "react";
+
 
 export default function Widgets() {
+  const [isDev, setIsDev] = useState(false);
+
+  useEffect(() => {
+    const role = localStorage.getItem("role");
+    setIsDev(role === "developer" ? true : false);
+    console.log("isDev: ", false);
+  }, []);
+
   // Sample static widgets
   const widgets = [
     {
@@ -90,7 +100,16 @@ export default function Widgets() {
     3xl:grid-cols-4
     "
     >
-      {widgets.map(
+      {widgets
+        .filter((widget) => {
+          if (isDev && widget.developerId === ) {
+            // render
+            return widget;
+          } else if (widget.developerId === ) {
+            return widget;
+          }
+        })
+        .map(
         ({
           developerName,
           developerId,
