@@ -25,8 +25,10 @@ const LoginForm = () => {
       // Handle successful login and redirect based on user role
       if (result.role === "master") {
         router.push("/pending-widgets");
-      } else {
+      } else if (result.role === "league") {
         router.push("/dashboard");
+      } else {
+        router.push("/widgetdevs")
       }
     } catch (error) {
       setSubmitStatus({

@@ -7,6 +7,7 @@ import {
   declineWidget,
   Request,
 } from "../../api/widget";
+import ProtectedRoute from "../components/ProtectedRoutes";
 
 export default function PendingWidgetsPage() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -56,6 +57,7 @@ export default function PendingWidgetsPage() {
   };
 
   return (
+    <ProtectedRoute>
     <div className="container mx-auto p-8">
       <h1 className="text-2xl font-bold mb-8 text-center">Pending Widgets</h1>
 
@@ -103,5 +105,6 @@ export default function PendingWidgetsPage() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   );
 }

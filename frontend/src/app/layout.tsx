@@ -1,4 +1,6 @@
 import "./globals.css";
+import { AuthProvider } from './contexts/AuthContext';
+import Navbar from './components/navbar/Navbar';
 
 export const metadata = {
   title: "ALPB Analytics Platform widget registration example",
@@ -12,8 +14,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
+    <AuthProvider>
+      <html lang="en">
+        <body>
+          <main>{children}</main>
+        </body>
+      </html>
+    </AuthProvider>
   );
 }
