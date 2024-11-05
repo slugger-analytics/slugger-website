@@ -1,6 +1,6 @@
 /// contexts/AuthContext.tsx
 "use client"
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
 
 
@@ -10,6 +10,8 @@ interface AuthContextType {
     loading: boolean;
     login: (token: string, role: string) => void;
     logout: () => void;
+    userId: string | null;
+    setUserId: Dispatch<SetStateAction<string | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,16 +19,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     // Check for token on initial load
     useEffect(() => {
-        console.log("Hereeee")
         const token = localStorage.getItem('idToken');
-        console.log(token)
         const role = localStorage.getItem('role');
-        console.log(role)
         if (token && role) {
             setIsAuthenticated(true);
             setUserRole(role);
@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, userRole, loading, login, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, userRole, loading, login, logout, userId, setUserId }}>
             {children}
         </AuthContext.Provider>
     );
