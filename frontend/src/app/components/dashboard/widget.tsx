@@ -17,8 +17,7 @@ import {
 } from "@/app/components/ui/avatar";
 
 type WidgetProps = {
-  developerName: string;
-  developerId: string;
+  developerIds: string[];
   imageUrl?: string;
   avatarUrl?: string;
   widgetName: string;
@@ -26,17 +25,18 @@ type WidgetProps = {
   isFavorite: boolean;
   widgetId: string;
   redirectUrl: string
+  isDev: boolean;
 };
 
 export default function Widget({
-  developerName,
-  developerId,
+  developerIds,
   imageUrl,
   widgetName,
   description,
   isFavorite,
   widgetId,
-  redirectUrl
+  redirectUrl,
+  isDev
 }: WidgetProps) {
 
   const redirect = () => {
@@ -49,10 +49,10 @@ export default function Widget({
       <CardHeader>
         <div className="flex items-center">
           <Avatar className="mr-5">
-            <AvatarImage src="" alt={developerName} />
-            <AvatarFallback>{developerName[0]}</AvatarFallback>
+            <AvatarImage src="" alt={"TMP"} />
+            <AvatarFallback>{"TMP"}</AvatarFallback>
           </Avatar>
-          <CardTitle>{developerName}</CardTitle>
+          <CardTitle>{"TMP"}</CardTitle>
         </div>
       </CardHeader>
       <div className="flex justify-center bg-gray-50 w-full mb-5">
@@ -69,7 +69,7 @@ export default function Widget({
         <CardDescription>{description}</CardDescription>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button variant="outline">Edit</Button>
+        {isDev && <Button variant="outline">Edit</Button>}
         <div>
           <Button className="ml-3" onClick={redirect}>Launch</Button>
           <Button variant="ghost">

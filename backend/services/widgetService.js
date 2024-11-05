@@ -1,6 +1,6 @@
-const AWS = require('aws-sdk');
-const apiGateway = new AWS.APIGateway({ region: 'us-east-2' });
-const db = require('../db');
+import { APIGateway } from 'aws-sdk';
+const apiGateway = new APIGateway({ region: 'us-east-2' });
+import { query as _query } from '../db';
 
 // Function to register a widget
 async function registerWidget(user_id, widgetName, description, visibility) {
@@ -13,7 +13,7 @@ async function registerWidget(user_id, widgetName, description, visibility) {
         // Insert the widget into the database
         console.log("MADE IT INSIDE THE REGISTER WIDGET WIDGETSERVICE RAHHH")
         const status = 'pending'
-        const result = await db.query(query, [user_id, widgetName, description, visibility, status]);
+        const result = await _query(query, [user_id, widgetName, description, visibility, status]);
         const widgetId = result.rows[0].widget_id;
         console.log(`Widget registered with ID: ${widgetId}`);
         
@@ -28,7 +28,7 @@ async function removeRequest(requestId) {
     const query = `DELETE FROM requests WHERE request_id = $1 RETURNING *;`;
     
     try {
-        const result = await db.query(query, [requestId]);
+        const result = await _query(query, [requestId]);
         if (result.rows.length === 0) {
             throw new Error('Request not found or already deleted.');
         }
@@ -46,7 +46,7 @@ async function createUserWidgetRelation(userId, widgetId, apiKey, role = 'owner'
             VALUES ($1, $2, $3, $4, NOW())
             RETURNING *;
         `;
-        const result = await db.query(query, [userId, widgetId, apiKey, role]);
+        const result = await _query(query, [userId, widgetId, apiKey, role]);
         return result.rows[0]; // Return the newly created relation
     } catch (error) {
         console.error('Error creating user-widget relation:', error.message);
@@ -95,7 +95,7 @@ async function saveApiKeyToDatabase(userId, apiKey) {
         SET api_key = $1
         WHERE user_id = $2;
     `;
-    await db.query(query, [apiKey, userId]);
+    await _query(query, [apiKey, userId]);
 }
 
 async function getRequestData(requestId) {
@@ -103,7 +103,7 @@ async function getRequestData(requestId) {
         const query = `
             SELECT * FROM requests WHERE request_id = $1
         `;
-        const result = await db.query(query, [requestId]);
+        const result = await _query(query, [requestId]);
 
         if (result.rows.length === 0) {
             throw new Error('Request not found');
@@ -121,7 +121,7 @@ async function getUserData(userCognitoID) {
         const query = `
             SELECT * FROM users WHERE cognito_user_id = $1
         `;
-        const result = await db.query(query, [userCognitoID]);
+        const result = await _query(query, [userCognitoID]);
 
         if (result.rows.length === 0) {
             throw new Error('Request not found');
@@ -143,7 +143,7 @@ async function createApprovedWidget(widgetData) {
             VALUES ($1, $2, $3, $4, NOW())
             RETURNING widget_id;
         `;
-        const result = await db.query(query, [widget_name, description, visibility, 'approved']);
+        const result = await _query(query, [widget_name, description, visibility, 'approved']);
 
         return result.rows[0]; // Return the newly created widget ID
     } catch (error) {
@@ -156,20 +156,28 @@ async function createApprovedWidget(widgetData) {
 async function getPendingWidgets() {
     const query = `
         SELECT * FROM requests`;
-    const result = await db.query(query);
+    const result = await _query(query);
     return result.rows;
 }
 
 async function getAllWidgets() {
+    // When we select * from widgets,
+    // need to get all user_ids from user_widget where user_widget.widget_id === widgets.widget_id
     const query = `
-        SELECT * FROM widgets`;
-    const result = await db.query(query);
-    console.log(result)
+        SELECT
+            w.*,
+            ARRAY_AGG(uw.user_id) AS developer_ids
+        FROM
+            widgets w
+        LEFT JOIN
+            user_widget uw ON w.widget_id = uw.widget_id
+        GROUP BY
+            w.widget_id;
+        `;
+    const result = await _query(query);
     return result.rows;
 }
 
 
-
-
-module.exports = { generateApiKeyForUser, getPendingWidgets, registerWidget, getRequestData, getUserData, createApprovedWidget, createUserWidgetRelation, removeRequest, getAllWidgets};
+export default { generateApiKeyForUser, getPendingWidgets, registerWidget, getRequestData, getUserData, createApprovedWidget, createUserWidgetRelation, removeRequest, getAllWidgets};
 
