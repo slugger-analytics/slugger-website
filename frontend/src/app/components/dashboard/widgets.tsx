@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import Widget from "./widget";
 import { fetchWidgets } from "../../../api/widget"; // Adjust path if needed
 import { jwtDecode } from "jwt-decode";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 interface WidgetData {
   developerIds: string[];
@@ -18,6 +19,7 @@ export default function Widgets() {
     const [widgets, setWidgets] = useState<WidgetData[]>([]);
     const [loading, setLoading] = useState(true);
     const [isDev, setIsDev] = useState(false);
+    const { userId } = useAuth();
     let token: string;
   
     useEffect(() => {
@@ -33,8 +35,8 @@ export default function Widgets() {
           const role = localStorage.getItem("role");
           setIsDev(role === "Widget Developer" ? true : false);
           const data = await fetchWidgets();
-          console.log("data:", data)
           const decodedToken: any = jwtDecode(token);
+          console.log("user id:", userId);
           // Map backend data to WidgetData format if needed
           const widgetData: WidgetData[] = data.map((item: any) => ({
             developerIds: item.developer_ids || [], // could process each developerIds array into a set if we run into frontend performance issues

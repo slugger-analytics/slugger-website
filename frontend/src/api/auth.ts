@@ -46,12 +46,6 @@ export const loginUser = async (email: string, password: string) => {
       localStorage.setItem("accessToken", data.accessToken);
       localStorage.setItem("idToken", data.idToken);
       localStorage.setItem("role", data.role); // Store role if needed
-      console.log("Access token:");
-      console.log(data.accessToken);
-      console.log("Id token:");
-      console.log(data.idToken);
-      console.log("Role: ");
-      console.log(data.role);
       return data; // Return user data to handle on the frontend
     } else {
       throw new Error(data.message || "Login failed");

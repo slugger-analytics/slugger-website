@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import InputField from "../components/input/InputField";
 import SubmitButton from "../components/input/SubmitButton";
 import { loginUser } from "../../api/auth";
+import { useAuth } from "../contexts/AuthContext";
 
 const LoginForm = () => {
   const [submitStatus, setSubmitStatus] = useState({
@@ -12,6 +13,7 @@ const LoginForm = () => {
     textClass: "black",
   });
   const router = useRouter();
+  const { setUserId } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,6 +23,7 @@ const LoginForm = () => {
 
     try {
       const result = await loginUser(email, password);
+      setUserId(result["user"]["user_id"]);
 
       // Handle successful login and redirect based on user role
       if (result.role === "master") {
