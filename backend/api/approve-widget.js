@@ -1,6 +1,6 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { getRequestData, createApprovedWidget, getUserData, generateApiKeyForUser, createUserWidgetRelation} = require('../services/widgetService');
+import { getRequestData, createApprovedWidget, getUserData, generateApiKeyForUser, createUserWidgetRelation} from '../services/widgetService.js';
 
 router.post('/', async (req, res) => {
     const { requestId } = req.body;
@@ -21,5 +21,4 @@ router.post('/', async (req, res) => {
     }
 });
 
-module.exports = router;
-
+export default router;

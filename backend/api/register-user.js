@@ -1,12 +1,14 @@
-const express = require('express');
-const AWS = require('aws-sdk');
-const pool = require('../db');  // Assuming you have db.js for PostgreSQL connection
-require('dotenv').config();
+import { Router } from 'express';
+import pkg from 'aws-sdk';
+const { CognitoIdentityServiceProvider } = pkg;
+import pool from '../db.js';  // Assuming you have db.js for PostgreSQL connection
+import dotenv from 'dotenv';
+dotenv.config();
 
-const router = express.Router();
+const router = Router();
 
 // Configure AWS SDK
-const cognito = new AWS.CognitoIdentityServiceProvider({
+const cognito = new CognitoIdentityServiceProvider({
   region: process.env.AWS_REGION  // e.g., 'us-east-1'
 });
 
@@ -51,5 +53,5 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
 

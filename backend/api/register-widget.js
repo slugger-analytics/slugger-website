@@ -1,7 +1,6 @@
-const express = require('express');
-const { registerWidget } = require('../services/widgetService');
-const router = express.Router();
-const jwt = require('jsonwebtoken');  // To decode the JWT token
+import { Router } from 'express';
+import { registerWidget } from '../services/widgetService.js';
+const router = Router();
 
 router.post('/', async (req, res) => {
     const { widgetName, description, visibility, userId } = req.body;
@@ -16,5 +15,5 @@ router.post('/', async (req, res) => {
 
 
 
-module.exports = router;
+export default router;
 

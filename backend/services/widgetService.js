@@ -1,9 +1,9 @@
-import { APIGateway } from 'aws-sdk';
+import pkg from 'aws-sdk';
+const { APIGateway } = pkg;
 const apiGateway = new APIGateway({ region: 'us-east-2' });
-import { query as _query } from '../db';
 
 // Function to register a widget
-async function registerWidget(user_id, widgetName, description, visibility) {
+export async function registerWidget(user_id, widgetName, description, visibility) {
     const query = `
       INSERT INTO requests (user_id, widget_name, description, visibility, status)
         VALUES ($1, $2, $3, $4, $5)
@@ -24,7 +24,7 @@ async function registerWidget(user_id, widgetName, description, visibility) {
     }
 }
 
-async function removeRequest(requestId) {
+export async function removeRequest(requestId) {
     const query = `DELETE FROM requests WHERE request_id = $1 RETURNING *;`;
     
     try {
@@ -39,7 +39,7 @@ async function removeRequest(requestId) {
     }
 }
 
-async function createUserWidgetRelation(userId, widgetId, apiKey, role = 'owner') {
+export async function createUserWidgetRelation(userId, widgetId, apiKey, role = 'owner') {
     try {
         const query = `
             INSERT INTO user_widget (user_id, widget_id, api_key, role, joined_at)
@@ -54,7 +54,7 @@ async function createUserWidgetRelation(userId, widgetId, apiKey, role = 'owner'
     }
 }
 
-async function generateApiKeyForUser(userId, email) {
+export async function generateApiKeyForUser(userId, email) {
     const params = {
         name: `ApiKey-${userId}`,
         description: `API key for ${email}`,
@@ -74,7 +74,7 @@ async function generateApiKeyForUser(userId, email) {
     }
 }
 
-async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
+export async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
     const params = {
         keyId: apiKeyId, 
         keyType: 'API_KEY',
@@ -89,7 +89,7 @@ async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
     }
 }
 
-async function saveApiKeyToDatabase(userId, apiKey) {
+export async function saveApiKeyToDatabase(userId, apiKey) {
     const query = `
         UPDATE user_widget
         SET api_key = $1
@@ -98,7 +98,7 @@ async function saveApiKeyToDatabase(userId, apiKey) {
     await _query(query, [apiKey, userId]);
 }
 
-async function getRequestData(requestId) {
+export async function getRequestData(requestId) {
     try {
         const query = `
             SELECT * FROM requests WHERE request_id = $1
@@ -116,7 +116,7 @@ async function getRequestData(requestId) {
     }
 }
 
-async function getUserData(userCognitoID) {
+export async function getUserData(userCognitoID) {
     try {
         const query = `
             SELECT * FROM users WHERE cognito_user_id = $1
@@ -135,8 +135,8 @@ async function getUserData(userCognitoID) {
 }
 
 
-async function createApprovedWidget(widgetData) {
-    const { widget_name, description, visibility, user_id } = widgetData;
+export async function createApprovedWidget(widgetData) {
+    const { widget_name, description, visibility } = widgetData;
     try {
         const query = `
             INSERT INTO widgets (widget_name, description, visibility, status, created_at)
@@ -153,14 +153,14 @@ async function createApprovedWidget(widgetData) {
 }
 
 
-async function getPendingWidgets() {
+export async function getPendingWidgets() {
     const query = `
         SELECT * FROM requests`;
     const result = await _query(query);
     return result.rows;
 }
 
-async function getAllWidgets() {
+export async function getAllWidgets() {
     // When we select * from widgets,
     // need to get all user_ids from user_widget where user_widget.widget_id === widgets.widget_id
     const query = `
@@ -174,10 +174,6 @@ async function getAllWidgets() {
         GROUP BY
             w.widget_id;
         `;
-    const result = await _query(query);
+    const result = await query(query);
     return result.rows;
 }
-
-
-export default { generateApiKeyForUser, getPendingWidgets, registerWidget, getRequestData, getUserData, createApprovedWidget, createUserWidgetRelation, removeRequest, getAllWidgets};
-

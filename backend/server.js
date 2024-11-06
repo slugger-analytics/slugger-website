@@ -1,20 +1,21 @@
-const express = require('express');
-const cors = require('cors');  // Enable if frontend and backend are on different domains
-require('dotenv').config();  // Load environment variables
+import express, { json } from 'express';
+import cors from 'cors';  // Enable if frontend and backend are on different domains
+import dotenv from "dotenv";
+dotenv.config();  // Load environment variables
 
-const registerWidgetRoute = require('./api/register-widget');
-const approveWidgetRoute = require('./api/approve-widget');
-const registerUserRoute = require('./api/register-user');
-const loginUserRoute = require('./api/login-user');
-const pendingWidgets = require('./api/pending-widgets');
-const declineRequestRoute = require('./api/decline-widget')
-const fetchAllWidgetRoute = require ('./api/fetch-widgets')
-const fetchUserByCognitoId = require ('./api/fetch-user');
+import registerWidgetRoute from './api/register-widget.js';
+import approveWidgetRoute from './api/approve-widget.js';
+import registerUserRoute from './api/register-user.js';
+import loginUserRoute from './api/login-user.js';
+import pendingWidgets from './api/pending-widgets.js';
+import declineRequestRoute from './api/decline-widget.js';
+import fetchAllWidgetRoute from './api/fetch-widgets.js';
+import fetchUserByCognitoId from './api/fetch-user.js';
 
 const app = express();
 
 app.use(cors());  // Enable CORS if necessary
-app.use(express.json());  // Parse incoming JSON requests
+app.use(json());  // Parse incoming JSON requests
 
 // Register routes
 app.use('/api/register-widget', registerWidgetRoute);
