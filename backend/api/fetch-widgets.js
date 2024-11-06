@@ -4,7 +4,6 @@ const router = Router();
 
 router.get('/', async (req, res) => {
     try {
-        console.log("hi")
         const widgets = await getAllWidgets();
         res.status(200).json(widgets);
     } catch (error) {
