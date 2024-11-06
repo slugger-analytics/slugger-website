@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import pkg from 'aws-sdk';
 const { CognitoIdentityServiceProvider } = pkg;
-import query from '../db.js';  // PostgreSQL connection setup
+import pool from '../db.js';  // PostgreSQL connection setup
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -27,13 +27,15 @@ router.post('/', async (req, res) => {
 
   try {
     // Step 1: Authenticate user with Cognito
-    const cognitoResult = await cognito.initiateAuth(params).promise();
+    const cognitoResult = await // The `.promise()` call might be on an JS SDK v2 client API.
+    // If yes, please remove .promise(). If not, remove this comment.
+    cognito.initiateAuth(params).promise();
     
     const { AccessToken, IdToken, RefreshToken } = cognitoResult.AuthenticationResult;
 
     // Step 2: Query your database for additional user information
     const userEmailQuery = 'SELECT * FROM users WHERE email = $1';
-    const dbResult = await query(userEmailQuery, [email]);
+    const dbResult = await pool.query(userEmailQuery, [email]);
 
     if (dbResult.rows.length === 0) {
       return res.status(404).json({ message: 'User not found in the database' });
