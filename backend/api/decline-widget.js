@@ -1,6 +1,6 @@
-const express = require('express');
-const router = express.Router();
-const { removeRequest } = require('../services/widgetService');
+import { Router } from 'express';
+const router = Router();
+import { removeRequest } from '../services/widgetService.js';
 
 router.post('/', async (req, res) => {
     const { requestId } = req.body;
@@ -17,4 +17,4 @@ router.post('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

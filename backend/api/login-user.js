@@ -1,12 +1,14 @@
-const express = require('express');
-const AWS = require('aws-sdk');
-const pool = require('../db');  // PostgreSQL connection setup
-require('dotenv').config();
+import { Router } from 'express';
+import pkg from 'aws-sdk';
+const { CognitoIdentityServiceProvider } = pkg;
+import query from '../db.js';  // PostgreSQL connection setup
+import dotenv from 'dotenv';
+dotenv.config();
 
-const router = express.Router();
+const router = Router();
 
 // Configure AWS SDK for Cognito
-const cognito = new AWS.CognitoIdentityServiceProvider({
+const cognito = new CognitoIdentityServiceProvider({
   region: process.env.AWS_REGION,  // Replace with your region, e.g., 'us-east-1'
 });
 
@@ -30,8 +32,8 @@ router.post('/', async (req, res) => {
     const { AccessToken, IdToken, RefreshToken } = cognitoResult.AuthenticationResult;
 
     // Step 2: Query your database for additional user information
-    const query = 'SELECT * FROM users WHERE email = $1';
-    const dbResult = await pool.query(query, [email]);
+    const userEmailQuery = 'SELECT * FROM users WHERE email = $1';
+    const dbResult = await query(userEmailQuery, [email]);
 
     if (dbResult.rows.length === 0) {
       return res.status(404).json({ message: 'User not found in the database' });
@@ -53,4 +55,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

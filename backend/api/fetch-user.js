@@ -1,6 +1,6 @@
-const express = require('express');
-const { getUserData } = require('../services/widgetService');
-const router = express.Router();
+import { Router } from 'express';
+import { getUserData } from '../services/widgetService.js';
+const router = Router();
 
 router.get('/', async (req, res) => {
     const {id} = req.body;
@@ -12,4 +12,4 @@ router.get('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

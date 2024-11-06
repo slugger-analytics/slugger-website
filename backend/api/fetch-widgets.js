@@ -1,9 +1,10 @@
-const express = require('express');
-const { getAllWidgets } = require('../services/widgetService');
-const router = express.Router();
+import { Router } from 'express';
+import { getAllWidgets } from '../services/widgetService.js';
+const router = Router();
 
 router.get('/', async (req, res) => {
     try {
+        console.log("hi")
         const widgets = await getAllWidgets();
         res.status(200).json(widgets);
     } catch (error) {
@@ -11,4 +12,4 @@ router.get('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

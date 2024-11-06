@@ -1,6 +1,6 @@
-const express = require('express');
-const { getPendingWidgets } = require('../services/widgetService');
-const router = express.Router();
+import { Router } from 'express';
+import { getPendingWidgets } from '../services/widgetService.js';
+const router = Router();
 
 router.get('/', async (req, res) => {
     try {
@@ -11,4 +11,4 @@ router.get('/', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

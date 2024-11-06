@@ -1,5 +1,5 @@
-const AWS = require('aws-sdk');
-const ses = new AWS.SES({ region: 'us-east-2' });
+import { SES } from 'aws-sdk';
+const ses = new SES({ region: 'us-east-2' });
 
 async function sendApiKeyEmail(email, apiKey) {
     const params = {
@@ -27,4 +27,4 @@ async function sendApiKeyEmail(email, apiKey) {
     }
 }
 
-module.exports = { sendApiKeyEmail };
+export default { sendApiKeyEmail };

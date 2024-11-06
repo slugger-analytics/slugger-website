@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "dependencies": {
     "aws-sdk": "^2.1691.0",
     "cors": "^2.8.5",
