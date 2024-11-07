@@ -5,6 +5,7 @@ import { HeartIcon, HeartFilledIcon, AngleIcon } from "@radix-ui/react-icons";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Import the dialog component
+import { updateWidget } from "@/api/widget"; // Import updateWidget function
 
 type WidgetProps = {
   developerIds: string[];
@@ -40,11 +41,13 @@ export default function Widget({
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [visibility, setVisibility] = useState("Private"); // Set default visibility as "Private"
 
+  // Function to handle widget redirection
   const redirect = () => {
     // TODO implement this bryan
   };
 
-  const handleSave = (data: { title: string; description: string; deploymentLink: string; visibility: string }) => {
+  // Handle save action in the EditWidgetDialog
+  const handleSave = async (data: { title: string; description: string; deploymentLink: string; visibility: string }) => {
     const updatedWidget = {
       developerIds,
       widgetId,
@@ -54,8 +57,15 @@ export default function Widget({
       imageUrl,
       redirectUrl: data.deploymentLink,
     };
-    onUpdateWidget(updatedWidget);
-    setIsDialogOpen(false); // Close the dialog after save
+
+    // Update widget using the updateWidget API function
+    try {
+      await updateWidget(updatedWidget); // Call the API to update the widget in the backend
+      onUpdateWidget(updatedWidget); // Call parent handler to update the widget in the parent component's state
+      setIsDialogOpen(false); // Close the dialog after saving
+    } catch (error) {
+      console.error("Error updating widget:", error);
+    }
   };
 
   useEffect(() => {
@@ -97,14 +107,20 @@ export default function Widget({
           <Button variant="ghost">{isFavorite ? <HeartFilledIcon /> : <HeartIcon />}</Button>
         </div>
       </CardFooter>
-      
+
       {/* Conditionally render the dialog */}
       {isDialogOpen && (
         <EditWidgetDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           onSave={handleSave}
-          initialData={{ title: widgetName, description, deploymentLink: redirectUrl, visibility }}
+          initialData={{ 
+            id: widgetId, // Pass the widget id to the dialog
+            title: widgetName, 
+            description, 
+            deploymentLink: redirectUrl, 
+            visibility 
+          }}
         />
       )}
     </Card>
