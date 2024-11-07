@@ -12,6 +12,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { useState } from "react";
+import { updateWidget } from '../../../../../backend/services/widgetService';
 
 interface EditWidgetDialogProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, on
       deploymentLink,
       visibility,
     };
+    updateWidget();
     onSave(updatedData);
   };
 

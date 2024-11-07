@@ -118,3 +118,27 @@ export const fetchWidgets = async (): Promise<Request[]> => {
   }
 };
 
+interface widgetDataType {
+  id: string;
+  title: string;
+  description: string;
+  deploymentLink: string;
+  visibility: string;
+}
+
+export const updateWidget = async ({ id, title, description, deploymentLink, visibility }: widgetDataType) => {
+  try {
+    const response = await fetch(`http://localhost:3001/api/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ title, description, deploymentLink, visibility })
+    });
+    return response;
+  } catch (error) {
+    console.error("Error updating widget:", error);
+    throw error;
+  }
+}
+
