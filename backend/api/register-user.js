@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import pkg from 'aws-sdk';
-const { CognitoIdentityServiceProvider } = pkg;
 import pool from '../db.js';  // Assuming you have db.js for PostgreSQL connection
 import dotenv from 'dotenv';
+
+const { CognitoIdentityServiceProvider } = pkg;
 dotenv.config();
 
 const router = Router();

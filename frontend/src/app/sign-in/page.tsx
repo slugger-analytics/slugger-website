@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function SignIn() {
   return (
-    <body>
+    <div>
       <Navbar />
       <div className="w-full flex justify-center">
         <div className="bg-gray-100 w-1/2 max-w-lg px-10 my-10 shadow-md rounded-lg">
@@ -24,6 +24,6 @@ export default function SignIn() {
           </div>
         </div>
       </div>
-    </body>
+    </div>
   );
 }

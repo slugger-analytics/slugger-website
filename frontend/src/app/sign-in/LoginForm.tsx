@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import InputField from "../components/input/InputField";
 import SubmitButton from "../components/input/SubmitButton";
@@ -13,7 +13,7 @@ const LoginForm = () => {
     textClass: "black",
   });
   const router = useRouter();
-  const { setUserId } = useAuth();
+  const { userId, setUserId } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -38,6 +38,11 @@ const LoginForm = () => {
       });
     }
   };
+
+  // TODO remove useEffect
+  // useEffect(() => {
+  //   console.log("userId is now:", userId);
+  // }, [userId]);
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col items-center w-80">
