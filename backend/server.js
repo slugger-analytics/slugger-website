@@ -11,6 +11,7 @@ import pendingWidgets from './api/pending-widgets.js';
 import declineRequestRoute from './api/decline-widget.js';
 import fetchAllWidgetRoute from './api/fetch-widgets.js';
 import fetchUserByCognitoId from './api/fetch-user.js';
+import editWidgetRouter from './api/edit-widget.js';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/pending-widgets', pendingWidgets)
 app.use('/api/decline-widget', declineRequestRoute)
 app.use('/api/fetch-widgets', fetchAllWidgetRoute)
 app.use('/api/fetch-user', fetchUserByCognitoId)
+app.use('/api/edit-widget', editWidgetRouter)
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {

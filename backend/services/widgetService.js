@@ -27,7 +27,7 @@ export async function registerWidget(user_id, widgetName, description, visibilit
 export async function updateWidget(widgetId, title, description, link, visibility) {
     const editQuery = `
         UPDATE widgets
-        SET title = $1, description = $2, link = $3, visibility = $4
+        SET widget_name = $1, description = $2, redirect_link = $3, visibility = $4
         WHERE widget_id = $5
     `;
     try {
