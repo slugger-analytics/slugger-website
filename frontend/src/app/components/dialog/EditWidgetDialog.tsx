@@ -12,7 +12,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { useState } from "react";
-import { updateWidget } from "@/api/widget"; // Import the updateWidget function from api
+import { updateWidget } from "@/api/widget"; 
 
 interface EditWidgetDialogProps {
   isOpen: boolean;
@@ -35,7 +35,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, on
 
   const handleSave = async () => {
     const updatedData = {
-      id: initialData.id, // Ensure to pass the id for the widget to be updated
+      id: initialData.id,
       title,
       description,
       deploymentLink,
@@ -43,12 +43,11 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, on
     };
 
     try {
-      await updateWidget(updatedData); // Call the updateWidget function to update the widget in the database
-      onSave(updatedData); // Optional: notify the parent component about the successful update
-      onClose(); // Close the dialog after saving
+      await updateWidget(updatedData); 
+      onSave(updatedData); 
+      onClose(); 
     } catch (error) {
       console.error("Error updating widget:", error);
-      // Handle error as needed, like showing a toast notification
     }
   };
 
