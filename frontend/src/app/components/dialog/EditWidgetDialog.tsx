@@ -12,12 +12,14 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { useState } from "react";
+import { updateWidget } from "@/api/widget"; // Import the updateWidget function from api
 
 interface EditWidgetDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: { title: string; description: string; deploymentLink: string; visibility: string }) => void;
   initialData: {
+    id: string; // Assuming each widget has an id
     title: string;
     description: string;
     deploymentLink: string;
@@ -31,14 +33,23 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, on
   const [deploymentLink, setDeploymentLink] = useState(initialData.deploymentLink || "");
   const [visibility, setVisibility] = useState(initialData.visibility || "Private");
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const updatedData = {
+      id: initialData.id, // Ensure to pass the id for the widget to be updated
       title,
       description,
       deploymentLink,
       visibility,
     };
-    onSave(updatedData);
+
+    try {
+      await updateWidget(updatedData); // Call the updateWidget function to update the widget in the database
+      onSave(updatedData); // Optional: notify the parent component about the successful update
+      onClose(); // Close the dialog after saving
+    } catch (error) {
+      console.error("Error updating widget:", error);
+      // Handle error as needed, like showing a toast notification
+    }
   };
 
   return (
