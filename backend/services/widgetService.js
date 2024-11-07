@@ -12,7 +12,6 @@ export async function registerWidget(user_id, widgetName, description, visibilit
       `;
     try {
         // Insert the widget into the database
-        console.log("MADE IT INSIDE THE REGISTER WIDGET WIDGETSERVICE RAHHH")
         const status = 'pending'
         const result = await pool.query(query, [user_id, widgetName, description, visibility, status]);
         const widgetId = result.rows[0].widget_id;
@@ -22,6 +21,21 @@ export async function registerWidget(user_id, widgetName, description, visibilit
     } catch (error) {
         console.error('Error registering widget:', error);
         throw new Error('Failed to register widget');
+    }
+}
+
+export async function updateWidget(widgetId, title, description, link, visibility) {
+    const editQuery = `
+        UPDATE widgets
+        SET title = $1, description = $2, link = $3, visibility = $4
+        WHERE widget_id = $5
+    `;
+    try {
+        const result = pool.query(editQuery, [title, description, link, visibility, widgetId]);
+        return { result, message: "Widget edited successfully" };
+    } catch (error) {
+        console.error('Error updating widget:', error);
+        throw new Error('Failed to update widget:', error);
     }
 }
 

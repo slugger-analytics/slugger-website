@@ -1,6 +1,7 @@
 import { Router } from 'express';
-const router = Router();
 import { removeRequest } from '../services/widgetService.js';
+
+const router = Router();
 
 router.post('/', async (req, res) => {
     const { requestId } = req.body;

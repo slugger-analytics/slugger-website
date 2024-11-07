@@ -1,6 +1,7 @@
 import express from 'express';
-const router = express.Router();
 import { getRequestData, createApprovedWidget, getUserData, generateApiKeyForUser, createUserWidgetRelation} from '../services/widgetService.js';
+
+const router = express.Router();
 
 router.post('/', async (req, res) => {
     const { requestId } = req.body;

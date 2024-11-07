@@ -49,8 +49,8 @@ export default function Widget({
       <CardHeader>
         <div className="flex items-center">
           <Avatar className="mr-5">
-            <AvatarImage src="" alt={"TMP"} />
-            <AvatarFallback>{"TMP"}</AvatarFallback>
+            <AvatarImage src="" alt={"DB"} />
+            <AvatarFallback>{"DB"}</AvatarFallback>
           </Avatar>
           <CardTitle>{"TMP"}</CardTitle>
         </div>

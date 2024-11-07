@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { registerWidget } from '../services/widgetService.js';
+
 const router = Router();
 
 router.post('/', async (req, res) => {

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getUserData } from '../services/widgetService.js';
+
 const router = Router();
 
 router.get('/', async (req, res) => {

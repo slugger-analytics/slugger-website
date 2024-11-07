@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import Widget from "./widget";
 import { fetchWidgets } from "../../../api/widget"; // Adjust path if needed
-import { jwtDecode } from "jwt-decode";
 import { useAuth } from "@/app/contexts/AuthContext";
 
 interface WidgetData {
@@ -20,23 +19,16 @@ export default function Widgets() {
     const [loading, setLoading] = useState(true);
     const [isDev, setIsDev] = useState(false);
     const { userId } = useAuth();
-    let token: string;
   
     useEffect(() => {
       // Fetch widgets from backend
       const loadWidgets = async () => {
         try {
-          const res = localStorage.getItem("idToken");
-          if (!res) {
-            throw new Error("idToken does not exist");
-          } else {
-            token = res;
-          }
           const role = localStorage.getItem("role");
           setIsDev(role === "Widget Developer" ? true : false);
           const data = await fetchWidgets();
-          const decodedToken: any = jwtDecode(token);
           console.log("user id:", userId);
+          console.log("typeof user id:,", typeof userId);
           // Map backend data to WidgetData format if needed
           const widgetData: WidgetData[] = data.map((item: any) => ({
             developerIds: item.developer_ids || [], // could process each developerIds array into a set if we run into frontend performance issues
@@ -57,7 +49,7 @@ export default function Widgets() {
       };
     
       loadWidgets();
-    }, []);
+    }, [userId]);
   
     if (loading) {
       return <p>Loading widgets...</p>;
@@ -75,10 +67,15 @@ export default function Widgets() {
     >
       {widgets
           .filter((widget) => {
-            if (isDev && widget.developerId === token) {
+            // console.log("widget.developerIds:", widget.developerIds)
+            if (widget.developerIds) {
+              // console.log("typeof developerid:", typeof widget.developerIds[0]);
+            }
+            if (isDev && userId && widget.developerIds.includes(userId)) {
               // render
+              console.log("I AM IN!")
               return widget;
-            } else if (widget.developerId === token) {
+            } else if (!isDev) {
               return widget;
             }
         })
