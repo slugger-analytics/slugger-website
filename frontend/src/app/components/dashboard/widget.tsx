@@ -4,7 +4,7 @@ import Image from "next/image";
 import { HeartIcon, HeartFilledIcon, AngleIcon } from "@radix-ui/react-icons";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import { EditWidgetDialog } from "@/app/components/dialog/EditWidgetDialog"; // Import the dialog component
+import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Import the dialog component
 
 type WidgetProps = {
   developerIds: string[];
@@ -38,13 +38,13 @@ export default function Widget({
   onUpdateWidget,
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [visibility, setVisibility] = useState("Private"); // Set default visibility as "Private"
 
   const redirect = () => {
     // TODO implement this bryan
   };
 
   const handleSave = (data: { title: string; description: string; deploymentLink: string; visibility: string }) => {
-    console.log("Saving widget:", data); // Log data when saving
     const updatedWidget = {
       developerIds,
       widgetId,
@@ -58,7 +58,6 @@ export default function Widget({
     setIsDialogOpen(false); // Close the dialog after save
   };
 
-  // Log the dialog state when it changes
   useEffect(() => {
     console.log("Dialog state after update:", isDialogOpen);
   }, [isDialogOpen]);
@@ -89,10 +88,7 @@ export default function Widget({
       </CardContent>
       <CardFooter className="flex justify-between">
         {isDev && (
-          <Button variant="outline" onClick={() => {
-            console.log("Edit button clicked"); // Log when the Edit button is clicked
-            setIsDialogOpen(true); // Open the dialog
-          }}>
+          <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
             Edit
           </Button>
         )}
@@ -104,10 +100,11 @@ export default function Widget({
       
       {/* Conditionally render the dialog */}
       {isDialogOpen && (
-        <EditWidgetDialog 
-          isOpen={isDialogOpen} 
-          onClose={() => setIsDialogOpen(false)} 
-          onSave={handleSave} 
+        <EditWidgetDialog
+          isOpen={isDialogOpen}
+          onClose={() => setIsDialogOpen(false)}
+          onSave={handleSave}
+          initialData={{ title: widgetName, description, deploymentLink: redirectUrl, visibility }}
         />
       )}
     </Card>

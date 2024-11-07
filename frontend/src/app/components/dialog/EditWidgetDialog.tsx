@@ -1,75 +1,124 @@
-import React, { useState } from "react";
-import { Button } from "../ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/app/components/ui/dialog";
-import { Input } from "@/app/components/ui/input"; // Assuming this is the Input without the label prop
-import { Checkbox } from "@/app/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Checkbox } from "../ui/checkbox";
+import { useState } from "react";
 
-// Type for the EditWidgetDialog component props
-type EditWidgetDialogProps = {
+interface EditWidgetDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: { title: string; description: string; deploymentLink: string; visibility: string }) => void;
-};
+  initialData: {
+    title: string;
+    description: string;
+    deploymentLink: string;
+    visibility: string;
+  };
+}
 
-export function EditWidgetDialog({ isOpen, onClose, onSave }: EditWidgetDialogProps) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [deploymentLink, setDeploymentLink] = useState("");
-  const [visibility, setVisibility] = useState("Private");
+const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, onSave, initialData }) => {
+  const [title, setTitle] = useState(initialData.title || "");
+  const [description, setDescription] = useState(initialData.description || "");
+  const [deploymentLink, setDeploymentLink] = useState(initialData.deploymentLink || "");
+  const [visibility, setVisibility] = useState(initialData.visibility || "Private");
 
   const handleSave = () => {
-    console.log("Saving data:", { title, description, deploymentLink, visibility }); // Log when saving data
-    onSave({ title, description, deploymentLink, visibility });
-    onClose(); // Close the dialog after save
+    const updatedData = {
+      title,
+      description,
+      deploymentLink,
+      visibility,
+    };
+    onSave(updatedData);
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit Widget</DialogTitle>
-        </DialogHeader>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Edit Widget</AlertDialogTitle>
+          <AlertDialogDescription>
+            Update the widget's details below and save your changes.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
         <div className="space-y-4">
+          {/* Title Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Title</label>
+            <Label htmlFor="title">Title</Label>
             <Input
+              id="title"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => setTitle(e.target.value.slice(0, 30))}
+              placeholder="Widget Title"
               maxLength={30}
-              placeholder="Enter title"
             />
           </div>
+
+          {/* Description Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Description</label>
+            <Label htmlFor="description">Description</Label>
             <Input
+              id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value.slice(0, 100))}
+              placeholder="Widget Description"
               maxLength={100}
-              placeholder="Enter description"
             />
           </div>
+
+          {/* Deployment Link Input */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Deployment Link</label>
+            <Label htmlFor="deploymentLink">Deployment Link</Label>
             <Input
+              id="deploymentLink"
               value={deploymentLink}
-              onChange={(e) => setDeploymentLink(e.target.value)}
+              onChange={(e) => setDeploymentLink(e.target.value.slice(0, 100))}
+              placeholder="https://example.com"
               maxLength={100}
-              placeholder="Enter link"
             />
           </div>
-          <div className="flex items-center space-x-3">
-            <Checkbox
-              checked={visibility === "Private"}
-              onChange={() => setVisibility(visibility === "Private" ? "Public" : "Private")}
-            />
-            <span>{visibility === "Private" ? "Private" : "Public"}</span>
+
+          {/* Visibility Options */}
+          <div>
+            <Label>Visibility</Label>
+            <div className="flex items-center space-x-4 mt-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="visibility-private"
+                  checked={visibility === "Private"}
+                  onCheckedChange={() => setVisibility("Private")}
+                />
+                <Label htmlFor="visibility-private">Private</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="visibility-public"
+                  checked={visibility === "Public"}
+                  onCheckedChange={() => setVisibility("Public")}
+                />
+                <Label htmlFor="visibility-public">Public</Label>
+              </div>
+            </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave}>Save</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
-}
+};
+
+export default EditWidgetDialog;
