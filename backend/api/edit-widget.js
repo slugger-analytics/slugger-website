@@ -3,8 +3,10 @@ import { updateWidget } from "../services/widgetService.js";
 
 const router = new Router();
 
-router.post('/', async (req, res) => {
-    const { widgetId, title, description, link, visibility } = req.body();
+router.put('/id', async (req, res) => {
+    const { title, description, link, visibility } = req.body;
+    const widgetId = req.params.id;
+    
     try {
         const result = await updateWidget(widgetId, title, description, link, visibility);
         res.status(200).json(result);
