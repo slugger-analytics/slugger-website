@@ -31,11 +31,11 @@ export async function updateWidget(widgetId, title, description, link, visibilit
         WHERE widget_id = $5
     `;
     try {
-        const result = pool.query(editQuery, [title, description, link, visibility, widgetId]);
+        const result = await pool.query(editQuery, [title, description, link, visibility, widgetId]);
         return { result, message: "Widget edited successfully" };
     } catch (error) {
         console.error('Error updating widget:', error);
-        throw new Error('Failed to update widget:', error);
+        throw new Error('Failed to update widget');
     }
 }
 
