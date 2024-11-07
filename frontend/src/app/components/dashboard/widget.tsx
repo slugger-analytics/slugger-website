@@ -16,6 +16,7 @@ type WidgetProps = {
   widgetId: string;
   redirectUrl: string;
   isDev: boolean;
+  visibility: string; // Make sure to add visibility here
   onUpdateWidget: (updatedWidget: {
     developerIds: string[];
     widgetId: string;
@@ -36,10 +37,10 @@ export default function Widget({
   widgetId,
   redirectUrl,
   isDev,
+  visibility, // Add visibility prop here
   onUpdateWidget,
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [visibility, setVisibility] = useState("Private"); // Set default visibility as "Private"
 
   // Function to handle widget redirection
   const redirect = () => {
@@ -48,20 +49,29 @@ export default function Widget({
 
   // Handle save action in the EditWidgetDialog
   const handleSave = async (data: { title: string; description: string; deploymentLink: string; visibility: string }) => {
+    // Map the updated widget data to match widgetDataType
     const updatedWidget = {
+      id: widgetId, // Map widgetId to id
+      title: data.title, // Map title to widgetName
+      description: data.description,
+      deploymentLink: data.deploymentLink, // Map deploymentLink
+      visibility: data.visibility,
+    };
+
+    const updatedWidget2 = {
       developerIds,
       widgetId,
-      widgetName: data.title,
+      widgetName: data.title,  // Use data.title for widgetName
       description: data.description,
-      isFavorite,
+      isFavorite,  // Retain isFavorite as it is
       imageUrl,
-      redirectUrl: data.deploymentLink,
+      redirectUrl: data.deploymentLink, // Use deploymentLink as redirectUrl
     };
 
     // Update widget using the updateWidget API function
     try {
       await updateWidget(updatedWidget); // Call the API to update the widget in the backend
-      onUpdateWidget(updatedWidget); // Call parent handler to update the widget in the parent component's state
+      onUpdateWidget(updatedWidget2); // Call parent handler to update the widget in the parent component's state
       setIsDialogOpen(false); // Close the dialog after saving
     } catch (error) {
       console.error("Error updating widget:", error);
@@ -114,12 +124,12 @@ export default function Widget({
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           onSave={handleSave}
-          initialData={{ 
+          initialData={{
             id: widgetId, // Pass the widget id to the dialog
-            title: widgetName, 
-            description, 
-            deploymentLink: redirectUrl, 
-            visibility 
+            title: widgetName,
+            description,
+            deploymentLink: redirectUrl,
+            visibility, // Pass visibility to the dialog
           }}
         />
       )}
