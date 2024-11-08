@@ -11,6 +11,7 @@ interface WidgetData {
   isFavorite: boolean;
   imageUrl?: string;
   redirectUrl: string;
+  visibility: string;  // Add visibility to WidgetData
 }
 
 export default function Widgets() {
@@ -33,7 +34,8 @@ export default function Widgets() {
           description: item.description || "",
           isFavorite: item.is_favorite || false,
           imageUrl: item.image_url || undefined,
-          redirectUrl: item.redirect_link || "", // Ensure this is set properly
+          redirectUrl: item.redirect_link || "",
+          visibility: item.visibility || "public",  // Ensure visibility is included
         }));
 
         setWidgets(widgetData);
@@ -50,7 +52,7 @@ export default function Widgets() {
   const updateWidget = (updatedWidget: WidgetData) => {
     setWidgets((prevWidgets) =>
       prevWidgets.map((widget) =>
-        widget.widgetId === updatedWidget.widgetId ? updatedWidget : widget
+        widget.widgetId === updatedWidget.widgetId ? { ...widget, ...updatedWidget } : widget
       )
     );
   };
@@ -60,15 +62,7 @@ export default function Widgets() {
   }
 
   return (
-    <div
-      className="grid gap-10 p-4
-    sm:grid-cols-1
-    md:grid-cols-1
-    lg:grid-cols-2
-    xl:grid-cols-3
-    3xl:grid-cols-4
-    "
-    >
+    <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4">
       {widgets
         .filter((widget) =>
           isDev && userId && widget.developerIds.includes(userId) ? widget : !isDev
@@ -78,7 +72,8 @@ export default function Widgets() {
             key={widget.widgetId}
             {...widget}
             isDev={isDev}
-            onUpdateWidget={updateWidget}
+            onUpdateWidget={updateWidget} // Pass the updatedWidget with visibility
+            visibility={widget.visibility} // Pass visibility here as well
           />
         ))}
     </div>
