@@ -1,6 +1,6 @@
 import express from 'express';
 import { getRequestData, createApprovedWidget, getUserData, generateApiKeyForUser, createUserWidgetRelation} from '../services/widgetService.js';
-
+import {sendApiKeyEmail} from '../services/emailService.js'
 const router = express.Router();
 
 router.post('/', async (req, res) => {
@@ -15,8 +15,8 @@ router.post('/', async (req, res) => {
         const userEmail = userData['email']
         const apiKey = await generateApiKeyForUser(userID, userEmail);
         const userWidgetRelation = await createUserWidgetRelation(userID, widgetID, apiKey);
-        
-        res.status(200).json({ message: 'Widget approved and user-widget relation created successfully', userWidgetRelation });
+        const email = await sendApiKeyEmail(userEmail, apiKey)
+        res.status(200).json({ message: 'Widget approved, user-widget relation created, and API key sent via email', userWidgetRelation });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
