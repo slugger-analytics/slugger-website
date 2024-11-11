@@ -20,44 +20,38 @@ export default function Widgets() {
   const [isDev, setIsDev] = useState(false);
   const { userId } = useAuth();
 
+  const loadWidgets = async () => {
+    try {
+      const role = localStorage.getItem("role");
+      setIsDev(role === "Widget Developer");
+      const data = await fetchWidgets();
+
+      const widgetData: WidgetData[] = data.map((item: any) => ({
+        developerIds: item.developer_ids || [],
+        widgetId: item.widget_id || "",
+        widgetName: item.widget_name || "Unnamed Widget",
+        description: item.description || "",
+        isFavorite: item.is_favorite || false,
+        imageUrl: item.image_url || undefined,
+        redirectUrl: item.redirect_link || "",
+        visibility: item.visibility || "public",  // Ensure visibility is included
+      }));
+
+      setWidgets(widgetData);
+    } catch (error) {
+      console.error("Error fetching widgets:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadWidgets = async () => {
-      try {
-        const role = localStorage.getItem("role");
-        setIsDev(role === "Widget Developer");
-        const data = await fetchWidgets();
-
-        const widgetData: WidgetData[] = data.map((item: any) => ({
-          developerIds: item.developer_ids || [],
-          widgetId: item.widget_id || "",
-          widgetName: item.widget_name || "Unnamed Widget",
-          description: item.description || "",
-          isFavorite: item.is_favorite || false,
-          imageUrl: item.image_url || undefined,
-          redirectUrl: item.redirect_link || "",
-          visibility: item.visibility || "public",  // Ensure visibility is included
-        }));
-
-        setWidgets(widgetData);
-      } catch (error) {
-        console.error("Error fetching widgets:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadWidgets();
   }, [userId]);
 
-  const updateWidget = (updatedWidget: WidgetData) => {
-    setWidgets((prevWidgets) =>
-      prevWidgets.map((widget) =>
-        widget.widgetId === updatedWidget.widgetId ? { ...widget, ...updatedWidget } : widget
-      )
-    );
-  };
 
   if (loading) {
+    // TODO this could look prettier
     return <p>Loading widgets...</p>;
   }
 
@@ -72,7 +66,7 @@ export default function Widgets() {
             key={widget.widgetId}
             {...widget}
             isDev={isDev}
-            onUpdateWidget={updateWidget} // Pass the updatedWidget with visibility
+            onUpdateWidget={loadWidgets} // Pass the updatedWidget with visibility
             visibility={widget.visibility} // Pass visibility here as well
           />
         ))}
