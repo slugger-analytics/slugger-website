@@ -4,7 +4,7 @@ const apiGateway = new APIGateway({ region: 'us-east-2' });
 import pool from '../db.js';  // PostgreSQL connection setup
 
 // Function to register a widget
-export async function registerWidget(user_id, widgetName, description, visibility) {
+export async function registerWidget(user_id, widgetName, description, visibility, widgetProps) {
     const query = `
       INSERT INTO requests (user_id, widget_name, description, visibility, status)
         VALUES ($1, $2, $3, $4, $5)
@@ -24,14 +24,14 @@ export async function registerWidget(user_id, widgetName, description, visibilit
     }
 }
 
-export async function updateWidget(widgetId, title, description, link, visibility) {
+export async function updateWidget({ widgetId, widgetName, description, redirectLink, visibility }) {
     const editQuery = `
         UPDATE widgets
         SET widget_name = $1, description = $2, redirect_link = $3, visibility = $4
         WHERE widget_id = $5
     `;
     try {
-        const result = await pool.query(editQuery, [title, description, link, visibility, widgetId]);
+        const result = await pool.query(editQuery, [widgetName, description, redirectLink, visibility, widgetId]);
         return { result, message: "Widget edited successfully" };
     } catch (error) {
         console.error('Error updating widget:', error);
@@ -80,6 +80,11 @@ export async function generateApiKeyForUser(userId, email) {
 
     try {
         const apiKey = await apiGateway.createApiKey(params).promise();
+
+        if (!apiKey.id) {
+            throw new Error('Failed to generate API key: no ID returned');
+        }
+
         await associateApiKeyWithUsagePlan(apiKey.id, process.env.USAGE_PLAN_ID);
         await saveApiKeyToDatabase(userId, apiKey.id);
         return apiKey.id;
@@ -118,7 +123,7 @@ export async function getRequestData(requestId) {
         const query = `
             SELECT * FROM requests WHERE request_id = $1
         `;
-        const result = await _query(query, [requestId]);
+        const result = await pool.query(query, [requestId]);
 
         if (result.rows.length === 0) {
             throw new Error('Request not found');
@@ -150,15 +155,14 @@ export async function getUserData(userCognitoID) {
 }
 
 
-export async function createApprovedWidget(widgetData) {
-    const { widget_name, description, visibility } = widgetData;
+export async function createApprovedWidget({ widgetName, description, visibility }) {
     try {
         const query = `
             INSERT INTO widgets (widget_name, description, visibility, status, created_at)
             VALUES ($1, $2, $3, $4, NOW())
             RETURNING widget_id;
         `;
-        const result = await pool.query(query, [widget_name, description, visibility, 'approved']);
+        const result = await pool.query(query, [widgetName, description, visibility, 'approved']);
 
         return result.rows[0]; // Return the newly created widget ID
     } catch (error) {
@@ -175,7 +179,8 @@ export async function getPendingWidgets() {
     return result.rows;
 }
 
-export async function getAllWidgets() {
+
+export async function getAllWidgets(widgetName, categories, page, limit) {
     // When we select * from widgets,
     // need to get all user_ids from user_widget where user_widget.widget_id === widgets.widget_id
     const widgetsQuery = `
@@ -189,6 +194,13 @@ export async function getAllWidgets() {
         GROUP BY
             w.widget_id;
         `;
+    // const result = await pool
+    //     .select({
+    //         widget: widgets,
+    //         developer_ids: 'developer_ids',
+    //     })
+    //     .from(widgets)
+    //     .leftJoin()
     const result = await pool.query(widgetsQuery);
     return result.rows;
 }
