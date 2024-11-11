@@ -17,15 +17,7 @@ type WidgetProps = {
   redirectUrl: string;
   isDev: boolean;
   visibility: string; // Make sure to add visibility here
-  onUpdateWidget: (updatedWidget: {
-    developerIds: string[];
-    widgetId: string;
-    widgetName: string;
-    description: string;
-    isFavorite: boolean;
-    imageUrl?: string;
-    redirectUrl: string;
-  }) => void;
+  onUpdateWidget: () => void;
 };
 
 export default function Widget({
@@ -58,20 +50,11 @@ export default function Widget({
       visibility: data.visibility,
     };
 
-    const updatedWidget2 = {
-      developerIds,
-      widgetId,
-      widgetName: data.title,  // Use data.title for widgetName
-      description: data.description,
-      isFavorite,  // Retain isFavorite as it is
-      imageUrl,
-      redirectUrl: data.deploymentLink, // Use deploymentLink as redirectUrl
-    };
 
     // Update widget using the updateWidget API function
     try {
       await updateWidget(updatedWidget); // Call the API to update the widget in the backend
-      onUpdateWidget(updatedWidget2); // Call parent handler to update the widget in the parent component's state
+      onUpdateWidget(); // Call parent handler to update the widget in the parent component's state
       setIsDialogOpen(false); // Close the dialog after saving
     } catch (error) {
       console.error("Error updating widget:", error);
