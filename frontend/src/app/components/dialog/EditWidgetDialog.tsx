@@ -12,9 +12,9 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { useState } from "react";
-import { updateWidget } from "@/api/widget"; 
 import { useStore } from "@nanostores/react";
 import { $targetWidget } from "@/lib/store";
+import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
 
 interface EditWidgetDialogProps {
   isOpen: boolean;
@@ -28,10 +28,11 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, on
   const [description, setDescription] = useState(targetWidget.description || "");
   const [deploymentLink, setDeploymentLink] = useState(targetWidget.redirectLink || "");
   const [visibility, setVisibility] = useState(targetWidget.visibility || "Private");
+  const { editWidget } = useMutationWidgets();
 
   const handleSave = async () => {
     try {
-      await updateWidget({ id: targetWidget.id, name, description, redirectLink: deploymentLink, visibility}); 
+      await editWidget({ id: targetWidget.id, name, description, redirectLink: deploymentLink, visibility}); 
       onClose(); 
       onSave();
     } catch (error) {
