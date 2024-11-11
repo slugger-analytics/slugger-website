@@ -11,7 +11,7 @@ import pendingWidgets from './api/pending-widgets.js';
 import declineRequestRoute from './api/decline-widget.js';
 import fetchAllWidgetRoute from './api/fetch-widgets.js';
 import fetchUserByCognitoId from './api/fetch-user.js';
-import editWidgetRouter from './api/edit-widget';
+import editWidgetRouter from './api/edit-widget.js';
 
 const app = express();
 

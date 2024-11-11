@@ -1,4 +1,5 @@
-import { SES } from 'aws-sdk';
+import pkg from 'aws-sdk';
+const { SES } = pkg;
 const ses = new SES({ region: 'us-east-2' });
 
 async function sendApiKeyEmail(email, apiKey) {
@@ -27,4 +28,4 @@ async function sendApiKeyEmail(email, apiKey) {
     }
 }
 
-export default { sendApiKeyEmail };
+export default sendApiKeyEmail;

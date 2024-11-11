@@ -1,6 +1,6 @@
 import express from 'express';
 import { getRequestData, createApprovedWidget, getUserData, generateApiKeyForUser, createUserWidgetRelation} from '../services/widgetService.js';
-import {sendApiKeyEmail} from '../services/emailService.js'
+import sendApiKeyEmail from '../services/emailService.js'
 const router = express.Router();
 
 router.post('/', async (req, res) => {
