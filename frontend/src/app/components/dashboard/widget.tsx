@@ -5,7 +5,6 @@ import { HeartIcon, HeartFilledIcon, AngleIcon } from "@radix-ui/react-icons";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Import the dialog component
-import { updateWidget } from "@/api/widget"; // Import updateWidget function
 import { WidgetType } from "@/data/types";
 import { useStore } from "@nanostores/react";
 import { $targetWidget, setTargetWidget } from "@/lib/store";
