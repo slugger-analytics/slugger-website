@@ -6,92 +6,57 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
 import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Import the dialog component
 import { updateWidget } from "@/api/widget"; // Import updateWidget function
+import { WidgetType } from "@/data/types";
+import { useStore } from "@nanostores/react";
+import { $targetWidget, setTargetWidget } from "@/lib/store";
 
-type WidgetProps = {
-  developerIds: string[];
-  imageUrl?: string;
-  widgetName: string;
-  description: string;
-  isFavorite: boolean;
-  widgetId: string;
-  redirectUrl: string;
+interface WidgetProps extends WidgetType {
   isDev: boolean;
-  visibility: string; // Make sure to add visibility here
   onUpdateWidget: () => void;
-};
+  visibility: string;
+}
 
-export default function Widget({
-  developerIds,
-  imageUrl,
-  widgetName,
-  description,
-  isFavorite,
-  widgetId,
-  redirectUrl,
-  isDev,
-  visibility, // Add visibility prop here
-  onUpdateWidget,
-}: WidgetProps) {
+export default function Widget({ id, name, description, imageUrl, isDev, onUpdateWidget, visibility, redirectLink }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const isFavorite = true; // TODO: add functionality to change this
 
   // Function to handle widget redirection
   const redirect = () => {
     // TODO implement this bryan
   };
 
-  // Handle save action in the EditWidgetDialog
-  const handleSave = async (data: { title: string; description: string; deploymentLink: string; visibility: string }) => {
-    // Map the updated widget data to match widgetDataType
-    const updatedWidget = {
-      id: widgetId, // Map widgetId to id
-      title: data.title, // Map title to widgetName
-      description: data.description,
-      deploymentLink: data.deploymentLink, // Map deploymentLink
-      visibility: data.visibility,
-    };
-
-
-    // Update widget using the updateWidget API function
-    try {
-      await updateWidget(updatedWidget); // Call the API to update the widget in the backend
-      onUpdateWidget(); // Call parent handler to update the widget in the parent component's state
-      setIsDialogOpen(false); // Close the dialog after saving
-    } catch (error) {
-      console.error("Error updating widget:", error);
-    }
-  };
-
-  useEffect(() => {
-    console.log("Dialog state after update:", isDialogOpen);
-  }, [isDialogOpen]);
+  const handleOpenDialog = () => {
+    setTargetWidget({ id, name, description, imageUrl, visibility, redirectLink});
+    setIsDialogOpen(true);
+  }
 
   return (
     <Card className="w-[350px]">
       <CardHeader>
         <div className="flex items-center">
           <Avatar className="mr-5">
-            <AvatarImage src={imageUrl || ""} alt={widgetName} />
-            <AvatarFallback>{widgetName.charAt(0)}</AvatarFallback>
+            <AvatarImage src={imageUrl || ""} alt={name} />
+            <AvatarFallback>{name.charAt(0)}</AvatarFallback>
           </Avatar>
-          <CardTitle>{widgetName}</CardTitle>
+          <CardTitle>{name}</CardTitle>
         </div>
       </CardHeader>
       <div className="flex justify-center bg-gray-50 w-full mb-5">
         <div className="h-[175px] py-5 flex justify-center items-center">
           {imageUrl ? (
-            <Image src={imageUrl} alt={widgetName} width="150" height="150" />
+            <Image src={imageUrl} alt={name} width="150" height="150" />
           ) : (
             <AngleIcon className="size-10 fill-current text-gray-400" />
           )}
         </div>
       </div>
       <CardContent>
-        <CardTitle className="mb-3">{widgetName}</CardTitle>
+        <CardTitle className="mb-3">{name}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardContent>
       <CardFooter className="flex justify-between">
         {isDev && (
-          <Button variant="outline" onClick={() => setIsDialogOpen(true)}>
+          <Button variant="outline" onClick={handleOpenDialog}>
             Edit
           </Button>
         )}
@@ -106,14 +71,7 @@ export default function Widget({
         <EditWidgetDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          onSave={handleSave}
-          initialData={{
-            id: widgetId, // Pass the widget id to the dialog
-            title: widgetName,
-            description,
-            deploymentLink: redirectUrl,
-            visibility, // Pass visibility to the dialog
-          }}
+          onSave={onUpdateWidget}
         />
       )}
     </Card>

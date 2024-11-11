@@ -2,20 +2,11 @@ import React, { useEffect, useState } from "react";
 import Widget from "./widget";
 import { fetchWidgets } from "../../../api/widget"; // Adjust path if needed
 import { useAuth } from "@/app/contexts/AuthContext";
-
-interface WidgetData {
-  developerIds: string[];
-  widgetId: string;
-  widgetName: string;
-  description: string;
-  isFavorite: boolean;
-  imageUrl?: string;
-  redirectUrl: string;
-  visibility: string;  // Add visibility to WidgetData
-}
+import { setWidgetsStore } from "@/lib/store";
+import { WidgetType } from "@/data/types";
 
 export default function Widgets() {
-  const [widgets, setWidgets] = useState<WidgetData[]>([]);
+  const [widgets, setWidgets] = useState<WidgetType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDev, setIsDev] = useState(false);
   const { userId } = useAuth();
@@ -26,18 +17,19 @@ export default function Widgets() {
       setIsDev(role === "Widget Developer");
       const data = await fetchWidgets();
 
-      const widgetData: WidgetData[] = data.map((item: any) => ({
-        developerIds: item.developer_ids || [],
-        widgetId: item.widget_id || "",
-        widgetName: item.widget_name || "Unnamed Widget",
+      const widgetData: WidgetType[] = data.map((item: any) => ({
+        id: item.widget_id,
+        name: item.widget_name || "Unnamed Widget",
         description: item.description || "",
-        isFavorite: item.is_favorite || false,
-        imageUrl: item.image_url || undefined,
-        redirectUrl: item.redirect_link || "",
+        widgetId: item.widget_id || "",
         visibility: item.visibility || "public",  // Ensure visibility is included
+        redirectUrl: item.redirect_link || "",
+        imageUrl: item.image_url || undefined,
+        developerIds: item.developer_ids || [],
       }));
 
       setWidgets(widgetData);
+      setWidgetsStore(widgets);
     } catch (error) {
       console.error("Error fetching widgets:", error);
     } finally {
@@ -59,15 +51,15 @@ export default function Widgets() {
     <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4">
       {widgets
         .filter((widget) =>
-          isDev && userId && widget.developerIds.includes(userId) ? widget : !isDev
+          isDev && userId && widget.developerIds?.includes(userId) ? widget : !isDev
         )
         .map((widget) => (
           <Widget
-            key={widget.widgetId}
+            key={widget.id}
             {...widget}
             isDev={isDev}
             onUpdateWidget={loadWidgets} // Pass the updatedWidget with visibility
-            visibility={widget.visibility} // Pass visibility here as well
+            visibility={widget.visibility ?? "Private"} // Pass visibility here as well
           />
         ))}
     </div>

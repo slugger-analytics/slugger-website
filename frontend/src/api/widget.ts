@@ -6,6 +6,7 @@ export interface WidgetData {
 }
 
 import { jwtDecode } from "jwt-decode";
+import { WidgetType } from "@/data/types";
 
 export const registerWidget = async (
   widgetData: any,
@@ -126,14 +127,15 @@ interface widgetDataType {
   visibility: string;
 }
 
-export const updateWidget = async ({ id, title, description, deploymentLink, visibility }: widgetDataType) => {
+export const updateWidget = async ({ id, name, description, redirectLink, visibility }: WidgetType) => {
   try {
-    const response = await fetch(`http://localhost:3001/api/${id}`, {
-      method: "PUT",
+    console.log("updateWidget called with new name:", name);
+    const response = await fetch(`http://localhost:3001/api/edit-widget/${id}`, {
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ title, description, deploymentLink, visibility })
+      body: JSON.stringify({ name, description, redirectLink, visibility })
     });
     return response;
   } catch (error) {

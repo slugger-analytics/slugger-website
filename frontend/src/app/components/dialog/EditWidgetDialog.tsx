@@ -13,39 +13,28 @@ import { Label } from "../ui/label";
 import { Checkbox } from "../ui/checkbox";
 import { useState } from "react";
 import { updateWidget } from "@/api/widget"; 
+import { useStore } from "@nanostores/react";
+import { $targetWidget } from "@/lib/store";
 
 interface EditWidgetDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { title: string; description: string; deploymentLink: string; visibility: string }) => void;
-  initialData: {
-    id: string; // Assuming each widget has an id
-    title: string;
-    description: string;
-    deploymentLink: string;
-    visibility: string;
-  };
+  onSave: () => void;
 }
 
-const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, onSave, initialData }) => {
-  const [title, setTitle] = useState(initialData.title || "");
-  const [description, setDescription] = useState(initialData.description || "");
-  const [deploymentLink, setDeploymentLink] = useState(initialData.deploymentLink || "");
-  const [visibility, setVisibility] = useState(initialData.visibility || "Private");
+const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, onSave }) => {
+  const targetWidget = useStore($targetWidget);
+  const [name, setName] = useState(targetWidget.name || "");
+  const [description, setDescription] = useState(targetWidget.description || "");
+  const [deploymentLink, setDeploymentLink] = useState(targetWidget.redirectLink || "");
+  const [visibility, setVisibility] = useState(targetWidget.visibility || "Private");
 
   const handleSave = async () => {
-    const updatedData = {
-      id: initialData.id,
-      title,
-      description,
-      deploymentLink,
-      visibility,
-    };
-
+    console.log("saving w/ new name:", name)
     try {
-      await updateWidget(updatedData); 
-      onSave(updatedData); 
+      await updateWidget({ id: targetWidget.id, name, description, redirectLink: deploymentLink, visibility}); 
       onClose(); 
+      onSave();
     } catch (error) {
       console.error("Error updating widget:", error);
     }
@@ -67,8 +56,8 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, on
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value.slice(0, 30))}
+              value={name}
+              onChange={(e) => setName(e.target.value.slice(0, 30))}
               placeholder="Widget Title"
               maxLength={30}
             />
