@@ -30,7 +30,6 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, on
   const [visibility, setVisibility] = useState(targetWidget.visibility || "Private");
 
   const handleSave = async () => {
-    console.log("saving w/ new name:", name)
     try {
       await updateWidget({ id: targetWidget.id, name, description, redirectLink: deploymentLink, visibility}); 
       onClose(); 

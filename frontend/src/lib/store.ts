@@ -7,7 +7,7 @@ export function addWidget(widget: WidgetType) {
     $widgets.set([...$widgets.get(), widget]);
 }
 
-export function setWidgetsStore(widgets: WidgetType[]) {
+export function setWidgets(widgets: WidgetType[]) {
     $widgets.set([...widgets]);
 }
 
@@ -20,4 +20,10 @@ export const $targetWidget = atom<WidgetType>(emptyWidget);
 
 export function setTargetWidget(target: WidgetType) {
     $targetWidget.set(target);
+}
+
+export const $userRole = atom<string>("");
+
+export function setUserRole(role: string) {
+    $userRole.set(role);
 }

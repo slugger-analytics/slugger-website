@@ -39,11 +39,6 @@ const LoginForm = () => {
     }
   };
 
-  // TODO remove useEffect
-  // useEffect(() => {
-  //   console.log("userId is now:", userId);
-  // }, [userId]);
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col items-center w-80">
       <InputField

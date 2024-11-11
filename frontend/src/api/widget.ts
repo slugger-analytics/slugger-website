@@ -106,30 +106,32 @@ export const declineWidget = async (requestId: string): Promise<string> => {
   }
 };
 
-export const fetchWidgets = async (): Promise<Request[]> => {
+export const fetchWidgets = async (): Promise<WidgetType[]> => {
   try {
     const response = await fetch("http://localhost:3001/api/fetch-widgets");
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
-    return await response.json();
+    const data = await response.json();
+    const cleanedData = data.map((w: any) => ({
+        id: w.widget_id,
+        name: w.widget_name || "Unnamed Widget",
+        description: w.description || "",
+        widgetId: w.widget_id || "",
+        visibility: w.visibility || "Public",  // Ensure visibility is included
+        redirectUrl: w.redirect_link || "",
+        imageUrl: w.image_url || undefined,
+        developerIds: w.developer_ids || [],
+    }))
+    return cleanedData;
   } catch (error) {
     console.error("Error fetching pending widgets:", error);
     throw error;
   }
 };
 
-interface widgetDataType {
-  id: string;
-  title: string;
-  description: string;
-  deploymentLink: string;
-  visibility: string;
-}
-
 export const updateWidget = async ({ id, name, description, redirectLink, visibility }: WidgetType) => {
   try {
-    console.log("updateWidget called with new name:", name);
     const response = await fetch(`http://localhost:3001/api/edit-widget/${id}`, {
       method: "PATCH",
       headers: {

@@ -2,34 +2,34 @@ import React, { useEffect, useState } from "react";
 import Widget from "./widget";
 import { fetchWidgets } from "../../../api/widget"; // Adjust path if needed
 import { useAuth } from "@/app/contexts/AuthContext";
-import { setWidgetsStore } from "@/lib/store";
 import { WidgetType } from "@/data/types";
+import useQueryWidgets from "@/app/hooks/use-query-widgets";
 
 export default function Widgets() {
-  const [widgets, setWidgets] = useState<WidgetType[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDev, setIsDev] = useState(false);
+  const { widgets } = useQueryWidgets();
   const { userId } = useAuth();
 
   const loadWidgets = async () => {
     try {
       const role = localStorage.getItem("role");
       setIsDev(role === "Widget Developer");
-      const data = await fetchWidgets();
+      console.log("Widgets:", widgets);
+      // const widgetData: WidgetType[] = data.map((item: any) => ({
+      //   id: item.widget_id,
+      //   name: item.widget_name || "Unnamed Widget",
+      //   description: item.description || "",
+      //   widgetId: item.widget_id || "",
+      //   visibility: item.visibility || "public",  // Ensure visibility is included
+      //   redirectUrl: item.redirect_link || "",
+      //   imageUrl: item.image_url || undefined,
+      //   developerIds: item.developer_ids || [],
+      // }));
 
-      const widgetData: WidgetType[] = data.map((item: any) => ({
-        id: item.widget_id,
-        name: item.widget_name || "Unnamed Widget",
-        description: item.description || "",
-        widgetId: item.widget_id || "",
-        visibility: item.visibility || "public",  // Ensure visibility is included
-        redirectUrl: item.redirect_link || "",
-        imageUrl: item.image_url || undefined,
-        developerIds: item.developer_ids || [],
-      }));
-
-      setWidgets(widgetData);
-      setWidgetsStore(widgets);
+      // setWidgets(widgetData);
+      // console.log("setting store to:", widgetData)
+      // setWidgetsStore(widgetData);
     } catch (error) {
       console.error("Error fetching widgets:", error);
     } finally {
