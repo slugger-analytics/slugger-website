@@ -16,12 +16,12 @@ async function sendApiKeyEmail(email, apiKey) {
                 Data: 'Your ALPB Widget API Key'
             }
         },
-        Source: 'your-email@example.com'
+        Source: 'ALPB Analytics <noreply@alpb-analytics.com>'
     };
 
     try {
         await ses.sendEmail(params).promise();
-        console.log('Email sent successfully');
+        return 'Email sent successfully';
     } catch (err) {
         console.error('Error sending email:', err);
     }
