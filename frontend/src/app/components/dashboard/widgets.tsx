@@ -4,32 +4,23 @@ import { fetchWidgets } from "../../../api/widget"; // Adjust path if needed
 import { useAuth } from "@/app/contexts/AuthContext";
 import { WidgetType } from "@/data/types";
 import useQueryWidgets from "@/app/hooks/use-query-widgets";
+import { $widgetQuery } from "@/lib/store";
+import { useStore } from "@nanostores/react";
 
 export default function Widgets() {
   const [loading, setLoading] = useState(true);
-  const [isDev, setIsDev] = useState(false);
+  const [isDev, setIsDev] = useState(false)
   const { widgets } = useQueryWidgets();
-  const { userId } = useAuth();
+  const { userId, userRole } = useAuth();
+  const widgetQuery = useStore($widgetQuery);
 
   const loadWidgets = async () => {
     try {
-      const role = localStorage.getItem("role");
-      setIsDev(role === "Widget Developer");
-      console.log("Widgets:", widgets);
-      // const widgetData: WidgetType[] = data.map((item: any) => ({
-      //   id: item.widget_id,
-      //   name: item.widget_name || "Unnamed Widget",
-      //   description: item.description || "",
-      //   widgetId: item.widget_id || "",
-      //   visibility: item.visibility || "public",  // Ensure visibility is included
-      //   redirectUrl: item.redirect_link || "",
-      //   imageUrl: item.image_url || undefined,
-      //   developerIds: item.developer_ids || [],
-      // }));
-
-      // setWidgets(widgetData);
-      // console.log("setting store to:", widgetData)
-      // setWidgetsStore(widgetData);
+      if (userRole === "Widget Developer") {
+        setIsDev(true);
+      } else {
+        setIsDev(false);
+      }
     } catch (error) {
       console.error("Error fetching widgets:", error);
     } finally {
@@ -50,9 +41,15 @@ export default function Widgets() {
   return (
     <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4">
       {widgets
-        .filter((widget) =>
-          isDev && userId && widget.developerIds?.includes(userId) ? widget : !isDev
-        )
+        .filter((widget) => {
+          if (!widget.name.toLowerCase().includes(widgetQuery.toLowerCase())) {
+            // Widget must include search query
+            return;
+          }
+          if (isDev && userId && widget.developerIds?.includes(userId)) {
+            return widget;
+          } 
+        })
         .map((widget) => (
           <Widget
             key={widget.id}

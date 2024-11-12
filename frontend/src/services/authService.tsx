@@ -55,7 +55,6 @@ export const signInUser = async (email: string, password: string) => {
 
   try {
     const result = await cognito.initiateAuth(params).promise();
-    console.log(result);
     return result.AuthenticationResult; // Contains the tokens (ID, Access, Refresh tokens)
   } catch (error: unknown) {
     if (error instanceof Error) {
