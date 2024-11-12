@@ -22,18 +22,34 @@ interface EditWidgetDialogProps {
   onSave: () => void;
 }
 
-const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({ isOpen, onClose, onSave }) => {
+const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
+  isOpen,
+  onClose,
+  onSave,
+}) => {
   const targetWidget = useStore($targetWidget);
   const [name, setName] = useState(targetWidget.name || "");
-  const [description, setDescription] = useState(targetWidget.description || "");
-  const [deploymentLink, setDeploymentLink] = useState(targetWidget.redirectLink || "");
-  const [visibility, setVisibility] = useState(targetWidget.visibility || "Private");
+  const [description, setDescription] = useState(
+    targetWidget.description || "",
+  );
+  const [deploymentLink, setDeploymentLink] = useState(
+    targetWidget.redirectLink || "",
+  );
+  const [visibility, setVisibility] = useState(
+    targetWidget.visibility || "Private",
+  );
   const { editWidget } = useMutationWidgets();
 
   const handleSave = async () => {
     try {
-      await editWidget({ id: targetWidget.id, name, description, redirectLink: deploymentLink, visibility}); 
-      onClose(); 
+      await editWidget({
+        id: targetWidget.id,
+        name,
+        description,
+        redirectLink: deploymentLink,
+        visibility,
+      });
+      onClose();
       onSave();
     } catch (error) {
       console.error("Error updating widget:", error);

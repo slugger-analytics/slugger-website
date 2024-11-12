@@ -2,9 +2,9 @@ import { atom } from "nanostores";
 import { WidgetType } from "@/data/types";
 
 const emptyWidget: WidgetType = {
-    id: -1,
-    name: "empty widget"
-}
+  id: -1,
+  name: "empty widget",
+};
 
 export const $widgets = atom<WidgetType[]>([]);
 export const $userRole = atom<string>("");
@@ -12,40 +12,45 @@ export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
 
 export function addWidget(widget: WidgetType) {
-    $widgets.set([...$widgets.get(), widget]);
+  $widgets.set([...$widgets.get(), widget]);
 }
 
 export function setWidgets(widgets: WidgetType[]) {
-    $widgets.set([...widgets]);
+  $widgets.set([...widgets]);
 }
 
-
 export function setTargetWidget(target: WidgetType) {
-    $targetWidget.set(target);
+  $targetWidget.set(target);
 }
 
 export function setUserRole(role: string) {
-    $userRole.set(role);
+  $userRole.set(role);
 }
 
-export function updateStoreWidget({ id, name, description, visibility, redirectLink }: WidgetType) {
-    $widgets.set(
-        $widgets.get().map((widget) => {
-            if (widget.id === id) {
-                return {
-                    ...widget,
-                    ...(name !== undefined && { name }),
-                    ...(description !== undefined && { description }),
-                    ...(visibility !== undefined && { visibility }),
-                    ...(redirectLink !== undefined && { redirectLink })
-                }
-            } else {
-                return widget;
-            }
-        })
-    );
+export function updateStoreWidget({
+  id,
+  name,
+  description,
+  visibility,
+  redirectLink,
+}: WidgetType) {
+  $widgets.set(
+    $widgets.get().map((widget) => {
+      if (widget.id === id) {
+        return {
+          ...widget,
+          ...(name !== undefined && { name }),
+          ...(description !== undefined && { description }),
+          ...(visibility !== undefined && { visibility }),
+          ...(redirectLink !== undefined && { redirectLink }),
+        };
+      } else {
+        return widget;
+      }
+    }),
+  );
 }
 
 export function setWidgetQuery(query: string) {
-    $widgetQuery.set(query);
+  $widgetQuery.set(query);
 }
