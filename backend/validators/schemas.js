@@ -17,3 +17,18 @@ export const queryParamasSchema = z.object({
     page: z.coerce.number().int().positive().optional(),
     limit: z.coerce.number().int().positive().max(100, "Limit must be <= 100").optional(),
 })
+
+export const createUserSchema = z.object({
+    email: z.string().min(1),
+    firstName: z.string().max(255).optional(),
+    lastName: z.string().max(255).optional(),
+    role: z.string(),
+    favWidgetsIds: z.number().array().optional()
+});
+
+export const updateUserSchema = createUserSchema.partial();
+
+export const favoriteWidgetSchema = z.object({
+    userId: z.coerce.number().int().positive(),
+    widgetId: z.coerce.number().int().positive(),
+})
