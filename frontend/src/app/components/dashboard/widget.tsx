@@ -2,8 +2,19 @@ import React, { useState, useEffect } from "react";
 import { Button } from "../ui/button";
 import Image from "next/image";
 import { HeartIcon, HeartFilledIcon, AngleIcon } from "@radix-ui/react-icons";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/app/components/ui/avatar";
 import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Import the dialog component
 import { WidgetType } from "@/data/types";
 import { useStore } from "@nanostores/react";
@@ -15,7 +26,16 @@ interface WidgetProps extends WidgetType {
   visibility: string;
 }
 
-export default function Widget({ id, name, description, imageUrl, isDev, onUpdateWidget, visibility, redirectLink }: WidgetProps) {
+export default function Widget({
+  id,
+  name,
+  description,
+  imageUrl,
+  isDev,
+  onUpdateWidget,
+  visibility,
+  redirectLink,
+}: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const isFavorite = true; // TODO: add functionality to change this
 
@@ -25,9 +45,16 @@ export default function Widget({ id, name, description, imageUrl, isDev, onUpdat
   };
 
   const handleOpenDialog = () => {
-    setTargetWidget({ id, name, description, imageUrl, visibility, redirectLink});
+    setTargetWidget({
+      id,
+      name,
+      description,
+      imageUrl,
+      visibility,
+      redirectLink,
+    });
     setIsDialogOpen(true);
-  }
+  };
 
   return (
     <Card className="w-[350px]">
@@ -60,8 +87,12 @@ export default function Widget({ id, name, description, imageUrl, isDev, onUpdat
           </Button>
         )}
         <div>
-          <Button className="ml-3" onClick={redirect}>Launch</Button>
-          <Button variant="ghost">{isFavorite ? <HeartFilledIcon /> : <HeartIcon />}</Button>
+          <Button className="ml-3" onClick={redirect}>
+            Launch
+          </Button>
+          <Button variant="ghost">
+            {isFavorite ? <HeartFilledIcon /> : <HeartIcon />}
+          </Button>
         </div>
       </CardFooter>
 

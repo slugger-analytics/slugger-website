@@ -9,7 +9,7 @@ import { useStore } from "@nanostores/react";
 
 export default function Widgets() {
   const [loading, setLoading] = useState(true);
-  const [isDev, setIsDev] = useState(false)
+  const [isDev, setIsDev] = useState(false);
   const { widgets } = useQueryWidgets();
   const { userId, userRole } = useAuth();
   const widgetQuery = useStore($widgetQuery);
@@ -32,7 +32,6 @@ export default function Widgets() {
     loadWidgets();
   }, [userId]);
 
-
   if (loading) {
     // TODO this could look prettier
     return <p>Loading widgets...</p>;
@@ -48,7 +47,7 @@ export default function Widgets() {
           }
           if (isDev && userId && widget.developerIds?.includes(userId)) {
             return widget;
-          } 
+          }
         })
         .map((widget) => (
           <Widget

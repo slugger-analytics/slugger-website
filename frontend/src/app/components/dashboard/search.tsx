@@ -9,7 +9,7 @@ export default function Search() {
     <Input
       type="text"
       placeholder="Search for widgets"
-      className="w-1/3 max-w-72 mt-10"
+      className="w-1/3 max-w-72"
       onChange={(e) => setWidgetQuery(e.target.value)}
     />
   );

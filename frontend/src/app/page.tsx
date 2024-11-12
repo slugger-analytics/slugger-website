@@ -2,7 +2,7 @@
 
 import Navbar from "./components/navbar/Navbar";
 import Link from "next/link";
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider } from "./contexts/AuthContext";
 
 export default function Home() {
   return (

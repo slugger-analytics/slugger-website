@@ -114,15 +114,15 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
     }
     const data = await response.json();
     const cleanedData = data.map((w: any) => ({
-        id: w.widget_id,
-        name: w.widget_name || "Unnamed Widget",
-        description: w.description || "",
-        widgetId: w.widget_id || "",
-        visibility: w.visibility || "Public",  // Ensure visibility is included
-        redirectUrl: w.redirect_link || "",
-        imageUrl: w.image_url || undefined,
-        developerIds: w.developer_ids || [],
-    }))
+      id: w.widget_id,
+      name: w.widget_name || "Unnamed Widget",
+      description: w.description || "",
+      widgetId: w.widget_id || "",
+      visibility: w.visibility || "Public", // Ensure visibility is included
+      redirectUrl: w.redirect_link || "",
+      imageUrl: w.image_url || undefined,
+      developerIds: w.developer_ids || [],
+    }));
     return cleanedData;
   } catch (error) {
     console.error("Error fetching pending widgets:", error);
@@ -130,19 +130,27 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
   }
 };
 
-export const updateWidget = async ({ id, name, description, redirectLink, visibility }: WidgetType) => {
+export const updateWidget = async ({
+  id,
+  name,
+  description,
+  redirectLink,
+  visibility,
+}: WidgetType) => {
   try {
-    const response = await fetch(`http://localhost:3001/api/edit-widget/${id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
+    const response = await fetch(
+      `http://localhost:3001/api/edit-widget/${id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, description, redirectLink, visibility }),
       },
-      body: JSON.stringify({ name, description, redirectLink, visibility })
-    });
+    );
     return response;
   } catch (error) {
     console.error("Error updating widget:", error);
     throw error;
   }
-}
-
+};
