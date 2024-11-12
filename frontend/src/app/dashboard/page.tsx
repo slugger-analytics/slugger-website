@@ -15,10 +15,16 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      {/* <Search /> */}
       <Navbar />
+      {widgets.length > 0 && 
+        <div className="flex justify-center w-full">
+          <Search />
+        </div>}
       <div className="flex justify-center p-10">
-        {widgets.length > 0 ? <Widgets /> : <RegisterWidget />}
+        {widgets.length > 0 && <div>
+            <Widgets /> 
+          </div>}
+        {widgets.length == 0 && <RegisterWidget />}
 
       </div>
     </ProtectedRoute>

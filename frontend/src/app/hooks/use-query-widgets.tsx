@@ -1,6 +1,6 @@
 import { fetchWidgets } from "@/api/widget";
 import { WidgetType } from "@/data/types";
-import { setWidgets, $widgets, $userRole } from "@/lib/store";
+import { setWidgets, $widgets, $userRole, $widgetQuery } from "@/lib/store";
 import { useStore } from "@nanostores/react";
 import { useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -8,6 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 function useQueryWidgets() {
     const widgets = useStore($widgets);
     const userRole = useStore($userRole);
+    const widgetQuery = useStore($widgetQuery);
     const { userId } = useAuth();
 
     const loadWidgets = async () => {

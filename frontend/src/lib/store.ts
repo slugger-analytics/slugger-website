@@ -8,6 +8,8 @@ const emptyWidget: WidgetType = {
 
 export const $widgets = atom<WidgetType[]>([]);
 export const $userRole = atom<string>("");
+export const $targetWidget = atom<WidgetType>(emptyWidget);
+export const $widgetQuery = atom<string>("");
 
 export function addWidget(widget: WidgetType) {
     $widgets.set([...$widgets.get(), widget]);
@@ -17,7 +19,6 @@ export function setWidgets(widgets: WidgetType[]) {
     $widgets.set([...widgets]);
 }
 
-export const $targetWidget = atom<WidgetType>(emptyWidget);
 
 export function setTargetWidget(target: WidgetType) {
     $targetWidget.set(target);
@@ -43,4 +44,8 @@ export function updateStoreWidget({ id, name, description, visibility, redirectL
             }
         })
     );
+}
+
+export function setWidgetQuery(query: string) {
+    $widgetQuery.set(query);
 }
