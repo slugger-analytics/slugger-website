@@ -11,3 +11,14 @@ export const widgets = pgTable('widgets', {
     imageUrl: varchar('image_url'),
     categoryIds: integer('category_ids').array()
 });
+
+export const users = pgTable('users', {
+    id: serial('user_id').primaryKey(),
+    cognitoUser: varchar('cognito_user').notNull(),
+    email: varchar('email').notNull(),
+    firstName: varchar('first_name'),
+    latName: varchar('last_name'),
+    createdAt: timestamp('created_at').defaultNow(),
+    role: varchar('role').notNull(),
+    favWidgetsIds: integer('fav_widgets_ids').array(),
+});

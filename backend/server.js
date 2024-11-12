@@ -12,6 +12,7 @@ import declineRequestRoute from './api/decline-widget.js';
 import fetchAllWidgetRoute from './api/fetch-widgets.js';
 import fetchUserByCognitoId from './api/fetch-user.js';
 import editWidgetRouter from './api/edit-widget.js';
+import updateUserRouter from './api/update-user.js';
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/api/decline-widget', declineRequestRoute)
 app.use('/api/fetch-widgets', fetchAllWidgetRoute)
 app.use('/api/fetch-user', fetchUserByCognitoId)
 app.use('/api/edit-widget', editWidgetRouter)
+app.use('/api/update-user', updateUserRouter)
 const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
