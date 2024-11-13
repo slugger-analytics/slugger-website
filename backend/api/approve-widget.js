@@ -1,12 +1,15 @@
 import express from 'express';
 import { getRequestData, createApprovedWidget, getUserData, generateApiKeyForUser, createUserWidgetRelation} from '../services/widgetService.js';
 import sendApiKeyEmail from '../services/emailService.js'
+import { request } from 'http';
 const router = express.Router();
 
 router.post('/', async (req, res) => {
     const { requestId } = req.body;
-    try {  
+    try { 
+        console.log("resquestId:", req.body);
         const requestData = await getRequestData(requestId);
+        console.log("requestData:", requestData);
         const userCognitoID = requestData['user_id']
         const approvedWidgetID = await createApprovedWidget(requestData);
         const widgetID = approvedWidgetID['widget_id']
