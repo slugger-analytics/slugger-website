@@ -1,26 +1,31 @@
 import { fetchWidgets } from "@/api/widget";
 import { WidgetType } from "@/data/types";
-import { setWidgets, $widgets, $userRole, $widgetQuery } from "@/lib/store";
+import { setWidgets, $widgets, $userRole, $widgetQuery, $favWidgetIds, setFavWidgetIds, getFavWidgetIds } from "@/lib/store";
 import { useStore } from "@nanostores/react";
 import { useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { getFavorites } from "@/api/user";
 
 function useQueryWidgets() {
   const widgets = useStore($widgets);
   const userRole = useStore($userRole);
-  const widgetQuery = useStore($widgetQuery);
   const { userId } = useAuth();
+  const favWidgetIds = useStore($favWidgetIds);
 
   const loadWidgets = async () => {
     try {
       const fetchedWidgets = await fetchWidgets();
       const isDev = userRole == "Widget Developer" ? true : false;
+      console.log(fetchedWidgets)
+      console.log("user id:", userId)
       const filteredWidgets = fetchedWidgets.filter((widget) =>
         isDev && userId && widget.developerIds?.includes(userId)
           ? widget
           : !isDev,
       );
       setWidgets([...filteredWidgets]);
+      const favWidgetIds = await getFavorites(parseInt(userId));
+      setFavWidgetIds(favWidgetIds);
     } catch (error) {
       console.error("Error fetching widgets", error);
     }
@@ -28,7 +33,7 @@ function useQueryWidgets() {
 
   useEffect(() => {
     loadWidgets();
-  }, []);
+  }, [favWidgetIds]);
 
   return { widgets };
 }
