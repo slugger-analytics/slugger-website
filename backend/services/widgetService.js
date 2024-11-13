@@ -4,7 +4,7 @@ const apiGateway = new APIGateway({ region: 'us-east-2' });
 import pool from '../db.js';  // PostgreSQL connection setup
 
 // Function to register a widget
-export async function registerWidget(user_id, widgetName, description, visibility, widgetProps) {
+export async function registerWidget(user_id, widget_name, description, visibility, widgetProps) {
     const query = `
       INSERT INTO requests (user_id, widget_name, description, visibility, status)
         VALUES ($1, $2, $3, $4, $5)
@@ -13,7 +13,7 @@ export async function registerWidget(user_id, widgetName, description, visibilit
     try {
         // Insert the widget into the database
         const status = 'pending'
-        const result = await pool.query(query, [user_id, widgetName, description, visibility, status]);
+        const result = await pool.query(query, [user_id, widget_name, description, visibility, status]);
         const widgetId = result.rows[0].widget_id;
         console.log(`Widget registered with ID: ${widgetId}`);
         
@@ -24,14 +24,14 @@ export async function registerWidget(user_id, widgetName, description, visibilit
     }
 }
 
-export async function updateWidget({ widgetId, widgetName, description, redirectLink, visibility }) {
+export async function updateWidget({ widgetId, widget_name, description, redirectLink, visibility }) {
     const editQuery = `
         UPDATE widgets
         SET widget_name = $1, description = $2, redirect_link = $3, visibility = $4
         WHERE widget_id = $5
     `;
     try {
-        const result = await pool.query(editQuery, [widgetName, description, redirectLink, visibility, widgetId]);
+        const result = await pool.query(editQuery, [widget_name, description, redirectLink, visibility, widgetId]);
         return { result, message: "Widget edited successfully" };
     } catch (error) {
         console.error('Error updating widget:', error);
@@ -54,14 +54,14 @@ export async function removeRequest(requestId) {
     }
 }
 
-export async function createUserWidgetRelation(userId, widgetId, apiKey, role = 'owner') {
+export async function createUserWidgetRelation(user_id, widgetId, apiKey, role = 'owner') {
     try {
         const query = `
             INSERT INTO user_widget (user_id, widget_id, api_key, role, joined_at)
             VALUES ($1, $2, $3, $4, NOW())
             RETURNING *;
         `;
-        const result = await pool.query(query, [userId, widgetId, apiKey, role]);
+        const result = await pool.query(query, [user_id, widgetId, apiKey, role]);
         return result.rows[0]; // Return the newly created relation
     } catch (error) {
         console.error('Error creating user-widget relation:', error.message);
@@ -69,9 +69,9 @@ export async function createUserWidgetRelation(userId, widgetId, apiKey, role = 
     }
 }
 
-export async function generateApiKeyForUser(userId, email) {
+export async function generateApiKeyForUser(user_id, email) {
     const params = {
-        name: `ApiKey-${userId}`,
+        name: `ApiKey-${user_id}`,
         description: `API key for ${email}`,
         enabled: true,
         generateDistinctId: true,
@@ -86,7 +86,7 @@ export async function generateApiKeyForUser(userId, email) {
         }
 
         await associateApiKeyWithUsagePlan(apiKey.id, process.env.USAGE_PLAN_ID);
-        await saveApiKeyToDatabase(userId, apiKey.id);
+        await saveApiKeyToDatabase(user_id, apiKey.id);
         return apiKey.id;
     } catch (err) {
         console.error('Error generating API Key:', err);
@@ -109,21 +109,21 @@ export async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
     }
 }
 
-export async function saveApiKeyToDatabase(userId, apiKey) {
+export async function saveApiKeyToDatabase(user_id, apiKey) {
     const query = `
         UPDATE user_widget
         SET api_key = $1
         WHERE user_id = $2;
     `;
-    await pool.query(query, [apiKey, userId]);
+    await pool.query(query, [apiKey, user_id]);
 }
 
-export async function getRequestData(requestId) {
+export async function getRequestData(request_id) {
     try {
         const query = `
             SELECT * FROM requests WHERE request_id = $1
         `;
-        const result = await pool.query(query, [requestId]);
+        const result = await pool.query(query, [request_id]);
 
         if (result.rows.length === 0) {
             throw new Error('Request not found');
@@ -155,14 +155,15 @@ export async function getUserData(userCognitoID) {
 }
 
 
-export async function createApprovedWidget({ widgetName, description, visibility }) {
+export async function createApprovedWidget({ widget_name, description, visibility }) {
     try {
+        console.log("widget name:", widget_name)
         const query = `
             INSERT INTO widgets (widget_name, description, visibility, status, created_at)
             VALUES ($1, $2, $3, $4, NOW())
             RETURNING widget_id;
         `;
-        const result = await pool.query(query, [widgetName, description, visibility, 'approved']);
+        const result = await pool.query(query, [widget_name, description, visibility, 'approved']);
 
         return result.rows[0]; // Return the newly created widget ID
     } catch (error) {
@@ -180,7 +181,7 @@ export async function getPendingWidgets() {
 }
 
 
-export async function getAllWidgets(widgetName, categories, page, limit) {
+export async function getAllWidgets(widget_name, categories, page, limit) {
     // When we select * from widgets,
     // need to get all user_ids from user_widget where user_widget.widget_id === widgets.widget_id
     const widgetsQuery = `

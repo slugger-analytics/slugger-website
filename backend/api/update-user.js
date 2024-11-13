@@ -5,12 +5,12 @@ import { updateUserSchema, favoriteWidgetSchema } from "../validators/schemas.js
 
 const router = Router();
 
-router.patch('/add-favorite/:userId/:widgetId', 
+router.patch('/add-favorite/:userId', 
     // validationMiddleware(updateUserSchema),
     // validationMiddleware(favoriteWidgetSchema),
     async (req, res) => {
         const userId = Number(req.params.userId)
-        const widgetId = Number(req.params.widgetId);
+        const widgetId = Number(req.body.widgetId);
         try {
             const result = await favoriteWidget(userId, widgetId);
             res.status(201).json(result);
@@ -20,12 +20,12 @@ router.patch('/add-favorite/:userId/:widgetId',
     }
 );
 
-router.patch('/remove-favorite/:userId/:widgetId', 
+router.patch('/remove-favorite/:userId', 
     // validationMiddleware(updateUserSchema),
     // validationMiddleware(favoriteWidgetSchema),
     async (req, res) => {
         const userId = Number(req.params.userId)
-        const widgetId = Number(req.params.widgetId);
+        const widgetId = Number(req.body.widgetId);
         try {
             const result = await unfavoriteWidget(userId, widgetId);
             res.status(201).json(result);
