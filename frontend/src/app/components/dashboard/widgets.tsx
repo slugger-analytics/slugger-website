@@ -4,26 +4,26 @@ import { fetchWidgets } from "../../../api/widget"; // Adjust path if needed
 import { useAuth } from "@/app/contexts/AuthContext";
 import { WidgetType } from "@/data/types";
 import useQueryWidgets from "@/app/hooks/use-query-widgets";
-import { $favWidgetIds, $widgetQuery } from "@/lib/store";
+import { $favWidgetIds, $filters, $widgetQuery } from "@/lib/store";
 import { useStore } from "@nanostores/react";
 
 export default function Widgets() {
   const [loading, setLoading] = useState(true);
   const [isDev, setIsDev] = useState(false);
-  const [widgetsFavoriteStatus, setWidgetsFavoriteStatus] = useState<{ [key: number]: boolean }>({});
   const { widgets } = useQueryWidgets();
   const { userId, userRole } = useAuth();
   const favWidgetIds = useStore($favWidgetIds);
   const widgetQuery = useStore($widgetQuery);
+  const filters = useStore($filters);
 
   const loadWidgets = async () => {
     try {
-      console.log("triggered!")
       if (userRole === "Widget Developer") {
         setIsDev(true);
       } else {
         setIsDev(false);
       }
+
     } catch (error) {
       console.error("Error fetching widgets:", error);
     } finally {
@@ -33,7 +33,7 @@ export default function Widgets() {
 
   useEffect(() => {
     loadWidgets();
-  }, [userId, favWidgetIds]);
+  }, [userId]);
 
   if (loading) {
     // TODO this could look prettier
@@ -46,6 +46,10 @@ export default function Widgets() {
         .filter((widget) => {
           if (!widget.name.toLowerCase().includes(widgetQuery.toLowerCase())) {
             // Widget must include search query
+            return;
+          }
+          if (filters.has("favorites") && !favWidgetIds.has(widget.id)) {
+            // If "favorites" filter is enabled, widget must be a favorite.
             return;
           }
           if (isDev && userId && widget.developerIds?.includes(userId)) {
