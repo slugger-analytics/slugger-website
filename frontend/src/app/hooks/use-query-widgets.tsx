@@ -11,13 +11,12 @@ function useQueryWidgets() {
   const userRole = useStore($userRole);
   const { userId } = useAuth();
   const favWidgetIds = useStore($favWidgetIds);
+  const widgetQuery = useStore($widgetQuery);
 
   const loadWidgets = async () => {
     try {
       const fetchedWidgets = await fetchWidgets();
       const isDev = userRole == "Widget Developer" ? true : false;
-      console.log(fetchedWidgets)
-      console.log("user id:", userId)
       const filteredWidgets = fetchedWidgets.filter((widget) =>
         isDev && userId && widget.developerIds?.includes(userId)
           ? widget

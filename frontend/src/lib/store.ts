@@ -11,6 +11,7 @@ export const $userRole = atom<string>("");
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
 export const $favWidgetIds = atom<Set<number>>(new Set());
+export const $filters = atom<Set<string>>(new Set());
 
 export function addWidget(widget: WidgetType) {
   $widgets.set([...$widgets.get(), widget]);
@@ -54,6 +55,7 @@ export function updateStoreWidget({
 
 export function setWidgetQuery(query: string) {
   $widgetQuery.set(query);
+  console.log("in store:", $widgetQuery.get())
 }
 
 export function addFavWidgetId(id: number) {
@@ -61,7 +63,6 @@ export function addFavWidgetId(id: number) {
 }
 
 export function removeFavWidgetId(id: number) {
-  // TODO is this correct?
   const favWidgetIds = $favWidgetIds.get();
   favWidgetIds.delete(id);
   $favWidgetIds.set(favWidgetIds);
@@ -73,4 +74,14 @@ export function setFavWidgetIds(ids: number[]) {
 
 export function getFavWidgetIds() {
   return $favWidgetIds.get();
+}
+
+export function addFilter(filter: string) {
+  $filters.set($filters.get().add(filter));
+}
+
+export function removeFilter(filter: string) {
+  const filters = $filters.get();
+  filters.delete(filter);
+  $filters.set(filters);
 }
