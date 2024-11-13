@@ -10,6 +10,7 @@ export const $widgets = atom<WidgetType[]>([]);
 export const $userRole = atom<string>("");
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
+export const $favWidgetIds = atom<Set<number>>(new Set());
 
 export function addWidget(widget: WidgetType) {
   $widgets.set([...$widgets.get(), widget]);
@@ -53,4 +54,23 @@ export function updateStoreWidget({
 
 export function setWidgetQuery(query: string) {
   $widgetQuery.set(query);
+}
+
+export function addFavWidgetId(id: number) {
+  $favWidgetIds.set($favWidgetIds.get().add(id));
+}
+
+export function removeFavWidgetId(id: number) {
+  // TODO is this correct?
+  const favWidgetIds = $favWidgetIds.get();
+  favWidgetIds.delete(id);
+  $favWidgetIds.set(favWidgetIds);
+}
+
+export function setFavWidgetIds(ids: number[]) {
+  $favWidgetIds.set(new Set(ids));
+}
+
+export function getFavWidgetIds() {
+  return $favWidgetIds.get();
 }

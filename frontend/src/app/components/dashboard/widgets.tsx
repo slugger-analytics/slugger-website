@@ -4,18 +4,21 @@ import { fetchWidgets } from "../../../api/widget"; // Adjust path if needed
 import { useAuth } from "@/app/contexts/AuthContext";
 import { WidgetType } from "@/data/types";
 import useQueryWidgets from "@/app/hooks/use-query-widgets";
-import { $widgetQuery } from "@/lib/store";
+import { $favWidgetIds, $widgetQuery } from "@/lib/store";
 import { useStore } from "@nanostores/react";
 
 export default function Widgets() {
   const [loading, setLoading] = useState(true);
   const [isDev, setIsDev] = useState(false);
+  const [widgetsFavoriteStatus, setWidgetsFavoriteStatus] = useState<{ [key: number]: boolean }>({});
   const { widgets } = useQueryWidgets();
   const { userId, userRole } = useAuth();
+  const favWidgetIds = useStore($favWidgetIds);
   const widgetQuery = useStore($widgetQuery);
 
   const loadWidgets = async () => {
     try {
+      console.log("triggered!")
       if (userRole === "Widget Developer") {
         setIsDev(true);
       } else {
@@ -30,7 +33,7 @@ export default function Widgets() {
 
   useEffect(() => {
     loadWidgets();
-  }, [userId]);
+  }, [userId, favWidgetIds]);
 
   if (loading) {
     // TODO this could look prettier
@@ -56,6 +59,7 @@ export default function Widgets() {
             isDev={isDev}
             onUpdateWidget={loadWidgets} // Pass the updatedWidget with visibility
             visibility={widget.visibility ?? "Private"} // Pass visibility here as well
+            isFavorite={favWidgetIds.has(widget.id)}
           />
         ))}
     </div>

@@ -17,8 +17,8 @@ interface AuthContextType {
   loading: boolean;
   login: (token: string, role: string) => void;
   logout: () => void;
-  userId: string | null;
-  setUserId: Dispatch<SetStateAction<string | null>>;
+  userId: string;
+  setUserId: Dispatch<SetStateAction<string>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>("-1");
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
