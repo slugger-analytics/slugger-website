@@ -33,7 +33,7 @@ export async function signUpUser(data: {
 
 export const loginUser = async (email: string, password: string) => {
   try {
-    const response = await fetch("http:/alpb-analytics/api/login-user", {
+    const response = await fetch("http://alpb-analytics.com/api/login-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
