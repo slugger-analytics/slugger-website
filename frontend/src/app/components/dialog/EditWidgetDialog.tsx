@@ -19,13 +19,11 @@ import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
 interface EditWidgetDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: () => void;
 }
 
 const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   isOpen,
   onClose,
-  onSave,
 }) => {
   const targetWidget = useStore($targetWidget);
   const [name, setName] = useState(targetWidget.name || "");
@@ -50,7 +48,6 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
         visibility,
       });
       onClose();
-      onSave();
     } catch (error) {
       console.error("Error updating widget:", error);
     }

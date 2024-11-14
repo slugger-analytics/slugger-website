@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = (token: string, role: string) => {
     localStorage.setItem("idToken", token);
+    
     localStorage.setItem("role", role);
     setIsAuthenticated(true);
     setUserRole(role);

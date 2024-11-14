@@ -1,5 +1,5 @@
 import { WidgetType } from "@/data/types";
-import { $favWidgetIds, addFavWidgetId, removeFavWidgetId, updateStoreWidget } from "@/lib/store";
+import { $favWidgetIds, addFavWidgetId, incrementFiltersVersion, incrementWidgetsVersion, removeFavWidgetId, updateStoreWidget } from "@/lib/store";
 import { updateWidget } from "@/api/widget";
 import { useAuth } from "../contexts/AuthContext";
 import { addFavorite, removeFavorite } from "@/api/user";
@@ -25,6 +25,7 @@ function useMutationWidgets() {
         visibility,
       });
       updateStoreWidget({ id, name, description, visibility, redirectLink });
+      incrementWidgetsVersion();
     } catch (error) {
       console.error("Error updating widget:", error);
     }
@@ -36,12 +37,14 @@ function useMutationWidgets() {
       if (favWidgetIds.has(widgetId)) {
         await removeFavorite(id, widgetId);
         removeFavWidgetId(widgetId);
-        console.log("removed widget from favs")
+        console.log("removed widget from favs. Store is now:", favWidgetIds)
+        incrementFiltersVersion();
         return "removed";
       } else {
         await addFavorite(id, widgetId);
         addFavWidgetId(widgetId);
-        console.log("added widget to favs")
+        console.log("added widget to favs. Store is now:", favWidgetIds)
+        incrementFiltersVersion();
         return "added";
       }
     } catch (error) {

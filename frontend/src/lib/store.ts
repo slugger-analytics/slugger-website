@@ -7,11 +7,15 @@ const emptyWidget: WidgetType = {
 };
 
 export const $widgets = atom<WidgetType[]>([]);
+export const $widgetsVersion = atom<number>(0);
 export const $userRole = atom<string>("");
+export const $idToken = atom<string>("");
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
 export const $favWidgetIds = atom<Set<number>>(new Set());
+export const $filtersVersion = atom<number>(0);
 export const $filters = atom<Set<string>>(new Set());
+export const $activeCategoryIds = atom<Set<number>>(new Set([1, 2, 3]));
 
 export function addWidget(widget: WidgetType) {
   $widgets.set([...$widgets.get(), widget]);
@@ -55,7 +59,6 @@ export function updateStoreWidget({
 
 export function setWidgetQuery(query: string) {
   $widgetQuery.set(query);
-  console.log("in store:", $widgetQuery.get())
 }
 
 export function addFavWidgetId(id: number) {
@@ -69,6 +72,8 @@ export function removeFavWidgetId(id: number) {
 }
 
 export function setFavWidgetIds(ids: number[]) {
+  console.log("ids:", ids);
+  console.log("set from ids:", new Set(ids));
   $favWidgetIds.set(new Set(ids));
 }
 
@@ -84,4 +89,26 @@ export function removeFilter(filter: string) {
   const filters = $filters.get();
   filters.delete(filter);
   $filters.set(filters);
+}
+
+export function addCategoryId(id: number) {
+  $activeCategoryIds.set($activeCategoryIds.get().add(id));
+}
+
+export function removeCategoryId(id: number) {
+  const categories = $activeCategoryIds.get();
+  categories.delete(id);
+  $activeCategoryIds.set(categories);
+}
+
+export function setIdToken(token: string) {
+  $idToken.set(token);
+}
+
+export function incrementFiltersVersion() {
+  $filtersVersion.set($filtersVersion.get() + 1);
+}
+
+export function incrementWidgetsVersion() {
+  $widgetsVersion.set($widgetsVersion.get() + 1);
 }
