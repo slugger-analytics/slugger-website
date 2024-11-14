@@ -33,7 +33,7 @@ export async function signUpUser(data: {
 
 export const loginUser = async (email: string, password: string) => {
   try {
-    const response = await fetch("http://localhost:3001/api/login-user", {
+    const response = await fetch("http://ec2-3-140-204-112.us-east-2.compute.amazonaws.com//api/login-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
