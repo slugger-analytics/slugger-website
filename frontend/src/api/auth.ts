@@ -1,4 +1,4 @@
-import { setUserRole } from "@/lib/store";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export async function signUpUser(data: {
   email: string;
@@ -31,7 +31,8 @@ export async function signUpUser(data: {
   }
 }
 
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (email: string, password: string, ) => {
+  console.log("login user called")
   try {
     const response = await fetch("http://localhost:3001/api/login-user", {
       method: "POST",
@@ -44,11 +45,8 @@ export const loginUser = async (email: string, password: string) => {
     const data = await response.json();
 
     if (response.ok) {
+      console.log("I'm OK!");
       // Store tokens and user data locally
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("idToken", data.idToken);
-      localStorage.setItem("role", data.role); // Store role if needed
-      setUserRole(data.role);
       return data; // Return user data to handle on the frontend
     } else {
       throw new Error(data.message || "Login failed");

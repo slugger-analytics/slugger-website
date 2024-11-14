@@ -1,6 +1,6 @@
 import { fetchWidgets } from "@/api/widget";
 import { WidgetType } from "@/data/types";
-import { setWidgets, $widgets, $userRole, $widgetQuery, $favWidgetIds, setFavWidgetIds, getFavWidgetIds, incrementFiltersVersion, incrementWidgetsVersion } from "@/lib/store";
+import { setWidgets, $widgets, $widgetQuery, $favWidgetIds, setFavWidgetIds, getFavWidgetIds, incrementFiltersVersion, incrementWidgetsVersion } from "@/lib/store";
 import { useStore } from "@nanostores/react";
 import { useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
@@ -8,8 +8,7 @@ import { getFavorites } from "@/api/user";
 
 function useQueryWidgets() {
   const widgets = useStore($widgets);
-  const userRole = useStore($userRole);
-  const { userId } = useAuth();
+  const { userId, userRole } = useAuth();
 
   const loadWidgets = async () => {
     try {
