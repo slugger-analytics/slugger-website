@@ -13,47 +13,52 @@ import { useRouter } from "next/navigation";
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  userRole: string | null;
+  idToken: string;
+  userRole: string;
+  accessToken: string;
   loading: boolean;
   login: (token: string, role: string) => void;
   logout: () => void;
   userId: string;
   setUserId: Dispatch<SetStateAction<string>>;
+  setIdToken: Dispatch<SetStateAction<string>>;
+  setUserRole: Dispatch<SetStateAction<string>>;
+  setAccessToken: Dispatch<SetStateAction<string>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
   const [userId, setUserId] = useState<string>("-1");
+  const [idToken, setIdToken] = useState<string>("");
+  const [accessToken, setAccessToken] = useState<string>(""); // not used anywhere currently, but accessToken was previously stored in localstorage
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   // Check for token on initial load
   useEffect(() => {
-    const token = localStorage.getItem("idToken");
-    const role = localStorage.getItem("role");
-    if (token && role) {
+    // const token = localStorage.getItem("idToken");
+    // const role = localStorage.getItem("role");
+    console.log("idToken:", idToken);
+    console.log("userRole:", userRole);
+    if (idToken && userRole) {
       setIsAuthenticated(true);
-      setUserRole(role);
+      // setUserRole(role);
     }
     setLoading(false);
-  }, []);
+  }, [idToken, userRole]);
 
   const login = (token: string, role: string) => {
-    localStorage.setItem("idToken", token);
-    
-    localStorage.setItem("role", role);
     setIsAuthenticated(true);
+    setIdToken(token);
     setUserRole(role);
   };
 
   const logout = () => {
-    localStorage.removeItem("idToken");
-    localStorage.removeItem("role");
     setIsAuthenticated(false);
-    setUserRole(null);
+    setUserRole("");
     router.push("/login"); // Redirect to login page on logout
   };
 
@@ -61,12 +66,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{
         isAuthenticated,
+        idToken,
         userRole,
+        accessToken,
         loading,
         login,
         logout,
         userId,
         setUserId,
+        setIdToken,
+        setUserRole,
+        setAccessToken
       }}
     >
       {children}

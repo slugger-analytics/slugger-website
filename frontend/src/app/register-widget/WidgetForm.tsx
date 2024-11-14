@@ -8,7 +8,7 @@ import SubmitButton from "../components/input/SubmitButton";
 import SelectField from "../components/input/SelectField";
 import { registerWidget } from "../../api/widget";
 import { useStore } from "@nanostores/react";
-import { $idToken } from "@/lib/store";
+import { useAuth } from "../contexts/AuthContext";
 
 const initialState = {
   message: "",
@@ -17,7 +17,7 @@ const initialState = {
 export function WidgetForm() {
   const [state, setState] = useState(initialState);
   const router = useRouter();
-  const idToken = useStore($idToken);
+  const { idToken } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

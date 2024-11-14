@@ -7,15 +7,19 @@ const emptyWidget: WidgetType = {
 };
 
 export const $widgets = atom<WidgetType[]>([]);
-export const $widgetsVersion = atom<number>(0);
-export const $userRole = atom<string>("");
-export const $idToken = atom<string>("");
+// export const $userRole = atom<string>("");
+// export const $idToken = atom<string>("");
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
 export const $favWidgetIds = atom<Set<number>>(new Set());
-export const $filtersVersion = atom<number>(0);
 export const $filters = atom<Set<string>>(new Set());
 export const $activeCategoryIds = atom<Set<number>>(new Set([1, 2, 3]));
+
+// IMPORTANT: in order for us to re-render widgets, we need to keep track of the state of our widgets and filters
+// using the stores below. This is detects changes in REFERENCE, so our dashboard won't rerender when we
+// add to an array or set.
+export const $widgetsVersion = atom<number>(0);
+export const $filtersVersion = atom<number>(0);
 
 export function addWidget(widget: WidgetType) {
   $widgets.set([...$widgets.get(), widget]);
@@ -29,9 +33,9 @@ export function setTargetWidget(target: WidgetType) {
   $targetWidget.set(target);
 }
 
-export function setUserRole(role: string) {
-  $userRole.set(role);
-}
+// export function setUserRole(role: string) {
+//   $userRole.set(role);
+// }
 
 export function updateStoreWidget({
   id,
@@ -101,9 +105,9 @@ export function removeCategoryId(id: number) {
   $activeCategoryIds.set(categories);
 }
 
-export function setIdToken(token: string) {
-  $idToken.set(token);
-}
+// export function setIdToken(token: string) {
+//   $idToken.set(token);
+// }
 
 export function incrementFiltersVersion() {
   $filtersVersion.set($filtersVersion.get() + 1);
