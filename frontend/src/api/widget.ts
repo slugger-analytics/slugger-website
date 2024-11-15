@@ -21,7 +21,7 @@ export const registerWidget = async (
       ...widgetData,
       userId,
     };
-    const response = await fetch("http://localhost:3001/api/register-widget", {
+    const response = await fetch("http://alpb-analytics.com/api/register-widget", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -53,7 +53,7 @@ export interface Request {
 
 export const fetchPendingWidgets = async (): Promise<Request[]> => {
   try {
-    const response = await fetch("http://localhost:3001/api/pending-widgets");
+    const response = await fetch("http://alpb-analytics.com/api/pending-widgets");
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
@@ -66,7 +66,7 @@ export const fetchPendingWidgets = async (): Promise<Request[]> => {
 
 export const approveWidget = async (requestId: string): Promise<string> => {
   try {
-    const response = await fetch("http://localhost:3001/api/approve-widget", {
+    const response = await fetch("http://alpb-analytics.com/api/approve-widget", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requestId }),
@@ -88,7 +88,7 @@ export const approveWidget = async (requestId: string): Promise<string> => {
 
 export const declineWidget = async (requestId: string): Promise<string> => {
   try {
-    const response = await fetch("http://localhost:3001/api/decline-widget", {
+    const response = await fetch("http://alpb-analytics.com/api/decline-widget", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requestId }),
@@ -108,7 +108,7 @@ export const declineWidget = async (requestId: string): Promise<string> => {
 
 export const fetchWidgets = async (): Promise<WidgetType[]> => {
   try {
-    const response = await fetch("http://localhost:3001/api/fetch-widgets");
+    const response = await fetch("http://alpb-analytics.com/api/fetch-widgets");
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
@@ -139,7 +139,7 @@ export const updateWidget = async ({
 }: WidgetType) => {
   try {
     const response = await fetch(
-      `http://localhost:3001/api/edit-widget/${id}`,
+      `http://alpb-analytics.com/api/edit-widget/${id}`,
       {
         method: "PATCH",
         headers: {
