@@ -8,9 +8,7 @@ export async function signUpUser(data: {
   role: string;
 }) {
   try {
-    console.log(data);
     const response = await fetch("http://alpb-analytics.com/api/register-user", {
-      // Update to your backend URL
       method: "POST",
       headers: {
         "Content-Type": "application/json",
