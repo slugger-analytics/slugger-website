@@ -23,10 +23,12 @@ export const $filtersVersion = atom<number>(0);
 
 export function addWidget(widget: WidgetType) {
   $widgets.set([...$widgets.get(), widget]);
+  incrementWidgetsVersion();
 }
 
 export function setWidgets(widgets: WidgetType[]) {
   $widgets.set([...widgets]);
+  incrementWidgetsVersion();
 }
 
 export function setTargetWidget(target: WidgetType) {
@@ -59,26 +61,29 @@ export function updateStoreWidget({
       }
     }),
   );
+  incrementWidgetsVersion();
 }
 
 export function setWidgetQuery(query: string) {
   $widgetQuery.set(query);
+  incrementFiltersVersion();
 }
 
 export function addFavWidgetId(id: number) {
   $favWidgetIds.set($favWidgetIds.get().add(id));
+  incrementFiltersVersion();
 }
 
 export function removeFavWidgetId(id: number) {
   const favWidgetIds = $favWidgetIds.get();
   favWidgetIds.delete(id);
   $favWidgetIds.set(favWidgetIds);
+  incrementFiltersVersion();
 }
 
 export function setFavWidgetIds(ids: number[]) {
-  console.log("ids:", ids);
-  console.log("set from ids:", new Set(ids));
   $favWidgetIds.set(new Set(ids));
+  incrementFiltersVersion();
 }
 
 export function getFavWidgetIds() {
@@ -87,22 +92,26 @@ export function getFavWidgetIds() {
 
 export function addFilter(filter: string) {
   $filters.set($filters.get().add(filter));
+  incrementFiltersVersion();
 }
 
 export function removeFilter(filter: string) {
   const filters = $filters.get();
   filters.delete(filter);
   $filters.set(filters);
+  incrementFiltersVersion();
 }
 
 export function addCategoryId(id: number) {
   $activeCategoryIds.set($activeCategoryIds.get().add(id));
+  incrementFiltersVersion();
 }
 
 export function removeCategoryId(id: number) {
   const categories = $activeCategoryIds.get();
   categories.delete(id);
   $activeCategoryIds.set(categories);
+  incrementFiltersVersion();
 }
 
 // export function setIdToken(token: string) {

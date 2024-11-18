@@ -18,7 +18,7 @@ import {
 import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Import the dialog component
 import { WidgetType } from "@/data/types";
 import { useStore } from "@nanostores/react";
-import { $favWidgetIds, $targetWidget, $widgetsVersion, setTargetWidget } from "@/lib/store";
+import { $favWidgetIds, setTargetWidget } from "@/lib/store";
 import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
 
 interface WidgetProps extends WidgetType {

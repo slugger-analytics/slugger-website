@@ -35,13 +35,15 @@ export default function Widgets() {
 
   useEffect(() => {
     setUserRole();
-  }, [userId, userRole]);
+  }, [userId, userRole]);     // eslint-disable-line
 
   const filteredWidgets = useMemo(() => {
     return widgets
       .filter((widget) => {
-        console.log("Filtering widgets...")
-        if (!widget.name.toLowerCase().includes(widgetQuery.toLowerCase())) {
+        const lowerName = widget.name.toLowerCase();
+        const lowerDescription = widget.description?.toLowerCase()
+        const lowerQuery = widgetQuery.toLowerCase()
+        if (!(lowerName.includes(lowerQuery) || lowerDescription?.includes(lowerQuery))) {
           // Widget must include search query
           return false;
         }
@@ -58,7 +60,7 @@ export default function Widgets() {
 
         return true;
       })
-  }, [filtersVersion, widgetsVersion])
+  }, [filtersVersion, widgetsVersion])     // eslint-disable-line
 
   if (loading) {
     // TODO this could look prettier

@@ -8,7 +8,6 @@ export async function signUpUser(data: {
   role: string;
 }) {
   try {
-    console.log(data);
     const response = await fetch("http://localhost:3001/api/register-user", {
       // Update to your backend URL
       method: "POST",
@@ -19,7 +18,6 @@ export async function signUpUser(data: {
     });
 
     const result = await response.json();
-    console.log(result);
     if (!response.ok) {
       throw new Error(result.message || "Failed to sign up");
     }
@@ -32,7 +30,6 @@ export async function signUpUser(data: {
 }
 
 export const loginUser = async (email: string, password: string, ) => {
-  console.log("login user called")
   try {
     const response = await fetch("http://localhost:3001/api/login-user", {
       method: "POST",
@@ -45,7 +42,6 @@ export const loginUser = async (email: string, password: string, ) => {
     const data = await response.json();
 
     if (response.ok) {
-      console.log("I'm OK!");
       // Store tokens and user data locally
       return data; // Return user data to handle on the frontend
     } else {

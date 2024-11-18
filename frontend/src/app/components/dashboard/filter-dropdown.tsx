@@ -11,7 +11,7 @@ import {
 import { MixerVerticalIcon } from "@radix-ui/react-icons";
 import { Button } from "../ui/button";
 import { useStore } from "@nanostores/react";
-import { $filters, addFilter, incrementFiltersVersion, removeFilter } from "@/lib/store";
+import { $filters, addFilter, removeFilter } from "@/lib/store";
 import { useState, useEffect } from "react";
 import CategoriesDropdown from "./categories-dropdown";
 
@@ -23,10 +23,9 @@ function FilterDropdown() {
     if (filters.has("favorites")) {
       setFavsFilterActive(true);
     }
-  }, []);
+  }, [filters]);
 
   const toggleFavsFilter = () => {
-    console.log("called")
     if (filters.has("favorites")) {
       removeFilter("favorites");
       setFavsFilterActive(false);
@@ -34,7 +33,6 @@ function FilterDropdown() {
       addFilter("favorites");
       setFavsFilterActive(true);
     }
-    incrementFiltersVersion();
   }
   
   return (

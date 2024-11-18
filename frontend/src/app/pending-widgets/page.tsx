@@ -31,7 +31,6 @@ export default function PendingWidgetsPage() {
   const handleApproveWidget = async (requestId: string) => {
     try {
       const result = await approveWidget(requestId);
-      console.log("hereeee");
       setStatus(result);
       // Remove the approved widget from the list
       setRequests((prevWidgets) =>

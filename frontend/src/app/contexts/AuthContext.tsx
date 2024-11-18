@@ -41,8 +41,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // const token = localStorage.getItem("idToken");
     // const role = localStorage.getItem("role");
-    console.log("idToken:", idToken);
-    console.log("userRole:", userRole);
     if (idToken && userRole) {
       setIsAuthenticated(true);
       // setUserRole(role);

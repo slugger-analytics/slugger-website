@@ -59,7 +59,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Edit Widget</AlertDialogTitle>
           <AlertDialogDescription>
-            Update the widget's details below and save your changes.
+            {"Update the widget's details below and save your changes."}
           </AlertDialogDescription>
         </AlertDialogHeader>
 

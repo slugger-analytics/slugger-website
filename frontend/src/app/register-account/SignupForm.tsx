@@ -45,7 +45,6 @@ export function SignupForm() {
       };
 
       await signUpUser(userData); // This will now call your backend
-      console.log(userData);
       setSubmitStatus({
         message: "Sign up successful! Redirecting...",
         textClass: "text-green-500",

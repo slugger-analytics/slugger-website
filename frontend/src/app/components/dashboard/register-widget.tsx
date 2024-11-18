@@ -14,7 +14,7 @@ export default function RegisterWidget() {
 
   return (
     <Card>
-      <CardHeader>Don't see any widgets?</CardHeader>
+      <CardHeader>{"Don't see any widgets?"}</CardHeader>
       <CardContent className="flex justify-center">
         <Button onClick={handleClick}>Register a widget</Button>
       </CardContent>
