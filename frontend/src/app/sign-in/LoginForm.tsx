@@ -22,7 +22,6 @@ const LoginForm = () => {
     const password = formData.get("password") as string;
 
     try {
-      console.log("i was clicked")
       const result = await loginUser(email, password);
       setUserId(result["user"]["user_id"]);
       setAccessToken(result.accessToken);

@@ -1,7 +1,5 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Input } from "../ui/input";
-import { useState } from "react";
-import { useStore } from "@nanostores/react";
 import { setWidgetQuery } from "@/lib/store";
 
 export default function Search() {
