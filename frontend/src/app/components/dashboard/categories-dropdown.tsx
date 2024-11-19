@@ -39,8 +39,8 @@ function CategoriesDropdown() {
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <DropdownMenuCheckboxItem
-              checked={}
-              onCheckedChange={}
+              //checked={}
+              //onCheckedChange={}
             >
               Favorites
             </DropdownMenuCheckboxItem>
