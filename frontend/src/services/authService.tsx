@@ -11,11 +11,6 @@ export const signUpUser = async (
   lastName: string,
 ) => {
   const clientId = process.env.NEXT_PUBLIC_COGNITO_APP_CLIENT_ID;
-  console.log(
-    "Cognito App Client ID:",
-    process.env.NEXT_PUBLIC_COGNITO_APP_CLIENT_ID,
-  );
-  console.log(clientId);
   if (!clientId) {
     throw new Error("Missing Cognito App Client ID");
   }

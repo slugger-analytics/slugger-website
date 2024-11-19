@@ -13,7 +13,7 @@ const LoginForm = () => {
     textClass: "black",
   });
   const router = useRouter();
-  const { userId, setUserId } = useAuth();
+  const { setUserId, setIdToken, setAccessToken, setUserRole } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -24,6 +24,9 @@ const LoginForm = () => {
     try {
       const result = await loginUser(email, password);
       setUserId(result["user"]["user_id"]);
+      setAccessToken(result.accessToken);
+      setIdToken(result.idToken);
+      setUserRole(result.role);
 
       // Handle successful login and redirect based on user role
       if (result.role === "master") {

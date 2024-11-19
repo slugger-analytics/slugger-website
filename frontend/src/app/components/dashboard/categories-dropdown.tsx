@@ -11,45 +11,36 @@ import {
 import { MixerVerticalIcon } from "@radix-ui/react-icons";
 import { Button } from "../ui/button";
 import { useStore } from "@nanostores/react";
-import { $filters, addFilter, removeFilter } from "@/lib/store";
+import { $activeCategoryIds, $filters, addFilter, removeFilter } from "@/lib/store";
 import { useState, useEffect } from "react";
-import CategoriesDropdown from "./categories-dropdown";
 
-function FilterDropdown() {
-  const [favsFilterActive, setFavsFilterActive] = useState(false);
+function CategoriesDropdown() {
   const filters = useStore($filters);
+  const activeCategories = useStore($activeCategoryIds);
 
-  useEffect(() => {
-    if (filters.has("favorites")) {
-      setFavsFilterActive(true);
-    }
-  }, [filters]);
+  // useEffect(() => {
 
-  const toggleFavsFilter = () => {
-    if (filters.has("favorites")) {
-      removeFilter("favorites");
-      setFavsFilterActive(false);
-    } else {
-      addFilter("favorites");
-      setFavsFilterActive(true);
-    }
-  }
+  // }, []);
+
+  // const toggleFavsFilter = () => {
+
+  // }
   
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="mx-3">
-          <MixerVerticalIcon className="size-6" />
+          Categories
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>Filters</DropdownMenuLabel>
+        <DropdownMenuLabel>Categories</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
             <DropdownMenuCheckboxItem
-              checked={favsFilterActive}
-              onCheckedChange={toggleFavsFilter}
+              checked={}
+              onCheckedChange={}
             >
               Favorites
             </DropdownMenuCheckboxItem>
@@ -58,7 +49,7 @@ function FilterDropdown() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            {/* <CategoriesDropdown /> */}
+            heyyy
           </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
@@ -66,4 +57,4 @@ function FilterDropdown() {
   );
 }
 
-export default FilterDropdown;
+export default CategoriesDropdown;

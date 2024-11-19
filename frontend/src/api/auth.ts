@@ -1,4 +1,4 @@
-import { setUserRole } from "@/lib/store";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export async function signUpUser(data: {
   email: string;
@@ -17,7 +17,6 @@ export async function signUpUser(data: {
     });
 
     const result = await response.json();
-    console.log(result);
     if (!response.ok) {
       throw new Error(result.message || "Failed to sign up");
     }
@@ -29,7 +28,7 @@ export async function signUpUser(data: {
   }
 }
 
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (email: string, password: string, ) => {
   try {
     const response = await fetch("http://alpb-analytics.com/api/login-user", {
       method: "POST",
@@ -43,10 +42,6 @@ export const loginUser = async (email: string, password: string) => {
 
     if (response.ok) {
       // Store tokens and user data locally
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("idToken", data.idToken);
-      localStorage.setItem("role", data.role); // Store role if needed
-      setUserRole(data.role);
       return data; // Return user data to handle on the frontend
     } else {
       throw new Error(data.message || "Login failed");

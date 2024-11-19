@@ -7,6 +7,8 @@ import TextareaInput from "../components/input/TextareaInput";
 import SubmitButton from "../components/input/SubmitButton";
 import SelectField from "../components/input/SelectField";
 import { registerWidget } from "../../api/widget";
+import { useStore } from "@nanostores/react";
+import { useAuth } from "../contexts/AuthContext";
 
 const initialState = {
   message: "",
@@ -15,6 +17,7 @@ const initialState = {
 export function WidgetForm() {
   const [state, setState] = useState(initialState);
   const router = useRouter();
+  const { idToken } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,7 +29,6 @@ export function WidgetForm() {
     });
 
     try {
-      const idToken = localStorage.getItem("idToken");
       if (!idToken) {
         throw new Error("ID Token not found. Please log in again.");
       }
