@@ -28,7 +28,6 @@ export const registerWidget = async (
       },
       body: JSON.stringify(dataToSend),
     });
-    console.log(response);
     if (!response.ok) {
       const data = await response.json();
       throw new Error(data.message || "Failed to register widget");
@@ -72,13 +71,10 @@ export const approveWidget = async (requestId: string): Promise<string> => {
       body: JSON.stringify({ requestId }),
     });
     if (!response.ok) {
-      console.log("Didn't make it :(");
       const data = await response.json();
       throw new Error(data.message || "Failed to approve widget");
     }
-    console.log("Made it");
     const data = await response.json();
-    console.log(data);
     return data.apiKey || `Widget ${requestId} approved.`;
   } catch (error) {
     console.error("Error approving widget:", error);

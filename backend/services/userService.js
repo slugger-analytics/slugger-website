@@ -42,3 +42,19 @@ export async function unfavoriteWidget(userId, widgetId) {
         throw new Error('Failed to unfavorite widget');
     }
 }
+
+export async function getFavorites(userId) {
+    const selectQuery = `
+        SELECT fav_widgets_ids
+        FROM users
+        WHERE user_id = $1
+    `
+    try {
+        const result = await pool.query(selectQuery, [userId]);
+        const data = result.rows[0]?.fav_widgets_ids || [];
+        return { data, message: "Favorite widget ids fetched successfully" };
+    } catch (error) {
+        console.error('Error fetching favorite widget ids:', error);
+        throw new Error('Failed to fetch favorite widget ids');
+    }
+}

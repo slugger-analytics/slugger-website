@@ -18,12 +18,13 @@ import {
 import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Import the dialog component
 import { WidgetType } from "@/data/types";
 import { useStore } from "@nanostores/react";
-import { $targetWidget, setTargetWidget } from "@/lib/store";
+import { $favWidgetIds, setTargetWidget } from "@/lib/store";
+import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
 
 interface WidgetProps extends WidgetType {
   isDev: boolean;
-  onUpdateWidget: () => void;
   visibility: string;
+  isFavorite: boolean;
 }
 
 export default function Widget({
@@ -32,17 +33,21 @@ export default function Widget({
   description,
   imageUrl,
   isDev,
-  onUpdateWidget,
   visibility,
   redirectLink,
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const isFavorite = true; // TODO: add functionality to change this
+  const { toggleFavWidget } = useMutationWidgets(); 
+  const favWidgets = useStore($favWidgetIds);
 
   // Function to handle widget redirection
   const redirect = () => {
     // TODO implement this bryan
   };
+
+  const handleToggleFav = () => {
+    toggleFavWidget(id);
+  }
 
   const handleOpenDialog = () => {
     setTargetWidget({
@@ -90,8 +95,11 @@ export default function Widget({
           <Button className="ml-3" onClick={redirect}>
             Launch
           </Button>
-          <Button variant="ghost">
-            {isFavorite ? <HeartFilledIcon /> : <HeartIcon />}
+          <Button 
+            variant="ghost"
+            onClick={handleToggleFav}  
+          >
+            {favWidgets.has(id) ? <HeartFilledIcon /> : <HeartIcon />}
           </Button>
         </div>
       </CardFooter>
@@ -101,7 +109,6 @@ export default function Widget({
         <EditWidgetDialog
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
-          onSave={onUpdateWidget}
         />
       )}
     </Card>
