@@ -8,8 +8,7 @@ export async function signUpUser(data: {
   role: string;
 }) {
   try {
-    const response = await fetch("http://localhost:3001/api/register-user", {
-      // Update to your backend URL
+    const response = await fetch("http://alpb-analytics.com/api/register-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -31,7 +30,7 @@ export async function signUpUser(data: {
 
 export const loginUser = async (email: string, password: string, ) => {
   try {
-    const response = await fetch("http://localhost:3001/api/login-user", {
+    const response = await fetch("http://alpb-analytics.com/api/login-user", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

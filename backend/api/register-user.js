@@ -28,6 +28,7 @@ router.post('/', async (req, res) => {
   };
 
   try {
+    console.log("I'm failing here")
     // Register the user with Cognito
     const cognitoResult = await cognito.signUp(params).promise();
 
