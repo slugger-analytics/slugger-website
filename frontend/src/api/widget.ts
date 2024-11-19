@@ -99,11 +99,13 @@ export const fetchPendingWidgets = async (): Promise<Request[]> => {
  */
 export const approveWidget = async (requestId: string): Promise<string> => {
   try {
+    //TODO change this back to deployed server
     const response = await fetch("http://alpb-analytics.com/api/approve-widget", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requestId }),
     });
+    console.log({response})
 
     if (!response.ok) {
       const data = await response.json();
