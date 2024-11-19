@@ -1,6 +1,6 @@
 export const addFavorite = async (userId: number, widgetId: number) => {
     try {
-        const response = await fetch(`http://localhost:3001/api/user-favorites/add-favorite/${userId}`, {
+        const response = await fetch(`http://alpb-analytics.com/api/user-favorites/add-favorite/${userId}`, {
             method: 'PATCH',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ widgetId })
@@ -17,7 +17,7 @@ export const addFavorite = async (userId: number, widgetId: number) => {
 
 export const removeFavorite = async (userId: number, widgetId: number) => {
     try {
-        const response = await fetch(`http://localhost:3001/api/user-favorites/remove-favorite/${userId}`, {
+        const response = await fetch(`http://alpb-analytics.com/api/user-favorites/remove-favorite/${userId}`, {
             method: 'PATCH',
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ widgetId })
@@ -34,7 +34,7 @@ export const removeFavorite = async (userId: number, widgetId: number) => {
 
 export const getFavorites = async (userId: number) => {
     try {
-        const response = await fetch(`http://localhost:3001/api/user-favorites/${userId}`);
+        const response = await fetch(`http://alpb-analytics.com/api/user-favorites/${userId}`);
         const jsoned = await response.json();
         const data = jsoned.data;
         return data;
