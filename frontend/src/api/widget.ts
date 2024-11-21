@@ -105,7 +105,6 @@ export const approveWidget = async (requestId: string): Promise<string> => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ requestId }),
     });
-    console.log({response})
 
     if (!response.ok) {
       const data = await response.json();
