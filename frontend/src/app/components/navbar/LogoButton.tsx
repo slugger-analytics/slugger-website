@@ -12,12 +12,17 @@ import React from "react";
 import { useRouter } from "next/navigation"; // Next.js hook for client-side navigation
 import Image from "next/image"; // Optimized image component from Next.js
 
+type LogoButtonProps = {
+  width: number;
+  height: number;
+}
+
 /**
  * LogoButton Component
  *
  * @returns {JSX.Element} - The JSX representation of a button with a logo.
  */
-export default function LogoButton() {
+export default function LogoButton({ width, height }: LogoButtonProps) {
   const router = useRouter(); // Hook to access the Next.js router
 
   /**
@@ -29,18 +34,17 @@ export default function LogoButton() {
   };
 
   return (
-    <button
-      className="h-10 w-12 relative" // Utility classes for button dimensions and positioning
-      onClick={handleClick} // Attach the click handler
+    <div
+      onClick={handleClick}
+      style={{
+        width: width,
+        height: height,
+        cursor: 'pointer',
+      }}
+      className="flex justify-center items-center"
     >
-      {/* Logo Image */}
-      <Image
-        src="/alpb-logo.png" // Path to the logo image
-        alt="ALPB logo" // Alternative text for accessibility
-        fill={true} // Allows the image to fill the container
-        sizes="(max-width: 768px) 100vw" // Responsive sizes for image optimization
-      />
-    </button>
+      <Image src="/alpb-logo.png" alt="ALPB Logo" width={width} height={height} />
+    </div>
   );
 }
 

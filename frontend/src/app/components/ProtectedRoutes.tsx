@@ -11,6 +11,7 @@
 import { useEffect } from "react"; // React hook for managing side effects
 import { useRouter } from "next/navigation"; // Next.js router for client-side navigation
 import { useAuth } from "../contexts/AuthContext"; // Custom authentication context
+import Loading from "./layout/loading";
 
 /**
  * Props for the ProtectedRoute Component
@@ -47,7 +48,7 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
 
   // Display a loading message while authentication state is being determined
   if (loading) {
-    return <p>Loading...</p>;
+    return <Loading />
   }
 
   // Render the children if the user is authenticated
