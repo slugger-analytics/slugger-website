@@ -6,7 +6,7 @@ import Navbar from "../components/navbar/Navbar";
 export default function Home() {
   return (
     // Define the body of the HTML document
-    <body>
+    <div>
       {/* Render the Navbar component */}
       <Navbar />
       {/* Center the content horizontally */}
@@ -24,6 +24,6 @@ export default function Home() {
           </main>
         </div>
       </div>
-    </body>
+    </div>
   );
 }

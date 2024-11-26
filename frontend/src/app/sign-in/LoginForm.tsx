@@ -13,6 +13,7 @@ import {
 } from "@/app/components/ui/card"
 import { Input } from "@/app/components/ui/input"
 import Image from "next/image";
+import LogoButton from "../components/navbar/LogoButton";
 
 const LoginForm = () => {
   const [submitStatus, setSubmitStatus] = useState({
@@ -59,7 +60,10 @@ const LoginForm = () => {
   return (
     <Card className="w-[450px] pb-5 px-5">
       <CardHeader className="flex flex-col items-center justify-center">
-        <Image src="/alpb-logo.png" alt="ALPB Logo" width="70" height="70" className="mb-3"/>
+        <div className="mb-2">
+          <LogoButton width={70} height={70}/>
+        </div>
+
         <CardDescription>Sign in to continue to ALPB Analytics</CardDescription>
       </CardHeader>
       <CardContent>
@@ -75,7 +79,7 @@ const LoginForm = () => {
           <SubmitButton btnText="Continue" className="mt-8" />
         </form>
       </CardContent>
-      <div className="flex justify-center text-sm" style={{ height: "1.5rem" }}>
+      <div className="flex justify-center text-sm">
         <p className={submitStatus.textClass}>{submitStatus.message}</p>
       </div>
     </Card>
