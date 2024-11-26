@@ -80,6 +80,7 @@ export async function generateApiKeyForUser(user_id, email) {
 
     try {
         const apiKey = await apiGateway.createApiKey(params).promise();
+        console.log({apiKey});
 
         if (!apiKey.id) {
             throw new Error('Failed to generate API key: no ID returned');
@@ -100,7 +101,7 @@ export async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
         keyType: 'API_KEY',
         usagePlanId: usagePlanId
     };
-
+    console.log({params});
     try {
         await apiGateway.createUsagePlanKey(params).promise();
         console.log('API Key associated with Usage Plan');
