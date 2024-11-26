@@ -12,7 +12,6 @@ import {
   CardHeader,
 } from "@/app/components/ui/card"
 import { Input } from "@/app/components/ui/input"
-import Image from "next/image";
 import LogoButton from "../components/navbar/LogoButton";
 
 const LoginForm = () => {
@@ -63,7 +62,6 @@ const LoginForm = () => {
         <div className="mb-2">
           <LogoButton width={70} height={70}/>
         </div>
-
         <CardDescription>Sign in to continue to ALPB Analytics</CardDescription>
       </CardHeader>
       <CardContent>
