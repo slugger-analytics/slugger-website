@@ -10,6 +10,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button"; // Styled button component
 import Image from "next/image"; // Next.js image optimization component
 import { HeartIcon, HeartFilledIcon, AngleIcon } from "@radix-ui/react-icons"; // Radix UI icons
+import { useRouter } from "next/router";
 import {
   Card,
   CardContent,
@@ -61,13 +62,19 @@ export default function Widget({
   const { toggleFavWidget } = useMutationWidgets(); // Custom hook for toggling favorites
   const favWidgets = useStore($favWidgetIds); // Global state for favorite widgets
 
+  const router = useRouter();
   /**
    * Handles widget redirection.
    * @TODO Implement redirect logic.
    */
   const redirect = () => {
-    console.log("Redirect to:", redirectLink); // Placeholder for redirection logic
+    if (redirectLink) {
+      router.push(redirectLink);
+    } else {
+      console.error("Redirect link is missing or invalid.");
+    }
   };
+  
 
   /**
    * Toggles the widget's favorite status.
