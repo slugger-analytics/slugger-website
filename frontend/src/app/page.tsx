@@ -1,6 +1,5 @@
 "use client";
 
-import Navbar from "./components/navbar/Navbar";
 import Link from "next/link";
 import { AuthProvider } from "./contexts/AuthContext";
 import {
@@ -13,7 +12,6 @@ import {
 export default function Home() {
   return (
     <AuthProvider>
-      <Navbar />
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 py-10 px-4">
         <Card className="w-[500px] shadow-lg">
           <CardHeader className="flex flex-col items-center justify-center">
@@ -51,4 +49,3 @@ export default function Home() {
     </AuthProvider>
   );
 }
-

@@ -10,7 +10,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button"; // Styled button component
 import Image from "next/image"; // Next.js image optimization component
 import { HeartIcon, HeartFilledIcon, AngleIcon } from "@radix-ui/react-icons"; // Radix UI icons
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -75,7 +75,6 @@ export default function Widget({
     }
   };
   
-
   /**
    * Toggles the widget's favorite status.
    */

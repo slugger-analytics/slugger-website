@@ -11,3 +11,10 @@ export type WidgetType = {
   categoryIds?: number[];
   developerIds?: string[];
 };
+
+export type UserType = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  accountType: string;
+}

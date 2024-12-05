@@ -198,7 +198,7 @@ export const updateWidget = async ({
   description,
   redirectLink,
   visibility,
-  imageUrl
+  imageUrl,
 }: WidgetType): Promise<Response> => {
   try {
     const response = await fetch(`${API_URL}/api/edit-widget/${id}`, {
@@ -206,7 +206,13 @@ export const updateWidget = async ({
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ name, description, redirectLink, visibility, imageUrl }),
+      body: JSON.stringify({
+        name,
+        description,
+        redirectLink,
+        visibility,
+        imageUrl,
+      }),
     });
 
     if (!response.ok) {

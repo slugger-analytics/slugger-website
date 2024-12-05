@@ -132,10 +132,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
 
           <div>
             <Label>Icon</Label>
-            <IconSelector 
-              setImgUrl={setImageUrl}
-              imgUrl={imageUrl}
-            />
+            <IconSelector setImgUrl={setImageUrl} imgUrl={imageUrl} />
           </div>
 
           {/* Visibility Options */}
