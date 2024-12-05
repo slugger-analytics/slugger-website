@@ -3,8 +3,8 @@
 /**
  * ProtectedRoute Component
  *
- * A higher-order component (HOC) that wraps around protected content to enforce authentication 
- * and optional role-based access control. Redirects unauthenticated users to the sign-in page 
+ * A higher-order component (HOC) that wraps around protected content to enforce authentication
+ * and optional role-based access control. Redirects unauthenticated users to the sign-in page
  * and unauthorized users to an unauthorized access page.
  */
 
@@ -48,7 +48,7 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
 
   // Display a loading message while authentication state is being determined
   if (loading) {
-    return <Loading />
+    return <Loading />;
   }
 
   // Render the children if the user is authenticated
@@ -56,4 +56,3 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
 };
 
 export default ProtectedRoute;
-

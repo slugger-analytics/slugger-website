@@ -28,6 +28,7 @@ const router = express.Router(); // Create a new Express router instance
  */
 router.post('/', async (req, res) => {
     const { requestId } = req.body; // Extract requestId from the request body
+    console.log({requestId})
     try { 
         // Retrieve the request data based on requestId
         const requestData = await getRequestData(requestId);

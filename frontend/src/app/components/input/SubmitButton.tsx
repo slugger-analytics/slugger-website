@@ -46,4 +46,3 @@ export default function SubmitButton({ btnText, className }: InputProps) {
     </Button>
   );
 }
-
