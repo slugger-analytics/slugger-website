@@ -82,6 +82,8 @@ export async function generateApiKeyForUser(user_id, email) {
         stageKeys: [], // You can specify stages if needed
     };
 
+    DEBUG && logWithFunctionName(params);
+
     try {
         const apiKey = await apiGateway.createApiKey(params).promise();
         DEBUG && logWithFunctionName(apiKey);
@@ -92,7 +94,7 @@ export async function generateApiKeyForUser(user_id, email) {
         await saveApiKeyToDatabase(user_id, apiKey.id);
         return apiKey.id;
     } catch (err) {
-        console.log('Error generating API Key:', err);
+        DEBUG && logWithFunctionName(err);
         throw new Error('Failed to generate API key');
     }
 }
