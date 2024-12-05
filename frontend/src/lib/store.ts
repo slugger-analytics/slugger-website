@@ -1,6 +1,7 @@
-import { atom } from "nanostores";
-import { WidgetType } from "@/data/types";
-import { logger } from '@nanostores/logger';
+import { atom, map } from "nanostores";
+import { UserType, WidgetType } from "@/data/types";
+import { logger } from "@nanostores/logger";
+import { User } from "aws-sdk/clients/budgets";
 
 // Allow debug messages
 const DEBUG = false;
@@ -10,6 +11,13 @@ const emptyWidget: WidgetType = {
   name: "empty widget",
 };
 
+const emptyUser: UserType = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  accountType: "",
+}
+
 export const $widgets = atom<WidgetType[]>([]);
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
@@ -18,6 +26,7 @@ export const $filters = atom<Set<string>>(new Set());
 export const $activeCategoryIds = atom<Set<number>>(new Set([1, 2, 3]));
 export const $widgetsVersion = atom<number>(0);
 export const $filtersVersion = atom<number>(0);
+export const $user = map<UserType>(emptyUser);
 
 // Adds a new widget to the $widgets store and increments the widgets version
 export function addWidget(widget: WidgetType) {
@@ -45,7 +54,7 @@ export function updateStoreWidget({
   description,
   visibility,
   redirectLink,
-  imageUrl
+  imageUrl,
 }: WidgetType) {
   $widgets.set(
     $widgets.get().map((widget) => {
@@ -135,7 +144,13 @@ export function incrementWidgetsVersion() {
   $widgetsVersion.set($widgetsVersion.get() + 1);
 }
 
+export function setUser(user: UserType) {
+  $user.set(user);
+}
+
 // Logger for nanostores
-let destroy = DEBUG && logger({
-  'Widgets': $widgets
-})
+let destroy =
+  DEBUG &&
+  logger({
+    Widgets: $widgets,
+  });
