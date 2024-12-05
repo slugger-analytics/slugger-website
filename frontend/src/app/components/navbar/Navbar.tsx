@@ -62,4 +62,3 @@ export default function Navbar({ initials }: InputProps) {
     </div>
   );
 }
-

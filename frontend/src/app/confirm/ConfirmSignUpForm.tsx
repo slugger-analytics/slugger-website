@@ -10,8 +10,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/components/ui/card"
-import { Input } from "@/app/components/ui/input"
+} from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
 
 // Component for confirming sign-up
 export function ConfirmSignUpForm() {
@@ -57,10 +57,15 @@ export function ConfirmSignUpForm() {
     <Card>
       <CardHeader className="flex items-center justify-center">
         <CardTitle>You&apos;re almost there</CardTitle>
-        <CardDescription>Check your email for a confirmation code</CardDescription>
+        <CardDescription>
+          Check your email for a confirmation code
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="flex flex-col items-center w-80">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col items-center w-80"
+        >
           <div className="grid w-full items-center gap-4">
             {/* Input field for email */}
             <Input
@@ -84,13 +89,17 @@ export function ConfirmSignUpForm() {
             <SubmitButton btnText="Confirm Sign Up" />
             {/* Display submission status message */}
             <div className="flex justify-center text-sm">
-              <p className={`my-2 ${submitStatus.textClass}`} role="status" aria-live="polite">{submitStatus.message}</p>
+              <p
+                className={`my-2 ${submitStatus.textClass}`}
+                role="status"
+                aria-live="polite"
+              >
+                {submitStatus.message}
+              </p>
             </div>
           </div>
         </form>
-
       </CardContent>
     </Card>
-
   );
 }

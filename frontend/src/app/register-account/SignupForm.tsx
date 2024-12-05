@@ -12,10 +12,17 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/app/components/ui/card"
-import { Input } from "@/app/components/ui/input"
+} from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { Separator } from "@/app/components/ui/separator";
 import Image from "next/image";
 import LogoButton from "../components/navbar/LogoButton";
@@ -34,7 +41,7 @@ export function SignupForm() {
 
     setSubmitStatus({
       message: "",
-      textClass: "text-black",
+      textClass: "text-gray-600",
     });
 
     const formData = new FormData(event.currentTarget);
@@ -94,7 +101,9 @@ export function SignupForm() {
         <div className="mb-2">
           <LogoButton width={70} height={70} />
         </div>
-        <CardTitle className="text-alpbBlue">Get started with ALPB Analytics</CardTitle>
+        <CardTitle className="text-alpbBlue">
+          Get started with ALPB Analytics
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit}>
@@ -150,16 +159,15 @@ export function SignupForm() {
             <Separator className="my-4" />
             <div className="flex flex-col space-y-1.5">
               {/* <Label htmlFor="account-type">Account type</Label> */}
-              <Select
-                name="account-type"
-                required={true}
-              >
+              <Select name="account-type" required={true}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select an account type"/>
+                  <SelectValue placeholder="Select an account type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="widget developer">Widget Developer</SelectItem>
+                    <SelectItem value="widget developer">
+                      Widget Developer
+                    </SelectItem>
                     <SelectItem value="league">League</SelectItem>
                     <SelectItem value="master">Master</SelectItem>
                   </SelectGroup>
@@ -174,6 +182,5 @@ export function SignupForm() {
         <p className={submitStatus?.textClass}>{submitStatus?.message}</p>
       </div>
     </Card>
-
   );
 }

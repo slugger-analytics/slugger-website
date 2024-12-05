@@ -2,7 +2,6 @@
 import { ConfirmSignUpForm } from "./ConfirmSignUpForm";
 import Navbar from "../components/navbar/Navbar";
 
-
 // Define the Home component as the default export
 export default function Home() {
   return (
@@ -12,5 +11,5 @@ export default function Home() {
         <ConfirmSignUpForm />
       </div>
     </div>
-  )
+  );
 }

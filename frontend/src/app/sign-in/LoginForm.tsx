@@ -10,8 +10,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-} from "@/app/components/ui/card"
-import { Input } from "@/app/components/ui/input"
+} from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
 import LogoButton from "../components/navbar/LogoButton";
 
 const LoginForm = () => {
@@ -23,17 +23,14 @@ const LoginForm = () => {
   const { setUserId, setIdToken, setAccessToken, setUserRole } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    console.log("Submitted")
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    console.log({email, password})
-
     try {
       setSubmitStatus({
-        message: "Loading...", // Display error message on login failure
+        message: "Loading...",
         textClass: "text-gray-600",
       });
       const result = await loginUser(email, password);
@@ -60,7 +57,7 @@ const LoginForm = () => {
     <Card className="w-[450px] pb-5 px-5">
       <CardHeader className="flex flex-col items-center justify-center">
         <div className="mb-2">
-          <LogoButton width={70} height={70}/>
+          <LogoButton width={70} height={70} />
         </div>
         <CardDescription>Sign in to continue to ALPB Analytics</CardDescription>
       </CardHeader>
@@ -68,10 +65,20 @@ const LoginForm = () => {
         <form onSubmit={handleSubmit}>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
-              <Input name="email" type="email" required={true} placeholder="Email" />
+              <Input
+                name="email"
+                type="email"
+                required={true}
+                placeholder="Email"
+              />
             </div>
             <div className="flex flex-col space-y-1.5">
-              <Input name="password" type="password" required={true} placeholder="Password" />
+              <Input
+                name="password"
+                type="password"
+                required={true}
+                placeholder="Password"
+              />
             </div>
           </div>
           <SubmitButton btnText="Continue" className="mt-8" />
