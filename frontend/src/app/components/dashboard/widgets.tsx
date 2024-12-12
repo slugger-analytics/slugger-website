@@ -19,6 +19,7 @@ import {
   $filters,
   $widgetQuery,
   $widgetsVersion,
+  $user,
 } from "@/lib/store"; // Nanostores for managing application state
 import { useStore } from "@nanostores/react"; // Hook to access the store
 
@@ -37,11 +38,15 @@ export default function Widgets() {
 
   // Accessing global store values using nanostores
   const widgetsVersion = useStore($widgetsVersion);
-  const { userId, userRole } = useAuth();
   const favWidgetIds = useStore($favWidgetIds);
   const filtersVersion = useStore($filtersVersion);
   const widgetQuery = useStore($widgetQuery);
   const filters = useStore($filters);
+  const user = useStore($user);
+
+  useEffect(() => {
+    console.log(widgets);
+  }, [widgets])
 
   /**
    * Sets the user role (whether the user is a "Widget Developer").
@@ -49,7 +54,7 @@ export default function Widgets() {
    */
   const setUserRole = async () => {
     try {
-      if (userRole.toLowerCase() === "widget developer") {
+      if (user.role.toLowerCase() === "widget developer") {
         setIsDev(true); // Set to true if the user is a widget developer
       } else {
         setIsDev(false); // Set to false for other roles
@@ -64,7 +69,7 @@ export default function Widgets() {
   // Set user role whenever userId or userRole changes
   useEffect(() => {
     setUserRole();
-  }, [userId, userRole]);
+  }, [user.id, user.role]);
 
   /**
    * Filters the widgets based on:
@@ -96,7 +101,7 @@ export default function Widgets() {
 
       // If the user is a widget developer, only show widgets they created
       if (isDev) {
-        if (userId && widget.developerIds?.includes(userId)) {
+        if (user.id && widget.developerIds?.includes(String(user.id))) {
           return true; // Widget is created by the current user
         }
         return false; // Widget is not created by the current user
@@ -112,7 +117,7 @@ export default function Widgets() {
     favWidgetIds,
     widgetQuery,
     isDev,
-    userId,
+    user,
     filters,
   ]);
 

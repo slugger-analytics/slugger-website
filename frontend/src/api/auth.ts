@@ -6,7 +6,7 @@ dotenv.config();
  * Frontend API utility functions for user authentication and management.
  * Includes functions to sign up and log in users via the backend API.
  */
-
+const DEBUG = false;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
@@ -29,6 +29,7 @@ export async function signUpUser(data: {
   role: string;
 }) {
   try {
+    const startTime = performance.now();
     const response = await fetch(`${API_URL}/api/register-user`, {
       method: "POST", // HTTP POST request
       headers: {
@@ -36,6 +37,9 @@ export async function signUpUser(data: {
       },
       body: JSON.stringify(data), // Convert user data to JSON format
     });
+    const endTime = performance.now();
+    const authTime = endTime - startTime;
+    DEBUG && console.log(`Time to sign up: ${authTime}`);
 
     const result = await response.json(); // Parse the JSON response
 
@@ -61,6 +65,7 @@ export async function signUpUser(data: {
  */
 export const loginUser = async (email: string, password: string) => {
   try {
+    const startTime = performance.now();
     const response = await fetch(`${API_URL}/api/login-user`, {
       method: "POST", // HTTP POST request
       headers: {
@@ -68,6 +73,9 @@ export const loginUser = async (email: string, password: string) => {
       },
       body: JSON.stringify({ email, password }), // Convert credentials to JSON format
     });
+    const endTime = performance.now();
+    const authTime = endTime - startTime;
+    DEBUG && console.log(`Time to sign in: ${authTime}`);
 
     const data = await response.json(); // Parse the JSON response
 

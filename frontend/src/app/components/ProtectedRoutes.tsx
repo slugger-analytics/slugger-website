@@ -12,6 +12,8 @@ import { useEffect } from "react"; // React hook for managing side effects
 import { useRouter } from "next/navigation"; // Next.js router for client-side navigation
 import { useAuth } from "../contexts/AuthContext"; // Custom authentication context
 import Loading from "./layout/loading";
+import { useStore } from "@nanostores/react";
+import { $user } from "@/lib/store";
 
 /**
  * Props for the ProtectedRoute Component
@@ -31,7 +33,8 @@ interface ProtectedRouteProps {
  * @returns {JSX.Element | null} - Protected content or a redirect based on authentication and role.
  */
 const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
-  const { isAuthenticated, userRole, loading } = useAuth(); // Custom hook for authentication state
+  const { isAuthenticated, loading } = useAuth(); // Custom hook for authentication state
+  const user = useStore($user);
   const router = useRouter(); // Next.js router instance
 
   useEffect(() => {
@@ -39,12 +42,12 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
       if (!isAuthenticated) {
         // Redirect unauthenticated users to the sign-in page
         router.push("/sign-in");
-      } else if (role && userRole !== role) {
+      } else if (role && user.role.toLowerCase() !== role) {
         // Redirect users without the required role to the unauthorized page
         router.push("/unauthorized");
       }
     }
-  }, [isAuthenticated, userRole, loading, router, role]);
+  }, [isAuthenticated, user.role, loading, router, role]);
 
   // Display a loading message while authentication state is being determined
   if (loading) {

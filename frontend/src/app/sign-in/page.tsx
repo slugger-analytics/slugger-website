@@ -1,5 +1,4 @@
 import LoginForm from "./LoginForm";
-import Navbar from "../components/navbar/Navbar";
 import Link from "next/link";
 
 export default function SignIn() {

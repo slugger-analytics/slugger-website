@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@nanostores/logger": "^0.4.0",
+    "@nanostores/persistent": "^0.10.2",
     "@nanostores/react": "^0.8.0",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-avatar": "^1.1.1",

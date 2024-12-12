@@ -13,6 +13,8 @@ import {
 } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import LogoButton from "../components/navbar/LogoButton";
+import { setUser } from "@/lib/store";
+import { UserAPIResType } from "@/data/types";
 
 const LoginForm = () => {
   const [submitStatus, setSubmitStatus] = useState({
@@ -20,7 +22,7 @@ const LoginForm = () => {
     textClass: "text-gray-600",
   });
   const router = useRouter();
-  const { setUserId, setIdToken, setAccessToken, setUserRole } = useAuth();
+  const { setIdToken, setAccessToken } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,14 +35,14 @@ const LoginForm = () => {
         message: "Loading...",
         textClass: "text-gray-600",
       });
-      const result = await loginUser(email, password);
-      setUserId(result["user"]["user_id"]); // Set the user ID in the context
-      setAccessToken(result.accessToken); // Set the access token in the context
-      setIdToken(result.idToken); // Set the ID token in the context
-      setUserRole(result.role); // Set the user role in the context
+      const result: UserAPIResType = await loginUser(email, password);
+      // TODO set user info here!!!
+      setUser(result.user);
+      setAccessToken(result.authData.accessToken); // Set the access token in the context
+      setIdToken(result.authData.idToken); // Set the ID token in the context
 
       // Handle successful login and redirect based on user role
-      if (result.role === "master") {
+      if (result.user.role === "master") {
         router.push("/pending-widgets"); // Redirect to pending widgets page for master role
       } else {
         router.push("/dashboard"); // Redirect to dashboard for other roles

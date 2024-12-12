@@ -1,6 +1,7 @@
 import { WidgetType } from "@/data/types";
 import {
   $favWidgetIds,
+  $user,
   addFavWidgetId,
   removeFavWidgetId,
   updateStoreWidget,
@@ -11,7 +12,7 @@ import { addFavorite, removeFavorite } from "@/api/user";
 import { useStore } from "@nanostores/react";
 
 function useMutationWidgets() {
-  const { userId } = useAuth(); // Get the userId from the AuthContext
+  const user = useStore($user);
   const favWidgetIds = useStore($favWidgetIds); // Get the favorite widget IDs from the store
 
   const editWidget = async ({
@@ -46,13 +47,12 @@ function useMutationWidgets() {
 
   const toggleFavWidget = async (widgetId: number) => {
     try {
-      const id = parseInt(userId); // Convert userId to an integer
       if (favWidgetIds.has(widgetId)) {
-        await removeFavorite(id, widgetId); // Remove widget from favorites
+        await removeFavorite(user.id, widgetId); // Remove widget from favorites
         removeFavWidgetId(widgetId); // Update the store to reflect removal
         return "removed";
       } else {
-        await addFavorite(id, widgetId); // Add widget to favorites
+        await addFavorite(user.id, widgetId); // Add widget to favorites
         addFavWidgetId(widgetId); // Update the store to reflect addition
         return "added";
       }
