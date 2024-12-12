@@ -2,25 +2,13 @@
 
 import * as React from "react";
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
   Search,
-  Sparkles,
   Home,
-  Inbox
+  Inbox,
+  BookOpenCheck
 } from "lucide-react";
 
-import { NavProjects } from "@/app/components/nav-projects";
 import { NavUser } from "@/app/components/nav-user";
-import { TeamSwitcher } from "@/app/components/team-switcher";
 import { NavMain } from "@/app/components/nav-main";
 import {
   Sidebar,
@@ -33,70 +21,40 @@ import {
   SidebarMenuButton,
 } from "@/app/components/ui/sidebar";
 import Image from "next/image";
+import { useStore } from "@nanostores/react";
+import { $user } from "@/lib/store";
 
 // This is sample data.
-const data = {
-  user: {
-    name: "David Benjamin",
-    email: "dbenjam9@jh.edu",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "ALPB Analytics",
-      logo: GalleryVerticalEnd,
-      plan: "Developer",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Search",
-      url: "#",
-      icon: Search,
-    },
+
+
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const user = useStore($user);
+  const [roleDisplay, setRoleDisplay] = React.useState("");
+  const [navMain, setNavMain] = React.useState([
     {
       title: "Home",
-      url: "#",
+      url: "/dashboard",
       icon: Home,
       isActive: true,
     },
     {
-      title: "Inbox",
-      url: "#",
-      icon: Inbox,
-      badge: "10",
+      title: "Register Widget",
+      url: "/register-widget",
+      icon: BookOpenCheck,
+      isActive: false,
     },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-};
+  ]);
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  React.useEffect(() => {
+    if (user.role.toLowerCase() === "widget developer") {
+      setRoleDisplay("Developer Account");
+    } else if (user.role.toLowerCase() === "master") {
+      setRoleDisplay("Master Account");
+    } else {
+      setRoleDisplay("League Account");
+    }
+  }, [user.role]);
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -115,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">ALPB Analytics</span>
-                  <span className="font-normal">Developer Account</span>
+                  <span className="font-normal">{roleDisplay}</span>
                 </div>
               </a>
             </SidebarMenuButton>
@@ -123,10 +81,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

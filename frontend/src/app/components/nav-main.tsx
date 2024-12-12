@@ -1,74 +1,54 @@
-"use client";
+"use client"
 
-import { type LucideIcon } from "lucide-react";
+import { type LucideIcon } from "lucide-react"
 
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/app/components/ui/collapsible";
-import {
-  SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from "@/app/components/ui/sidebar";
-import { ChevronRightIcon } from "@radix-ui/react-icons";
+} from "@/app/components/ui/sidebar"
+import { useRouter } from "next/navigation"
+import { useStore } from "@nanostores/react"
+import { $user } from "@/lib/store"
+import { useAuth } from "../contexts/AuthContext"
+import { Button } from "./ui/button"
 
 export function NavMain({
   items,
 }: {
   items: {
-    title: string;
-    url: string;
-    icon?: LucideIcon;
-    isActive?: boolean;
-    items?: {
-      title: string;
-      url: string;
-    }[];
-  }[];
+    title: string
+    url: string
+    icon: LucideIcon
+    isActive?: boolean
+  }[]
 }) {
+  const router = useRouter();
+  const user = useStore($user);
+  const { isAuthenticated } = useAuth();
+
+  const handleRedirect = (url: string) => {
+    router.push(url);
+  };
+
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => (
-          <Collapsible
-            key={item.title}
-            asChild
-            defaultOpen={item.isActive}
-            className="group/collapsible"
-          >
-            <SidebarMenuItem>
-              <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.title}>
-                  {item.icon && <item.icon />}
-                  <span>{item.title}</span>
-                  <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                </SidebarMenuButton>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarMenuSub>
-                  {item.items?.map((subItem) => (
-                    <SidebarMenuSubItem key={subItem.title}>
-                      <SidebarMenuSubButton asChild>
-                        <a href={subItem.url}>
-                          <span>{subItem.title}</span>
-                        </a>
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              </CollapsibleContent>
-            </SidebarMenuItem>
-          </Collapsible>
-        ))}
-      </SidebarMenu>
-    </SidebarGroup>
-  );
+    <SidebarMenu>
+      {items.map((item) =>
+        item.title !== "Register Widget" || user.role.toLowerCase() === "widget developer" ? (
+          <SidebarMenuItem key={item.title}>
+            <SidebarMenuButton
+              asChild
+              onClick={() => handleRedirect(item.url)}
+            >
+              <button className="flex items-start p-5">
+                <item.icon />
+                <span>{item.title}</span>
+              </button>
+
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ) : null
+      )}
+    </SidebarMenu>
+  )
 }

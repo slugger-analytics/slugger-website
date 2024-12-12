@@ -1,7 +1,7 @@
 import { atom, map } from "nanostores";
+import { persistentMap } from '@nanostores/persistent'
 import { UserType, WidgetType } from "@/data/types";
 import { logger } from "@nanostores/logger";
-import { User } from "aws-sdk/clients/budgets";
 
 // Allow debug messages
 const DEBUG = false;
@@ -11,13 +11,6 @@ const emptyWidget: WidgetType = {
   name: "empty widget",
 };
 
-const emptyUser: UserType = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  accountType: "",
-}
-
 export const $widgets = atom<WidgetType[]>([]);
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
@@ -26,7 +19,6 @@ export const $filters = atom<Set<string>>(new Set());
 export const $activeCategoryIds = atom<Set<number>>(new Set([1, 2, 3]));
 export const $widgetsVersion = atom<number>(0);
 export const $filtersVersion = atom<number>(0);
-export const $user = map<UserType>(emptyUser);
 
 // Adds a new widget to the $widgets store and increments the widgets version
 export function addWidget(widget: WidgetType) {
@@ -144,13 +136,30 @@ export function incrementWidgetsVersion() {
   $widgetsVersion.set($widgetsVersion.get() + 1);
 }
 
+////////////////////
+/////// User ///////
+////////////////////
+const emptyUser: UserType = {
+  id: "",
+  first: "",
+  last: "",
+  email: "",
+  role: "",
+}
+
+export const $user = persistentMap<UserType>("user:", emptyUser);
+
 export function setUser(user: UserType) {
   $user.set(user);
+}
+
+export function clearUser() {
+  $user.set(emptyUser);
 }
 
 // Logger for nanostores
 let destroy =
   DEBUG &&
   logger({
-    Widgets: $widgets,
+    User: $user
   });

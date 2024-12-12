@@ -1,11 +1,9 @@
 import React from "react";
 import { CiCircleCheck } from "react-icons/ci";
-import Navbar from "../components/navbar/Navbar";
 
 export default function page() {
   return (
     <div>
-      <Navbar initials={"DB"} /> {/* Navbar component with initials prop */}
       <div className="flex flex-col justify-center items-center m-20">
         <h1>Thank you!</h1>
         <p className="text-m">We recieved your registration form.</p>

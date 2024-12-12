@@ -6,15 +6,26 @@ export type WidgetType = {
   visibility?: string;
   status?: string;
   createdAt?: string;
-  redirectLink?: string;
+  redirectUrl?: string;
   imageUrl?: string;
   categoryIds?: number[];
   developerIds?: string[];
 };
 
 export type UserType = {
-  firstName: string;
-  lastName: string;
+  id: string;
+  first: string;
+  last: string;
   email: string;
-  accountType: string;
+  role: string;
+}
+
+export type UserAPIResType = {
+  authData: {
+    accessToken: string;
+    idToken: string;
+    refreshToken: string;
+    cognitoUserId: string;
+  },
+  user: UserType;
 }

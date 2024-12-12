@@ -56,7 +56,7 @@ export default function Widget({
   imageUrl,
   isDev,
   visibility,
-  redirectLink,
+  redirectUrl,
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Local state for dialog visibility
   const { toggleFavWidget } = useMutationWidgets(); // Custom hook for toggling favorites
@@ -68,8 +68,8 @@ export default function Widget({
    * @TODO Implement redirect logic.
    */
   const redirect = () => {
-    if (redirectLink) {
-      router.push(redirectLink);
+    if (redirectUrl) {
+      router.push(redirectUrl);
     } else {
       console.error("Redirect link is missing or invalid.");
     }
@@ -93,7 +93,7 @@ export default function Widget({
       description,
       imageUrl,
       visibility,
-      redirectLink,
+      redirectUrl,
     });
     setIsDialogOpen(true);
   };
