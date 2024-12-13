@@ -44,10 +44,6 @@ export default function Widgets() {
   const filters = useStore($filters);
   const user = useStore($user);
 
-  useEffect(() => {
-    console.log(widgets);
-  }, [widgets])
-
   /**
    * Sets the user role (whether the user is a "Widget Developer").
    * Based on the user's role, it adjusts the `isDev` state to control widget visibility.

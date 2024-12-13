@@ -45,7 +45,7 @@ export function updateStoreWidget({
   name,
   description,
   visibility,
-  redirectLink,
+  redirectUrl,
   imageUrl,
 }: WidgetType) {
   $widgets.set(
@@ -56,7 +56,7 @@ export function updateStoreWidget({
           ...(name !== undefined && { name }),
           ...(description !== undefined && { description }),
           ...(visibility !== undefined && { visibility }),
-          ...(redirectLink !== undefined && { redirectLink }),
+          ...(redirectUrl !== undefined && { redirectUrl }),
           ...(imageUrl !== undefined && { imageUrl }),
         };
       } else {
