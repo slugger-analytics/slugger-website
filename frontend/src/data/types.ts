@@ -1,16 +1,28 @@
+interface APIResponse<T = undefined> {
+  success: boolean;
+  message: string;
+  data?: T;
+}
+
 // The shape of the data for a widget
-export type WidgetType = {
+export interface WidgetType {
   id: number;
   name: string;
   description?: string;
   visibility?: string;
   status?: string;
   createdAt?: string;
-  redirectUrl?: string;
+  redirectLink?: string;
   imageUrl?: string;
   categoryIds?: number[];
   developerIds?: string[];
-};
+}
+
+export interface RegisterWidgetDataType {
+  widgetName: string; // The name of the widget
+  description: string; // A description of the widget
+  visibility: string; // Visibility status ('Public', 'Private', etc.)
+}
 
 export type UserType = {
   id: string;
@@ -18,7 +30,7 @@ export type UserType = {
   last: string;
   email: string;
   role: string;
-}
+};
 
 export type UserAPIResType = {
   authData: {
@@ -26,6 +38,19 @@ export type UserAPIResType = {
     idToken: string;
     refreshToken: string;
     cognitoUserId: string;
-  },
+  };
   user: UserType;
+};
+
+export interface PendingWidget {
+  request_id: string;
+  widget_name: string;
+  description: string;
+  visibility: string;
+  status: string;
+  created_at: string;
+  approved_at: string;
+  user_id: string;
 }
+
+export type PendingWidgetsAPIRes = APIResponse<PendingWidget[]>;

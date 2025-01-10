@@ -51,7 +51,6 @@ export const signInUser = async (email: string, password: string) => {
       PASSWORD: password,
     },
   };
-  console.log("called")
   try {
     const result = await cognito.initiateAuth(params).promise();
     // TODO if we reach here, get user by email from db

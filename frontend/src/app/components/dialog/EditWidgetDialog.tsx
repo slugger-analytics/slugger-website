@@ -54,7 +54,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
     targetWidget.description || "",
   );
   const [deploymentLink, setDeploymentLink] = useState(
-    targetWidget.redirectUrl || "",
+    targetWidget.redirectLink || "",
   );
   const [visibility, setVisibility] = useState(
     targetWidget.visibility || "Private",
@@ -73,7 +73,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
         id: targetWidget.id,
         name,
         description,
-        redirectUrl: deploymentLink,
+        redirectLink: deploymentLink,
         visibility,
         imageUrl,
       });

@@ -3,48 +3,32 @@
  * Includes functions to register, fetch, approve, decline, and update widgets.
  */
 
-import { jwtDecode } from "jwt-decode"; // For decoding JWT tokens
-import { WidgetType } from "@/data/types"; // Importing WidgetType interface
+import { jwtDecode } from "jwt-decode";
+import {
+  PendingWidget,
+  PendingWidgetsAPIRes,
+  RegisterWidgetDataType,
+  WidgetType,
+} from "@/data/types";
 import dotenv from "dotenv";
+import { error } from "console";
 
 dotenv.config();
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-/**
- * Interface for Widget Data used in registration.
- */
-export interface WidgetData {
-  user_id: string; // The ID of the user creating the widget
-  widgetName: string; // The name of the widget
-  description: string; // A description of the widget
-  visibility: string; // Visibility status ('Public', 'Private', etc.)
-}
-
-/**
- * Registers a new widget by sending data to the backend API.
- *
- * @param {WidgetData} widgetData - The widget details to be registered.
- * @param {string} idToken - JWT token for authentication.
- * @returns {Promise<any>} - Response data from the API.
- * @throws {Error} - Throws an error if the API call fails or the response is not successful.
- */
 export const registerWidget = async (
-  widgetData: any,
-  idToken: string,
+  widgetData: RegisterWidgetDataType,
+  userId: string,
 ): Promise<any> => {
   try {
-    // Decode the token to extract user ID
-    const decodedToken: any = jwtDecode(idToken);
-    const userId = decodedToken.sub;
-
     // Attach user ID to the payload
     const dataToSend = {
       ...widgetData,
       userId,
     };
 
-    const response = await fetch(`${API_URL}/api/register-widget`, {
+    const response = await fetch(`${API_URL}/api/widgets/register`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -52,96 +36,73 @@ export const registerWidget = async (
       body: JSON.stringify(dataToSend),
     });
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || "Failed to register widget");
+    const res = await response.json();
+
+    if (!res.success) {
+      throw new Error(res.message);
     }
 
-    return await response.json();
+    return await res.data;
   } catch (error: any) {
     console.error("Error registering widget:", error.message || error);
     throw error;
   }
 };
 
-/**
- * Interface for a widget request.
- */
-export interface Request {
-  request_id: string; // The unique ID of the request
-  widget_name: string; // The name of the widget
-  description: string; // A description of the widget
-  visibility: string; // Visibility status ('Public', 'Private', etc.)
-  status: string; // The status of the request ('Pending', 'Approved', etc.)
-  user_id: string; // The ID of the user who submitted the request
-}
-
-/**
- * Fetches all pending widgets from the backend API.
- *
- * @returns {Promise<Request[]>} - An array of pending widget requests.
- * @throws {Error} - Throws an error if the API call fails.
- */
-export const fetchPendingWidgets = async (): Promise<Request[]> => {
+export const fetchPendingWidgets = async (): Promise<PendingWidget[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/pending-widgets`);
+    const response = await fetch(`${API_URL}/api/widgets/pending`);
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
-    return await response.json();
+    const res: PendingWidgetsAPIRes = await response.json();
+    if (!res.success || !res.data) {
+      throw new Error(res.message);
+    }
+    return res.data;
   } catch (error) {
     console.error("Error fetching pending widgets:", error);
     throw error;
   }
 };
 
-/**
- * Approves a widget request by sending the request ID to the backend API.
- *
- * @param {string} requestId - The ID of the widget request to approve.
- * @returns {Promise<string>} - The API key or a success message.
- * @throws {Error} - Throws an error if the API call fails.
- */
 export const approveWidget = async (requestId: string): Promise<string> => {
   try {
-    //TODO change this back to deployed server
-    const response = await fetch(`${API_URL}/api/approve-widget`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requestId }),
-    });
+    const response = await fetch(
+      `${API_URL}/api/widgets/pending/${requestId}/approve`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      },
+    );
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || "Failed to approve widget");
+    const res = await response.json();
+
+    if (!res.success) {
+      throw new Error(res.message);
     }
 
-    const data = await response.json();
-    return data.apiKey || `Widget ${requestId} approved.`;
+    return res.data.apiKey;
   } catch (error) {
     console.error("Error approving widget:", error);
     throw error;
   }
 };
 
-/**
- * Declines a widget request by sending the request ID to the backend API.
- *
- * @param {string} requestId - The ID of the widget request to decline.
- * @returns {Promise<string>} - A success message.
- * @throws {Error} - Throws an error if the API call fails.
- */
 export const declineWidget = async (requestId: string): Promise<string> => {
   try {
-    const response = await fetch(`${API_URL}/api/decline-widget`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requestId }),
-    });
+    const response = await fetch(
+      `${API_URL}/api/widgets/pending/${requestId}/decline`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      },
+    );
 
-    if (!response.ok) {
-      const data = await response.json();
-      throw new Error(data.message || "Failed to decline widget");
+    const res = await response.json();
+
+    if (!res.success) {
+      throw new Error(res.message);
     }
 
     return `Widget ${requestId} declined.`;
@@ -151,20 +112,15 @@ export const declineWidget = async (requestId: string): Promise<string> => {
   }
 };
 
-/**
- * Fetches all widgets from the backend API.
- *
- * @returns {Promise<WidgetType[]>} - An array of all widgets.
- * @throws {Error} - Throws an error if the API call fails.
- */
 export const fetchWidgets = async (): Promise<WidgetType[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/fetch-widgets`);
-    if (!response.ok) {
-      throw new Error(`Error: ${response.statusText}`);
+    const response = await fetch(`${API_URL}/api/widgets`);
+    const res = await response.json();
+    if (!res.success) {
+      throw new Error(res.message);
     }
 
-    const data = await response.json();
+    const data = res.data;
 
     // Normalize the data for frontend consumption
     const cleanedData = data.map((w: any) => ({
@@ -173,7 +129,7 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
       description: w.description || "",
       widgetId: w.widget_id || "",
       visibility: w.visibility || "Public",
-      redirectUrl: w.redirect_link || "",
+      redirectLink: w.redirect_link || "",
       imageUrl: w.image_url || undefined,
       developerIds: w.developer_ids || [],
     }));
@@ -185,23 +141,16 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
   }
 };
 
-/**
- * Updates an existing widget by sending the updated details to the backend API.
- *
- * @param {WidgetType} widgetData - The updated widget details.
- * @returns {Promise<Response>} - The response from the API.
- * @throws {Error} - Throws an error if the API call fails.
- */
 export const updateWidget = async ({
   id,
   name,
   description,
-  redirectUrl,
+  redirectLink,
   visibility,
   imageUrl,
 }: WidgetType): Promise<Response> => {
   try {
-    const response = await fetch(`${API_URL}/api/edit-widget/${id}`, {
+    const response = await fetch(`${API_URL}/api/widgets/${id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -209,17 +158,18 @@ export const updateWidget = async ({
       body: JSON.stringify({
         name,
         description,
-        redirectLink: redirectUrl,
+        redirectLink,
         visibility,
         imageUrl,
       }),
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to update widget");
+    const res = await response.json();
+    if (!res.success) {
+      throw new Error(res.message);
     }
 
-    return response;
+    return res.data;
   } catch (error) {
     console.error("Error updating widget:", error);
     throw error;

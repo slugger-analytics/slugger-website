@@ -5,12 +5,12 @@ import {
   fetchPendingWidgets,
   approveWidget,
   declineWidget,
-  Request,
 } from "../../api/widget";
+import { PendingWidget } from "@/data/types";
 import ProtectedRoute from "../components/ProtectedRoutes";
 
 export default function PendingWidgetsPage() {
-  const [requests, setRequests] = useState<Request[]>([]);
+  const [requests, setRequests] = useState<PendingWidget[]>([]);
   const [status, setStatus] = useState<string | null>(null);
 
   // Fetch pending widgets from the backend

@@ -56,13 +56,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [idToken, user.role]);
 
   const logout = () => {
-    console.log("clicked!");
     setIsAuthenticated(false);
     setAccessToken("");
     setIdToken("");
     clearUser();
-    router.push("/sign-in"); // Redirect to login page on logout
-  }
+    router.push("/"); // Redirect to home page on logout
+  };
 
   return (
     <AuthContext.Provider
