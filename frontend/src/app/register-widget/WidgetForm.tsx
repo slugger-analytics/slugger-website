@@ -28,21 +28,26 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { Separator } from "@/app/components/ui/separator";
-import Image from "next/image";
 import LogoButton from "../components/navbar/LogoButton";
 import { Textarea } from "../components/ui/textarea";
+import { $user } from "@/lib/store";
 
-const initialState = {
+const initialSubmitStatus = {
   message: "",
+  textClass: "text-black",
 };
 
 export function WidgetForm() {
-  const [state, setState] = useState(initialState);
+  const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
+  const [visibility, setVisibility] = useState("");
   const router = useRouter();
   const { idToken } = useAuth();
+  const user = useStore($user);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setSubmitStatus(initialSubmitStatus);
+
     const formData = new FormData(event.currentTarget); // form data -> key-value pairs
     const data: Record<string, string> = {};
 
@@ -55,20 +60,22 @@ export function WidgetForm() {
         throw new Error("ID Token not found. Please log in again."); // Ensure the user is authenticated
       }
 
-      console.log(data);
-
-      // Send data to the backend
       const widgetData = {
         widgetName: data["widget-name"],
         description: data["description"],
-        visibility: data["visibility"],
+        visibility: visibility,
         status: "pending", // Default status for new widgets
       };
-      const result = await registerWidget(widgetData, idToken); // The data will be sent to the backend
+
+      await registerWidget(widgetData, user.id);
       router.push("/form-submitted"); // Redirect on success
     } catch (error) {
-      console.error("Error submitting form:", error);
-      setState({ message: "Error submitting form" }); // Update state with error message
+      console.error(error);
+      setSubmitStatus({
+        message:
+          error instanceof Error ? error.message : "Error registering widget",
+        textClass: "text-red-600",
+      }); // Update state with error message
     }
   };
 
@@ -85,16 +92,6 @@ export function WidgetForm() {
       <CardContent>
         <form onSubmit={handleSubmit}>
           <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="first-name">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required={true}
-                placeholder="your@email.com"
-              />
-            </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="widget-name">Widget Name</Label>
               <Input
@@ -117,17 +114,19 @@ export function WidgetForm() {
 
             <Separator className="my-4" />
             <div className="flex flex-col space-y-1.5">
-              <Select name="account-type" required={true}>
+              <Select
+                name="account-type"
+                required={true}
+                onValueChange={(vis) => setVisibility(vis)}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select visibility" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="public">
-                      Public
-                    </SelectItem>
-                    <SelectItem value="private">Private</SelectItem>
-                    <SelectItem value="team">Your team only - Hagerstown Flying Boxcars</SelectItem>
+                    <SelectItem value="public">Public</SelectItem>
+                    {/* <SelectItem value="private">Private</SelectItem>
+                    <SelectItem value="team">Your team only - Hagerstown Flying Boxcars</SelectItem> */}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -135,48 +134,16 @@ export function WidgetForm() {
           </div>
           <SubmitButton btnText="Sign up" className="mt-8" />
         </form>
+        <div className="flex justify-center text-sm">
+          <p
+            className={`my-2 ${submitStatus.textClass}`}
+            role="status"
+            aria-live="polite"
+          >
+            {submitStatus.message}
+          </p>
+        </div>
       </CardContent>
     </Card>
-  );
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col items-center w-80">
-      <InputField
-        id="email"
-        label="Email"
-        type="email"
-        required={true}
-        placeholder="your@email.com"
-        subtext="You'll receive updates about your widget through this email."
-      />
-      <InputField
-        id="widget-name"
-        label="Widget name"
-        type="text"
-        required={true}
-        placeholder="Your widget name"
-      />
-      <TextareaInput
-        id="description"
-        label="Description"
-        required={false}
-        placeholder="A brief description"
-      />
-      <SelectField
-        id="visibility"
-        label="Visibility"
-        required={true}
-        options={[
-          "Your team only - Hagerstown Flying Boxcars",
-          "Custom - Analytics Group 1",
-          "Public",
-        ]}
-        subtext="You can change this option later."
-      />
-      <SubmitButton btnText="Register" />
-      <p aria-live="polite" className="sr-only" role="status">
-        {state?.message} {/* Display status message */}
-      </p>
-    </form>
   );
 }

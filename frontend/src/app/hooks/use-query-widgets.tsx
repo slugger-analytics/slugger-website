@@ -14,10 +14,11 @@ function useQueryWidgets() {
     try {
       const fetchedWidgets = await fetchWidgets();
       // Check if the user is a Widget Developer
-      const isDev = user.role.toLowerCase() == "widget developer" ? true : false;
+      const isDev =
+        user.role.toLowerCase() == "widget developer" ? true : false;
       // Filter widgets based on the user role and developer IDs
       const filteredWidgets = fetchedWidgets.filter((widget) =>
-        isDev && user.id && widget.developerIds?.includes(String(user.id))
+        isDev && user.id && widget.developerIds?.includes(user.id)
           ? widget
           : !isDev,
       );

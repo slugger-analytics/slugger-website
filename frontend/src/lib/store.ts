@@ -1,5 +1,5 @@
 import { atom, map } from "nanostores";
-import { persistentMap } from '@nanostores/persistent'
+import { persistentMap } from "@nanostores/persistent";
 import { UserType, WidgetType } from "@/data/types";
 import { logger } from "@nanostores/logger";
 
@@ -45,7 +45,7 @@ export function updateStoreWidget({
   name,
   description,
   visibility,
-  redirectUrl,
+  redirectLink,
   imageUrl,
 }: WidgetType) {
   $widgets.set(
@@ -56,7 +56,7 @@ export function updateStoreWidget({
           ...(name !== undefined && { name }),
           ...(description !== undefined && { description }),
           ...(visibility !== undefined && { visibility }),
-          ...(redirectUrl !== undefined && { redirectUrl }),
+          ...(redirectLink !== undefined && { redirectLink }),
           ...(imageUrl !== undefined && { imageUrl }),
         };
       } else {
@@ -145,7 +145,7 @@ const emptyUser: UserType = {
   last: "",
   email: "",
   role: "",
-}
+};
 
 export const $user = persistentMap<UserType>("user:", emptyUser);
 
@@ -161,5 +161,5 @@ export function clearUser() {
 let destroy =
   DEBUG &&
   logger({
-    User: $user
+    User: $user,
   });

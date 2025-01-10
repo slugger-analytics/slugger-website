@@ -21,10 +21,12 @@
     "drizzle-kit": "^0.28.0",
     "eslint": "^9.15.0",
     "nodemon": "^3.1.7",
+    "prettier": "3.4.2",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3"
   },
   "scripts": {
-    "dev": "tsx watch server.js"
+    "dev": "tsx watch server.js",
+    "prettier": "npx prettier . --write"
   }
 }

@@ -19,7 +19,7 @@ function useMutationWidgets() {
     id,
     name,
     description,
-    redirectUrl,
+    redirectLink,
     visibility,
     imageUrl,
   }: WidgetType) => {
@@ -28,7 +28,7 @@ function useMutationWidgets() {
         id,
         name,
         description,
-        redirectUrl,
+        redirectLink,
         visibility,
         imageUrl,
       });
@@ -37,7 +37,7 @@ function useMutationWidgets() {
         name,
         description,
         visibility,
-        redirectUrl,
+        redirectLink,
         imageUrl,
       }); // Update the widget in the store
     } catch (error) {

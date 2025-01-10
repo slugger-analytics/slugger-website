@@ -56,7 +56,7 @@ export default function Widget({
   imageUrl,
   isDev,
   visibility,
-  redirectUrl,
+  redirectLink,
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Local state for dialog visibility
   const { toggleFavWidget } = useMutationWidgets(); // Custom hook for toggling favorites
@@ -68,13 +68,13 @@ export default function Widget({
    * @TODO Implement redirect logic.
    */
   const redirect = () => {
-    if (redirectUrl) {
-      router.push(redirectUrl);
+    if (redirectLink) {
+      router.push(redirectLink);
     } else {
       console.error("Redirect link is missing or invalid.");
     }
   };
-  
+
   /**
    * Toggles the widget's favorite status.
    */
@@ -93,19 +93,24 @@ export default function Widget({
       description,
       imageUrl,
       visibility,
-      redirectUrl,
+      redirectLink,
     });
     setIsDialogOpen(true);
   };
 
   return (
     <Card className="w-[350px]">
-
       {/* Image Section */}
       <div className="flex justify-center w-full mb-5">
         <div className="h-[175px] py-5 bg-gray-50 w-full flex justify-center items-center">
           {imageUrl && imageUrl !== "default" ? (
-            <Image src={imageUrl} alt={name} width="150" height="150" className="rounded-full"/>
+            <Image
+              src={imageUrl}
+              alt={name}
+              width="150"
+              height="150"
+              className="rounded-full"
+            />
           ) : (
             <AngleIcon className="size-10 fill-current text-gray-400" />
           )}

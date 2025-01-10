@@ -64,6 +64,7 @@ export default function Widgets() {
 
   // Set user role whenever userId or userRole changes
   useEffect(() => {
+    console.log(widgets);
     setUserRole();
   }, [user.id, user.role]);
 
@@ -93,14 +94,6 @@ export default function Widgets() {
       // If "favorites" filter is enabled, only show widgets in the favorites list
       if (filters.has("favorites") && !favWidgetIds.has(widget.id)) {
         return false;
-      }
-
-      // If the user is a widget developer, only show widgets they created
-      if (isDev) {
-        if (user.id && widget.developerIds?.includes(String(user.id))) {
-          return true; // Widget is created by the current user
-        }
-        return false; // Widget is not created by the current user
       }
 
       // Show all widgets that match the search and filtering criteria

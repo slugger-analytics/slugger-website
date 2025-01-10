@@ -37,8 +37,9 @@ export default function Home() {
               Welcome to <span className="text-white">ALPB Analytics</span>
             </h1>
             <p className="text-lg font-bold text-white mt-4 max-w-2xl">
-            Discover advanced insights and data that redefine your understanding
-            of the game. Developed by the Johns Hopkins Sports Analytics Research Group.
+              Discover advanced insights and data that redefine your
+              understanding of the game. Developed by the Johns Hopkins Sports
+              Analytics Research Group.
             </p>
 
             {/* Buttons */}
@@ -61,7 +62,10 @@ export default function Home() {
         <footer className="w-full bg-white py-6 text-center text-black">
           <p className="text-sm font-bold">
             Questions?{" "}
-            <Link href="/help" className="text-blue-500 hover:underline font-bold">
+            <Link
+              href="/help"
+              className="text-blue-500 hover:underline font-bold"
+            >
               Contact bsantan3@jh.edu, dbenjam9@jh.edu, or xlu62@jh.edu.
             </Link>
           </p>

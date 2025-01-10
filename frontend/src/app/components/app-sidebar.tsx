@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Search,
-  Home,
-  Inbox,
-  BookOpenCheck
-} from "lucide-react";
+import { Search, Home, Inbox, BookOpenCheck } from "lucide-react";
 
 import { NavUser } from "@/app/components/nav-user";
 import { NavMain } from "@/app/components/nav-main";
@@ -25,7 +20,6 @@ import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
 
 // This is sample data.
-
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useStore($user);
