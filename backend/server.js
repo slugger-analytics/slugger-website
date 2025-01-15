@@ -9,11 +9,8 @@ import dotenv from "dotenv"; // For managing environment variables
 dotenv.config(); // Load environment variables from a `.env` file
 
 // Importing API route handlers
-import registerUserRoute from "./api/register-user.js";
-import loginUserRoute from "./api/login-user.js";
-import fetchUserByCognitoId from "./api/fetch-user.js";
-import userFavoritesRouter from "./api/user-favorites.js";
 import widgets from "./api/widgets.js";
+import users from "./api/users.js"
 
 // Initialize the Express app
 const app = express();
@@ -40,29 +37,7 @@ app.use(json());
 
 app.use("/api/widgets", widgets);
 
-/**
- * Route: `/api/register-user`
- * Handles user registration requests.
- */
-app.use("/api/register-user", registerUserRoute);
-
-/**
- * Route: `/api/login-user`
- * Handles user login requests.
- */
-app.use("/api/login-user", loginUserRoute);
-
-/**
- * Route: `/api/fetch-user`
- * Fetches user details by Cognito ID.
- */
-app.use("/api/fetch-user", fetchUserByCognitoId);
-
-/**
- * Route: `/api/user-favorites`
- * Manages user favorites, such as adding or removing widgets.
- */
-app.use("/api/user-favorites", userFavoritesRouter);
+app.use("/api/users", users); 
 
 // ---------------------------------------------------
 // Root Route

@@ -19,7 +19,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export const addFavorite = async (userId: number, widgetId: number) => {
   try {
     const response = await fetch(
-      `${API_URL}/api/user-favorites/add-favorite/${userId}`,
+      `${API_URL}/api/users/${userId}/add-favorite}`,
       {
         method: "PATCH", // HTTP PATCH request to update the user's favorites
         headers: { "Content-Type": "application/json" }, // Set the content type to JSON
@@ -50,7 +50,7 @@ export const addFavorite = async (userId: number, widgetId: number) => {
 export const removeFavorite = async (userId: number, widgetId: number) => {
   try {
     const response = await fetch(
-      `${API_URL}/api/user-favorites/remove-favorite/${userId}`,
+      `${API_URL}/api/users/${userId}/remove-favorite`,
       {
         method: "PATCH", // HTTP PATCH request to update the user's favorites
         headers: { "Content-Type": "application/json" }, // Set the content type to JSON
@@ -79,7 +79,7 @@ export const removeFavorite = async (userId: number, widgetId: number) => {
  */
 export const getFavorites = async (userId: number) => {
   try {
-    const response = await fetch(`${API_URL}/api/user-favorites/${userId}`, {
+    const response = await fetch(`${API_URL}/api/${userId}/favorite-widgets/`, {
       method: "GET", // HTTP GET request to retrieve user's favorites
     });
 
