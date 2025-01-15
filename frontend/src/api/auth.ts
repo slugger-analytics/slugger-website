@@ -30,7 +30,7 @@ export async function signUpUser(data: {
 }) {
   try {
     const startTime = performance.now();
-    const response = await fetch(`${API_URL}/api/register-user`, {
+    const response = await fetch(`${API_URL}/api/users/sign-up`, {
       method: "POST", // HTTP POST request
       headers: {
         "Content-Type": "application/json", // Content type for JSON payload
@@ -66,7 +66,7 @@ export async function signUpUser(data: {
 export const loginUser = async (email: string, password: string) => {
   try {
     const startTime = performance.now();
-    const response = await fetch(`${API_URL}/api/login-user`, {
+    const response = await fetch(`${API_URL}/api/users/sign-in`, {
       method: "POST", // HTTP POST request
       headers: {
         "Content-Type": "application/json", // Content type for JSON payload
