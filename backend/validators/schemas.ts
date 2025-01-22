@@ -81,3 +81,7 @@ export const favoriteWidgetSchema = z.object({
   userId: z.coerce.number().int().positive(), // User ID (required, positive integer)
   widgetId: z.coerce.number().int().positive(), // Widget ID (required, positive integer)
 });
+
+export const updateMemberTeamSchema = z.object({
+  teamId: z.string().length(36),
+});

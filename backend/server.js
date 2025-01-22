@@ -10,7 +10,8 @@ dotenv.config(); // Load environment variables from a `.env` file
 
 // Importing API route handlers
 import widgets from "./api/widgets.js";
-import users from "./api/users.js"
+import users from "./api/users.js";
+import teams from "./api/teams.js";
 
 // Initialize the Express app
 const app = express();
@@ -37,7 +38,9 @@ app.use(json());
 
 app.use("/api/widgets", widgets);
 
-app.use("/api/users", users); 
+app.use("/api/users", users);
+
+app.use("/api/teams", teams);
 
 // ---------------------------------------------------
 // Root Route

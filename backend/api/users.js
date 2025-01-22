@@ -96,13 +96,16 @@ router.post("/sign-in", async (req, res) => {
   };
   try {
     const authResult = await cognito.initiateAuth(params).promise();
-    const { AccessToken, IdToken, RefreshToken } = authResult.AuthenticationResult;
+    const { AccessToken, IdToken, RefreshToken } =
+      authResult.AuthenticationResult;
 
     const query = "SELECT * FROM users WHERE email = $1";
     const dbResult = await pool.query(query, [email]);
 
     if (dbResult.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     const user = dbResult.rows[0];
