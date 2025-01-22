@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { validationMiddleware } from "../middleware/validation-middleware.js";
 import pkg from "aws-sdk";
 import dotenv from "dotenv";
 import pool from "../db.js";

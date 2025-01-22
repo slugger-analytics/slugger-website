@@ -8,7 +8,6 @@ import {
   registerWidgetSchema,
 } from "../validators/schemas.js";
 import {
-  getRequestData,
   createApprovedWidget,
   getUserData,
   generateApiKeyForUser,
@@ -36,7 +35,7 @@ const selectRequestById = `
 const router = Router();
 
 // get all widgets
-router.get("/", validationMiddleware(queryParamsSchema), async (req, res) => {
+router.get("/", validationMiddleware({ querySchema: queryParamsSchema }), async (req, res) => {
   try {
     const { widgetName, categories, page, limit } = req.query;
 
@@ -58,7 +57,7 @@ router.get("/", validationMiddleware(queryParamsSchema), async (req, res) => {
 // edit a widget
 router.patch(
   "/:id",
-  validationMiddleware(editWidgetSchema),
+  validationMiddleware({ bodySchema: editWidgetSchema }),
   async (req, res) => {
     const { name, description, redirectLink, visibility, imageUrl } = req.body;
 
@@ -218,7 +217,7 @@ router.get("/pending", async (req, res) => {
 // register a widget
 router.post(
   "/register",
-  validationMiddleware(registerWidgetSchema),
+  validationMiddleware({ bodySchema: registerWidgetSchema }),
   async (req, res) => {
     const { widgetName, description, visibility, userId } = req.body; // Extract widget details and userId from the request body
 
