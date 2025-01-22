@@ -8,18 +8,36 @@ import { Request, Response, NextFunction } from "express";
 
 /**
  * Validation middleware factory.
- * Generates middleware that validates the `req.body` against a provided Zod schema.
+ * Generates middleware that validates the `req.body`, `req.params`, and/or `req.query` against a provided Zod schema.
  *
  * @param {z.ZodSchema} schema - The Zod schema to validate the request body against.
  * @returns {Function} Middleware function for request validation.
  */
-export function validationMiddleware<T extends ZodRawShape>(
-  schema: ZodObject<T>,
-) {
+export function validationMiddleware<T extends ZodRawShape>({
+  bodySchema,
+  paramsSchema,
+  querySchema,
+}: {
+  bodySchema?: ZodObject<T>;
+  paramsSchema?: ZodObject<T>;
+  querySchema?: ZodObject<T>;
+}) {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Validate the request body using the provided schema
-      schema.parse(req.body);
+      // Validate the request body if a schema is provided
+      if (bodySchema) {
+        bodySchema.parse(req.body);
+      }
+
+      // Validate the request params if a schema is provided
+      if (paramsSchema) {
+        paramsSchema.parse(req.params);
+      }
+
+      // Validate the request query params if a schema is provided
+      if (querySchema) {
+        querySchema.parse(req.query);
+      }
 
       // If validation passes, proceed to the next middleware or route handler
       next();

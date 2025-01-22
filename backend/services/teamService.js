@@ -12,6 +12,7 @@ export async function getTeams() {
 
 export async function getTeam(id) {
   try {
+    console.log({ id });
     const result = await pool.query(`SELECT * FROM team WHERE team_id = $1`, [
       id,
     ]);
@@ -44,19 +45,15 @@ export async function getTeamMembers(teamId) {
   }
 }
 
-// TODO there is an error with this function - debug
 export async function getTeamMember(teamId, memberId) {
   try {
-    console.log("Debug 1")
-    // error below
     const result = await pool.query(
       `
             SELECT *
             FROM users 
-            WHERE role = league AND team_id = $1 AND user_id = $2`,
+            WHERE role = 'league' AND team_id = $1 AND user_id = $2`,
       [teamId, memberId],
     );
-    console.log("Debug 2")
     const member = result.rows[0];
     return member;
   } catch (error) {
@@ -68,6 +65,7 @@ export async function getTeamMember(teamId, memberId) {
 
 export async function promoteTeamMember(teamId, memberId) {
   try {
+    console.log({ teamId, memberId });
     const result = await pool.query(
       `
             UPDATE users
@@ -105,18 +103,19 @@ export async function demoteTeamMember(teamId, memberId) {
 }
 
 export async function updateMemberTeam(newTeamId, memberId) {
-    try {
-        const result = await pool.query(`
+  try {
+    const result = await pool.query(
+      `
             UPDATE users
             SET team_id = $1
             WHERE user_id = $2
             RETURNING *
-        `, [newTeamId, memberId])
-        const updatedMember = result.rows[0];
-        return updatedMember;
-    } catch (error) {
-        throw new error(
-        error.message ?? `Error updating member's team`,
-        );
-    }
+        `,
+      [newTeamId, memberId],
+    );
+    const updatedMember = result.rows[0];
+    return updatedMember;
+  } catch (error) {
+    throw new error(error.message ?? `Error updating member's team`);
+  }
 }
