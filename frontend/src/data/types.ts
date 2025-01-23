@@ -54,3 +54,5 @@ export interface PendingWidget {
 }
 
 export type PendingWidgetsAPIRes = APIResponse<PendingWidget[]>;
+
+export type UserAPIRes = APIResponse<UserType>;

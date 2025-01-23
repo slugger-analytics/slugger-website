@@ -8,6 +8,7 @@ import {
   unfavoriteWidget,
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
+import authGuard from "../middleware/auth-guard.js";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
@@ -59,7 +60,7 @@ router.post("/sign-up", async (req, res) => {
 
     const query = `
       INSERT INTO users (cognito_user_id, email, first_name, last_name, role)
-      VALUES ($1, $2, $3, $4, $5) RETURNING user_id;
+      VALUES ($1, $2, $3, $4, $5) RETURNING *;
     `;
     const result = await pool.query(query, [
       cognitoUserId,
@@ -69,10 +70,14 @@ router.post("/sign-up", async (req, res) => {
       role,
     ]);
 
+    const user = result.rows[0];
+
+    req.session.user = user; // IMPORTANT stores session in DB
+
     res.status(200).json({
       success: true,
       message: "User registered successfully",
-      data: { userId: result.rows[0].user_id, cognitoUserId },
+      data: { userId: user.user_id, cognitoUserId },
     });
   } catch (error) {
     res.status(500).json({
@@ -108,6 +113,9 @@ router.post("/sign-in", async (req, res) => {
     }
 
     const user = dbResult.rows[0];
+
+    req.session.user = user; // IMPORTANT stores session in DB
+
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -120,6 +128,47 @@ router.post("/sign-in", async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+});
+
+router.post('/logout', async (req, res) => {
+  try {
+    console.log(req.session)
+    // If there's no data in the session, nothing to do
+    if (!req.session || !req.session.user) {
+      return res.status(200).json({ 
+        success: true,
+        message: 'Already logged out' 
+      });
+    }
+
+    // Destroy the session in database
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destruction error:', err);
+        return res.status(500).json({ error: 'Failed to complete logout' });
+      }
+
+      // Clear the session cookie
+      res.clearCookie('connect.sid', {
+        path: '/',
+        httpOnly: true,
+        secure: false, // TODO change to true for prod
+        sameSite: 'strict'
+      });
+
+      res.status(200).json({ 
+        success: true,
+        message: 'Successfully logged out' 
+      });
+    });
+
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Internal server error during logout' 
     });
   }
 });
@@ -187,6 +236,13 @@ router.get("/:userId/favorite-widgets", async (req, res) => {
       message: error.message,
     });
   }
+});
+
+router.post("/validate-session", authGuard, async (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Session is valid"
+  })
 });
 
 export default router;

@@ -32,6 +32,7 @@ export async function signUpUser(data: {
     const startTime = performance.now();
     const response = await fetch(`${API_URL}/api/users/sign-up`, {
       method: "POST", // HTTP POST request
+      credentials: 'include',
       headers: {
         "Content-Type": "application/json", // Content type for JSON payload
       },
@@ -71,6 +72,7 @@ export const loginUser = async (email: string, password: string) => {
       headers: {
         "Content-Type": "application/json", // Content type for JSON payload
       },
+      credentials: 'include',
       body: JSON.stringify({ email, password }), // Convert credentials to JSON format
     });
     const endTime = performance.now();
