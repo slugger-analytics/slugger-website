@@ -35,24 +35,28 @@ const selectRequestById = `
 const router = Router();
 
 // get all widgets
-router.get("/", validationMiddleware({ querySchema: queryParamsSchema }), async (req, res) => {
-  try {
-    const { widgetName, categories, page, limit } = req.query;
+router.get(
+  "/",
+  validationMiddleware({ querySchema: queryParamsSchema }),
+  async (req, res) => {
+    try {
+      const { widgetName, categories, page, limit } = req.query;
 
-    const widgets = await getAllWidgets(widgetName, categories, page, limit);
+      const widgets = await getAllWidgets(widgetName, categories, page, limit);
 
-    res.status(200).json({
-      success: true,
-      message: "Widgets retrieved successfully",
-      data: widgets,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-});
+      res.status(200).json({
+        success: true,
+        message: "Widgets retrieved successfully",
+        data: widgets,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+  },
+);
 
 // edit a widget
 router.patch(
