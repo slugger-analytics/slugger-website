@@ -67,6 +67,7 @@ export async function signUpUser(data: {
 export const loginUser = async (email: string, password: string) => {
   try {
     const startTime = performance.now();
+    console.log("Debug 1");
     const response = await fetch(`${API_URL}/api/users/sign-in`, {
       method: "POST", // HTTP POST request
       headers: {
@@ -75,22 +76,39 @@ export const loginUser = async (email: string, password: string) => {
       credentials: 'include',
       body: JSON.stringify({ email, password }), // Convert credentials to JSON format
     });
+    console.log("Debug 2")
     const endTime = performance.now();
     const authTime = endTime - startTime;
     DEBUG && console.log(`Time to sign in: ${authTime}`);
 
-    const data = await response.json(); // Parse the JSON response
+    const res = await response.json(); // Parse the JSON response
 
-    if (response.ok) {
+    if (res.success) {
       // Handle successful responses
       // Optionally, store tokens or user data in localStorage or a state manager
-      return data; // Return the user data for frontend handling
+      return res.data; // Return the user data for frontend handling
     } else {
       // Handle unsuccessful responses
-      throw new Error(data.message || "Login failed");
+      throw new Error(res.message || "Login failed");
     }
   } catch (error) {
     console.error("Error during login:", error);
     throw error; // Rethrow the error for handling in the caller
   }
 };
+
+export const validateSession = async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/users/validate-session`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: 'include',
+    });
+    const res = await response.json();
+    return res.success;
+  } catch {
+    return false;
+  }
+}
