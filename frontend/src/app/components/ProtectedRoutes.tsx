@@ -8,12 +8,13 @@
  * and unauthorized users to an unauthorized access page.
  */
 
-import { useEffect } from "react"; // React hook for managing side effects
+import { useEffect, useState } from "react"; // React hook for managing side effects
 import { useRouter } from "next/navigation"; // Next.js router for client-side navigation
 import { useAuth } from "../contexts/AuthContext"; // Custom authentication context
 import Loading from "./layout/loading";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
+import { validateSession } from "@/api/auth";
 
 /**
  * Props for the ProtectedRoute Component
@@ -38,15 +39,24 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
   const router = useRouter(); // Next.js router instance
 
   useEffect(() => {
-    if (!loading) {
-      if (!isAuthenticated) {
-        // Redirect unauthenticated users to the sign-in page
-        router.push("/sign-in");
-      } else if (role && user.role.toLowerCase() !== role) {
-        // Redirect users without the required role to the unauthorized page
-        router.push("/unauthorized");
+    const checkSession = async () => {
+      try {
+        if (!loading) {
+          const sessionIsValid = await validateSession();
+          if (!sessionIsValid) {
+            // Redirect unauthenticated users to the sign-in page
+            router.push("/sign-in");
+          } else if (role && user.role.toLowerCase() !== role) {
+            // Redirect users without the required role to the unauthorized page
+            router.push("/unauthorized");
+          }
+        }
+      } catch (error) {
+        console.error("Error validating authentication:", error);
       }
-    }
+    };
+
+    checkSession();
   }, [isAuthenticated, user.role, loading, router, role]);
 
   // Display a loading message while authentication state is being determined
@@ -55,7 +65,8 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
   }
 
   // Render the children if the user is authenticated
-  return isAuthenticated ? <>{children}</> : null;
+  // return isAuthenticated ? <>{children}</> : null;
+  return <>{children}</>
 };
 
 export default ProtectedRoute;

@@ -1,5 +1,4 @@
 import { Router } from "express";
-import pool from "../db";
 import { validationMiddleware } from "../middleware/validation-middleware";
 import {
   getTeams,
@@ -13,8 +12,6 @@ import {
 import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas";
 
 const router = Router();
-
-// TODO ensure we're validating path variables, not request body
 
 // get all teams
 router.get("/", async (req, res) => {

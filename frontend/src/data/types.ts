@@ -15,7 +15,7 @@ export interface WidgetType {
   redirectLink?: string;
   imageUrl?: string;
   categoryIds?: number[];
-  developerIds?: string[];
+  developerIds?: number[];
 }
 
 export interface RegisterWidgetDataType {
@@ -55,4 +55,17 @@ export interface PendingWidget {
 
 export type PendingWidgetsAPIRes = APIResponse<PendingWidget[]>;
 
-export type UserAPIRes = APIResponse<UserType>;
+export interface AuthDataType {
+  accessToken: string;
+  idToken: string;
+  refreshToken: string;
+}
+
+export interface LoginType {
+  user: UserType;
+  authData: AuthDataType;
+}
+
+export type LoginAPIRes = APIResponse<LoginType>;
+
+export type FavoritesAPIRes = APIResponse<number[]>;

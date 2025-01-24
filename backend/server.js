@@ -62,6 +62,7 @@ app.use(
       httpOnly: true,
       secure: false, // TODO change to true for prod
       maxAge: 24 * 60 /*minutes*/ * 60 /*seconds*/ * 1000, // session length (ms)
+      // maxAge: 1000 * 5 // TODO change back to normal amount!
     },
   }),
 );

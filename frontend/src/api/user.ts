@@ -2,6 +2,7 @@
  * Frontend API utility functions for managing user favorites.
  * Includes functions to add, remove, and fetch favorite widgets for a user.
  */
+import { FavoritesAPIRes } from "@/data/types";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -19,7 +20,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export const addFavorite = async (userId: number, widgetId: number) => {
   try {
     const response = await fetch(
-      `${API_URL}/api/users/${userId}/add-favorite}`,
+      `${API_URL}/api/users/${userId}/add-favorite`,
       {
         method: "PATCH", // HTTP PATCH request to update the user's favorites
         headers: { "Content-Type": "application/json" }, // Set the content type to JSON
@@ -27,10 +28,14 @@ export const addFavorite = async (userId: number, widgetId: number) => {
       },
     );
 
-    if (!response.ok) {
+    const res = await response.json();
+
+    if (!res.success) {
       // Handle unsuccessful responses
-      throw new Error(`Error: ${response.statusText}`);
+      throw new Error(`Error adding favorite: ${res.message}`);
     }
+
+    return res.data;
 
     return await response.json(); // Parse and return the JSON response
   } catch (error) {
@@ -58,12 +63,14 @@ export const removeFavorite = async (userId: number, widgetId: number) => {
       },
     );
 
-    if (!response.ok) {
+    const res = await response.json();
+
+    if (!res.success) {
       // Handle unsuccessful responses
-      throw new Error(`Error: ${response.statusText}`);
+      throw new Error(`Error removing favorite: ${res.message}`);
     }
 
-    return await response.json(); // Parse and return the JSON response
+    return res.data;
   } catch (error) {
     console.error("Error removing widget from favorites:", error);
     throw error; // Rethrow the error for handling in the caller
@@ -79,17 +86,17 @@ export const removeFavorite = async (userId: number, widgetId: number) => {
  */
 export const getFavorites = async (userId: number) => {
   try {
-    const response = await fetch(`${API_URL}/api/${userId}/favorite-widgets/`, {
+    const response = await fetch(`${API_URL}/api/users/${userId}/favorite-widgets/`, {
       method: "GET", // HTTP GET request to retrieve user's favorites
     });
 
-    if (!response.ok) {
+    const res: FavoritesAPIRes = await response.json();
+
+    if (!res.success) {
       // Handle unsuccessful responses
-      throw new Error(`Error: ${response.statusText}`);
+      throw new Error(`Error: ${res.message}`);
     }
-    const jsoned = await response.json(); // Parse the JSON response
-    const data = jsoned.data; // Extract the `data` property containing favorite widget IDs
-    return data; // Return the array of favorite widget IDs
+    return res.data; // Return the array of favorite widget IDs
   } catch (error) {
     console.error("Error fetching favorite widgets:", error);
     throw error; // Rethrow the error for handling in the caller

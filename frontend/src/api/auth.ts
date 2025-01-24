@@ -1,3 +1,4 @@
+import { LoginAPIRes } from "@/data/types";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -67,7 +68,6 @@ export async function signUpUser(data: {
 export const loginUser = async (email: string, password: string) => {
   try {
     const startTime = performance.now();
-    console.log("Debug 1");
     const response = await fetch(`${API_URL}/api/users/sign-in`, {
       method: "POST", // HTTP POST request
       headers: {
@@ -76,26 +76,39 @@ export const loginUser = async (email: string, password: string) => {
       credentials: 'include',
       body: JSON.stringify({ email, password }), // Convert credentials to JSON format
     });
-    console.log("Debug 2")
     const endTime = performance.now();
     const authTime = endTime - startTime;
     DEBUG && console.log(`Time to sign in: ${authTime}`);
 
-    const res = await response.json(); // Parse the JSON response
+    const res: LoginAPIRes = await response.json(); // Parse the JSON response
 
-    if (res.success) {
-      // Handle successful responses
-      // Optionally, store tokens or user data in localStorage or a state manager
-      return res.data; // Return the user data for frontend handling
-    } else {
-      // Handle unsuccessful responses
+    if (!res.success) {
       throw new Error(res.message || "Login failed");
     }
+
+    return res.data;
   } catch (error) {
     console.error("Error during login:", error);
     throw error; // Rethrow the error for handling in the caller
   }
 };
+
+export const logoutUser = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_URL}/api/users/logout`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include"
+    });
+    const res = await response.json();
+    return res.success;
+  } catch (error) {
+    console.error("Error logging out:", error);
+    throw error
+  }
+}
 
 export const validateSession = async () => {
   try {

@@ -93,7 +93,7 @@ export async function getFavorites(userId) {
     // Fetch the user's favorite widget IDs
     const result = await pool.query(selectQuery, [userId]);
     const data = result.rows[0]?.fav_widgets_ids || []; // Return an empty array if no favorites are found
-    return { data, message: "Favorite widget ids fetched successfully" };
+    return data;
   } catch (error) {
     console.error("Error fetching favorite widget ids:", error);
     throw new Error("Failed to fetch favorite widget ids");
