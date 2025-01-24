@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
 import { $user, clearUser } from "@/lib/store";
+import { logoutUser } from "@/api/auth";
 
 // The AuthContextType interface defines the shape of the context object
 interface AuthContextType {
@@ -29,6 +30,7 @@ interface AuthContextType {
   setAccessToken: Dispatch<SetStateAction<string>>;
   // Function to log the user out
   logout: () => void;
+  setLoading: Dispatch<SetStateAction<boolean>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,12 +57,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(false);
   }, [idToken, user.role]);
 
-  const logout = () => {
-    setIsAuthenticated(false);
-    setAccessToken("");
-    setIdToken("");
-    clearUser();
-    router.push("/"); // Redirect to home page on logout
+  const logout = async () => {
+    try {
+      await logoutUser();
+      setLoading(true);
+      clearUser();
+      router.push("/"); // Redirect to home page on logout
+      setIsAuthenticated(false);
+      setAccessToken("");
+      setIdToken("");
+    } catch (error) {
+      console.error(error);
+    }
+
   };
 
   return (
@@ -73,6 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIdToken,
         setAccessToken,
         logout,
+        setLoading
       }}
     >
       {children}

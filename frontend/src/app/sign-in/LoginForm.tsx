@@ -14,7 +14,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 import LogoButton from "../components/navbar/LogoButton";
 import { setUser } from "@/lib/store";
-import { UserAPIResType } from "@/data/types";
+import { LoginType, UserAPIResType } from "@/data/types";
 
 const LoginForm = () => {
   const [submitStatus, setSubmitStatus] = useState({
@@ -22,7 +22,7 @@ const LoginForm = () => {
     textClass: "text-gray-600",
   });
   const router = useRouter();
-  const { setIdToken, setAccessToken } = useAuth();
+  const { setIdToken, setAccessToken, setLoading } = useAuth();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,7 +35,8 @@ const LoginForm = () => {
         message: "Loading...",
         textClass: "text-gray-600",
       });
-      const result: UserAPIResType = await loginUser(email, password);
+      setLoading(true);
+      const result = (await loginUser(email, password)) as LoginType;
       // TODO set user info here!!!
       setUser(result.user);
       setAccessToken(result.authData.accessToken); // Set the access token in the context
@@ -47,6 +48,7 @@ const LoginForm = () => {
       } else {
         router.push("/dashboard"); // Redirect to dashboard for other roles
       }
+      
     } catch (error) {
       setSubmitStatus({
         message: "Login failed. Please try again", // Display error message on login failure

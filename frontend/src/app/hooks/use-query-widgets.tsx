@@ -15,16 +15,17 @@ function useQueryWidgets() {
       const fetchedWidgets = await fetchWidgets();
       // Check if the user is a Widget Developer
       const isDev =
-        user.role.toLowerCase() == "widget developer" ? true : false;
+        user.role === "widget developer" ? true : false;
+
       // Filter widgets based on the user role and developer IDs
       const filteredWidgets = fetchedWidgets.filter((widget) =>
-        isDev && user.id && widget.developerIds?.includes(user.id)
+        isDev && user.id && widget.developerIds?.includes(parseInt(user.id))
           ? widget
           : !isDev,
       );
       setWidgets([...filteredWidgets]);
       // Fetch favorite widget IDs for the user
-      const favWidgetIds = await getFavorites(parseInt(user.id));
+      const favWidgetIds = (await getFavorites(parseInt(user.id))) as number[];
       setFavWidgetIds(favWidgetIds);
     } catch (error) {
       console.error("Error fetching widgets", error);
@@ -32,7 +33,10 @@ function useQueryWidgets() {
   };
 
   useEffect(() => {
-    loadWidgets();
+    if (user.id) {
+      loadWidgets();
+    }
+
   }, [user.id]); // eslint-disable-line
 
   return { widgets };

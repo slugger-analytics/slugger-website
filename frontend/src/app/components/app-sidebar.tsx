@@ -40,7 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   ]);
 
   React.useEffect(() => {
-    if (user.role.toLowerCase() === "widget developer") {
+    if (user.role === "widget developer") {
       setRoleDisplay("Developer Account");
     } else if (user.role.toLowerCase() === "master") {
       setRoleDisplay("Master Account");

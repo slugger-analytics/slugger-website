@@ -50,7 +50,7 @@ export default function Widgets() {
    */
   const setUserRole = async () => {
     try {
-      if (user.role.toLowerCase() === "widget developer") {
+      if (user.role === "widget developer") {
         setIsDev(true); // Set to true if the user is a widget developer
       } else {
         setIsDev(false); // Set to false for other roles
@@ -64,7 +64,6 @@ export default function Widgets() {
 
   // Set user role whenever userId or userRole changes
   useEffect(() => {
-    console.log(widgets);
     setUserRole();
   }, [user.id, user.role]);
 

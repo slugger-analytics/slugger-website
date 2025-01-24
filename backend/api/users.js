@@ -93,38 +93,43 @@ router.post("/sign-up", async (req, res) => {
  */
 router.post("/sign-in", async (req, res) => {
   const { email, password } = req.body;
-  console.log("Debug A");
   const params = {
     AuthFlow: "USER_PASSWORD_AUTH",
     ClientId: process.env.COGNITO_APP_CLIENT_ID,
     AuthParameters: { USERNAME: email, PASSWORD: password },
   };
   try {
-    console.log("Debug B");
     const authResult = await cognito.initiateAuth(params).promise();
     const { AccessToken, IdToken, RefreshToken } =
       authResult.AuthenticationResult;
 
     const query = "SELECT * FROM users WHERE email = $1";
     const dbResult = await pool.query(query, [email]);
-    console.log("Debug C");
     if (dbResult.rows.length === 0) {
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
     }
-    console.log("Debug D");
     const user = dbResult.rows[0];
-    console.log(user);
-    console.log("Debug E");
+
     req.session.user = user; // IMPORTANT stores session in DB
-    console.log("Debug F");
+
     res.status(200).json({
       success: true,
       message: "Login successful",
       data: {
-        authData: { AccessToken, IdToken, RefreshToken },
-        user,
+        authData: {
+          acceessToken: AccessToken,
+          idToken: IdToken,
+          refreshToken: RefreshToken
+        },
+        user: {
+          email: user.email,
+          first: user.first_name,
+          last: user.last_name,
+          role: user.role,
+          id: user.user_id
+        }
       },
     });
   } catch (error) {
@@ -137,7 +142,7 @@ router.post("/sign-in", async (req, res) => {
 
 router.post('/logout', async (req, res) => {
   try {
-    console.log(req.session)
+    console.log("recieved")
     // If there's no data in the session, nothing to do
     if (!req.session || !req.session.user) {
       return res.status(200).json({ 

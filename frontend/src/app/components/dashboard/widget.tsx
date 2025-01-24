@@ -102,7 +102,7 @@ export default function Widget({
     <Card className="w-[350px]">
       {/* Image Section */}
       <div className="flex justify-center w-full mb-5">
-        <div className="h-[175px] py-5 bg-gray-50 w-full flex justify-center items-center">
+        <div className="h-[175px] py-5 bg-gray-50 w-full flex justify-center items-center rounded-t-xl">
           {imageUrl && imageUrl !== "default" ? (
             <Image
               src={imageUrl}

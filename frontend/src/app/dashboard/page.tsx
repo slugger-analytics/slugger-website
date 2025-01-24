@@ -11,9 +11,15 @@ import Search from "../components/dashboard/search";
 import FilterDropdown from "../components/dashboard/filter-dropdown";
 import RegisterWidget from "../components/dashboard/register-widget";
 import Widgets from "../components/dashboard/widgets";
+import { useStore } from "@nanostores/react";
+import { $user } from "@/lib/store";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Page() {
   const { widgets } = useQueryWidgets();
+  const user = useStore($user);
+  const { loading } = useAuth();
+
 
   return (
     <ProtectedRoute>
@@ -23,7 +29,7 @@ export default function Page() {
           {" "}
           {/* Ensures the route is protected and only accessible to authenticated users */}
           <SidebarTrigger />
-          {widgets.length > 0 && (
+          {!loading && widgets.length > 0 && (
             <div className="flex justify-center w-full mt-10">
               <Search /> {/* Search component for filtering widgets */}
               <FilterDropdown />{" "}
@@ -31,12 +37,12 @@ export default function Page() {
             </div>
           )}
           <div className="flex justify-center p-10">
-            {widgets.length > 0 && (
+            {!loading && widgets.length > 0 && (
               <div>
-                <Widgets /> {/* Component to display the list of widgets */}
+                <Widgets />
               </div>
             )}
-            {widgets.length == 0 && <RegisterWidget />}{" "}
+            {!loading && widgets.length == 0 && <RegisterWidget />}{" "}
             {/* Component to register a new widget if none exist */}
           </div>
         </SidebarInset>
