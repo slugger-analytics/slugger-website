@@ -18,7 +18,7 @@ import {
 import Image from "next/image";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
-
+import { Users } from "lucide-react";
 // This is sample data.
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -37,8 +37,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: BookOpenCheck,
       isActive: false,
     },
+    {
+      title: "My Team",
+      url: "/team-page",
+      icon: Users,
+      isActive: false,
+    },
   ]);
-
   React.useEffect(() => {
     if (user.role === "widget developer") {
       setRoleDisplay("Developer Account");

@@ -30,6 +30,7 @@ export type UserType = {
   last: string;
   email: string;
   role: string;
+  team_id?: string;
 };
 
 export type UserAPIResType = {
