@@ -9,6 +9,8 @@ import {
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
 import authGuard from "../middleware/auth-guard.js";
+import jwt from "jsonwebtoken";
+import { getTeam } from "../services/teamService";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
@@ -43,46 +45,86 @@ router.get("/", async (req, res) => {
  * Register a new user.
  */
 router.post("/sign-up", async (req, res) => {
-  const { email, password, firstName, lastName, role } = req.body;
-  const params = {
-    ClientId: process.env.COGNITO_APP_CLIENT_ID,
-    Username: email,
-    Password: password,
-    UserAttributes: [
-      { Name: "email", Value: email },
-      { Name: "given_name", Value: firstName },
-      { Name: "family_name", Value: lastName },
-    ],
-  };
+  console.log("Here");
+  const { email, password, firstName, lastName, role, inviteToken, teamId, teamRole } = req.body;
+  console.log(req.body);
   try {
+  
+    let finalTeamId = null;
+
+    if (inviteToken) {
+      try {
+        const decoded = jwt.verify(inviteToken, process.env.SESSION_SECRET);
+        finalTeamId = parseInt(decoded.teamId, 10);
+      } catch (err) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired invite link"
+        });
+      }
+    } else if (teamId) {
+      console.log("teamId");
+      console.log(teamId);
+      try {
+        const teamExists = await getTeam(teamId);
+        if (!teamExists) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid team selected"
+          });
+        }
+      } catch (error) {
+        console.error("Error verifying team:", error);
+        return res.status(400).json({
+          success: false,
+          message: "Error verifying team"
+        });
+      }
+    }
+
+    const params = {
+      ClientId: process.env.COGNITO_APP_CLIENT_ID,
+      Username: email,
+      Password: password,
+      UserAttributes: [
+        { Name: "email", Value: email },
+        { Name: "given_name", Value: firstName },
+        { Name: "family_name", Value: lastName }
+      ]
+    };
+
     const cognitoResult = await cognito.signUp(params).promise();
     const cognitoUserId = cognitoResult.UserSub;
 
+    // Insert into your database with team_id
     const query = `
-      INSERT INTO users (cognito_user_id, email, first_name, last_name, role)
-      VALUES ($1, $2, $3, $4, $5) RETURNING *;
+      INSERT INTO users (cognito_user_id, email, first_name, last_name, role, team_id, team_role)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
     `;
+
     const result = await pool.query(query, [
       cognitoUserId,
       email,
       firstName,
       lastName,
       role,
+      teamId,
+      teamRole
     ]);
 
     const user = result.rows[0];
-
-    req.session.user = user; // IMPORTANT stores session in DB
+    req.session.user = user;
 
     res.status(200).json({
       success: true,
       message: "User registered successfully",
-      data: { userId: user.user_id, cognitoUserId },
+      data: { userId: user.user_id, cognitoUserId }
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
   }
 });
@@ -128,7 +170,9 @@ router.post("/sign-in", async (req, res) => {
           first: user.first_name,
           last: user.last_name,
           role: user.role,
-          id: user.user_id
+          id: user.user_id,
+          teamId: user.team_id,
+          teamRole: user.team_role
         }
       },
     });
