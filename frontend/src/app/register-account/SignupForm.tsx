@@ -163,7 +163,7 @@ export function SignupForm() {
         {invitedTeam && (
           <div className="mb-4 p-4 bg-blue-50 rounded-md">
             <p className="text-sm text-blue-600">
-              You've been invited to join {invitedTeam.team_name}
+              You&apos;ve been invited to join {invitedTeam.team_name}
             </p>
           </div>
         )}
