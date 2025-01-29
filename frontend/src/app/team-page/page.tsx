@@ -9,7 +9,7 @@ import {
 import ProtectedRoute from "../components/ProtectedRoutes";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import { UserPlus, Link as LinkIcon } from "lucide-react";
+import { UserPlus, Link as LinkIcon, Clipboard as ClipboardIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
@@ -34,6 +34,7 @@ export default function TeamPage() {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const user = useStore($user);
 
+  console.log(user);
 
   const generateInviteLink = async () => {
     try {
@@ -59,8 +60,9 @@ export default function TeamPage() {
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
-        console.log(user.team_id);
-        const response = await fetch(`${API_URL}/api/teams/${user.team_id}/members`);
+        console.log("TeamID");
+        console.log(user.teamId);
+        const response = await fetch(`${API_URL}/api/teams/${user.teamId}/members`);
         const data = await response.json();
         
         if (data.success) {
@@ -74,10 +76,10 @@ export default function TeamPage() {
       }
     };
 
-    if (user.team_id) {
+    if (user.teamId) {
       fetchTeamMembers();
     }
-  }, [user.team_id]);
+  }, [user.teamId]);
 
   return (
     <ProtectedRoute role="league">
@@ -106,7 +108,7 @@ export default function TeamPage() {
                         <p className="text-sm text-gray-500">{member.email}</p>
                       </div>
                       <span className="text-sm bg-gray-100 px-3 py-1 rounded-full">
-                        {member.is_admin ? "Admin" : "Member"}
+                        {member.team_role}
                       </span>
                     </CardContent>
                   </Card>
@@ -124,10 +126,29 @@ export default function TeamPage() {
                 Generate Invite Link
               </Button>
               {inviteLink && (
-                <div className="text-sm text-gray-500 text-center">
-                  <p>Share this link with your team members:</p>
-                  <code className="bg-gray-100 px-2 py-1 rounded">{inviteLink}</code>
-                </div>
+                <Card className="w-full max-w-2xl">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col items-center gap-4">
+                      <p className="text-sm font-medium text-gray-600">
+                        Your invite link:
+                      </p>
+                      <div className="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 break-all text-sm font-mono text-gray-700">
+                        {inviteLink}
+                      </div>
+                      <Button
+                        variant="secondary"
+                        className="flex items-center gap-2"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(inviteLink);
+                          toast.success("Invite link copied to clipboard!");
+                        }}
+                      >
+                        <ClipboardIcon className="h-5 w-5" />
+                        Copy to Clipboard
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
             </div>
           </div>
