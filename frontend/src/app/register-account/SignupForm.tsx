@@ -99,14 +99,13 @@ export function SignupForm() {
       return;
     }
 
-    // If league account type is selected, store basic info and redirect
-    if (data["account-type"] === "league") {
+    // Only redirect to league registration if there's no invite token
+    if (data["account-type"] === "league" && !inviteToken) {
       sessionStorage.setItem('leagueRegistration', JSON.stringify({
         email: data["email"],
         password: data["password"],
         firstName: data["first-name"],
-        lastName: data["last-name"],
-        inviteToken: inviteToken || undefined
+        lastName: data["last-name"]
       }));
       
       router.push('/register-league');
@@ -121,10 +120,11 @@ export function SignupForm() {
         firstName: data["first-name"],
         lastName: data["last-name"],
         role: data["account-type"],
+        teamRole: data["team-role"],
         inviteToken: inviteToken || undefined
       };
 
-      await signUpUser(userData); // This will now call your backend
+      await signUpUser(userData);
       setSubmitStatus({
         message: "Sign up successful! Redirecting...",
         textClass: "text-green-600",
@@ -218,23 +218,34 @@ export function SignupForm() {
               />
             </div>
             <Separator className="my-4" />
-            <div className="flex flex-col space-y-1.5">
-              {/* <Label htmlFor="account-type">Account type</Label> */}
-              <Select name="account-type" required={true}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select an account type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="widget developer">
-                      Widget Developer
-                    </SelectItem>
-                    <SelectItem value="league">League</SelectItem>
-                    <SelectItem value="master">Master</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+            {!invitedTeam ? (
+              <div className="flex flex-col space-y-1.5">
+                <Select name="account-type" required={true}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an account type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="widget developer">Widget Developer</SelectItem>
+                      <SelectItem value="league">League</SelectItem>
+                      <SelectItem value="master">Master</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="team-role">Your Role</Label>
+                <Input
+                  id="team-role"
+                  name="team-role"
+                  type="text"
+                  required={true}
+                  placeholder="e.g., General Manager, Analytics Director"
+                />
+                <input type="hidden" name="account-type" value="league" />
+              </div>
+            )}
           </div>
           <SubmitButton btnText="Sign up" className="mt-8" />
         </form>

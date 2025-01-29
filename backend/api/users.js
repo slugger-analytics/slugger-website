@@ -45,43 +45,28 @@ router.get("/", async (req, res) => {
  * Register a new user.
  */
 router.post("/sign-up", async (req, res) => {
-  console.log("Here");
+  console.log("Sign-up request received:", req.body);
   const { email, password, firstName, lastName, role, inviteToken, teamId, teamRole } = req.body;
-  console.log(req.body);
-  try {
   
+  try {
     let finalTeamId = null;
 
     if (inviteToken) {
       try {
         const decoded = jwt.verify(inviteToken, process.env.SESSION_SECRET);
-        finalTeamId = parseInt(decoded.teamId, 10);
+        finalTeamId = decoded.teamId;
       } catch (err) {
+        console.error("Invite token verification failed:", err);
         return res.status(400).json({
           success: false,
           message: "Invalid or expired invite link"
         });
       }
     } else if (teamId) {
-      console.log("teamId");
-      console.log(teamId);
-      try {
-        const teamExists = await getTeam(teamId);
-        if (!teamExists) {
-          return res.status(400).json({
-            success: false,
-            message: "Invalid team selected"
-          });
-        }
-      } catch (error) {
-        console.error("Error verifying team:", error);
-        return res.status(400).json({
-          success: false,
-          message: "Error verifying team"
-        });
-      }
+      finalTeamId = teamId;
     }
 
+    // Cognito signup
     const params = {
       ClientId: process.env.COGNITO_APP_CLIENT_ID,
       Username: email,
@@ -93,38 +78,46 @@ router.post("/sign-up", async (req, res) => {
       ]
     };
 
-    const cognitoResult = await cognito.signUp(params).promise();
-    const cognitoUserId = cognitoResult.UserSub;
+    try {
+      const cognitoResult = await cognito.signUp(params).promise();
+      const cognitoUserId = cognitoResult.UserSub;
 
-    // Insert into your database with team_id
-    const query = `
-      INSERT INTO users (cognito_user_id, email, first_name, last_name, role, team_id, team_role)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING *
-    `;
+      // Database insertion
+      const query = `
+        INSERT INTO users (cognito_user_id, email, first_name, last_name, role, team_id, team_role)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING user_id;
+      `;
 
-    const result = await pool.query(query, [
-      cognitoUserId,
-      email,
-      firstName,
-      lastName,
-      role,
-      teamId,
-      teamRole
-    ]);
+      const values = [
+        cognitoUserId,
+        email,
+        firstName,
+        lastName,
+        'league',
+        teamId,
+        teamRole || 'Team Member'
+      ];
 
-    const user = result.rows[0];
-    req.session.user = user;
+      const result = await pool.query(query, values);
 
-    res.status(200).json({
-      success: true,
-      message: "User registered successfully",
-      data: { userId: user.user_id, cognitoUserId }
-    });
+      res.status(200).json({
+        success: true,
+        message: "User registered successfully",
+        userId: result.rows[0].user_id
+      });
+    } catch (cognitoError) {
+      console.error("Cognito signup failed:", cognitoError);
+      res.status(400).json({
+        success: false,
+        message: cognitoError.message || "Failed to create user account"
+      });
+    }
   } catch (error) {
+    console.error("Server error during signup:", error);
     res.status(500).json({
       success: false,
-      message: error.message
+      message: "Error registering user"
     });
   }
 });
