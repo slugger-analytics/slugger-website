@@ -10,6 +10,7 @@ import {
   updateMemberTeam,
 } from "../services/teamService";
 import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas";
+import jwt from 'jsonwebtoken';
 
 const router = Router();
 
@@ -172,5 +173,79 @@ router.patch(
     }
   },
 );
+
+// Add this route after your existing team routes
+router.post("/:teamId/invite", async (req, res) => {
+  try {
+    console.log("Invite route hit");
+    const teamId = req.params.teamId;
+    
+    // Verify the team exists
+    const team = await getTeam(teamId);
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found"
+      });
+    }
+
+    // Generate a unique invite token using JWT
+    const token = jwt.sign(
+      { 
+        teamId: teamId,
+        exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+      },
+      process.env.SESSION_SECRET // Using your existing session secret
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Invite link generated successfully",
+      token
+    });
+
+  } catch (error) {
+    console.error("Error generating invite link:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate invite link"
+    });
+  }
+});
+
+// Change from /invite/validate to a more explicit path
+router.post("/validate-invite", async (req, res) => {
+  console.log("Validate invite route hit");
+  console.log("Request body:", req.body);
+  try {
+    const { inviteToken } = req.body;
+    
+    // Verify and decode the token
+    const decoded = jwt.verify(inviteToken, process.env.SESSION_SECRET);
+    
+    // Get team info
+    const team = await getTeam(decoded.teamId);
+    if (!team) {
+      return res.status(404).json({
+        success: false,
+        message: "Team not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      team: {
+        team_name: team.team_name,
+        team_id: team.team_id
+      }
+    });
+  } catch (error) {
+    console.error("Error validating invite:", error);
+    res.status(400).json({
+      success: false,
+      message: "Invalid or expired invite link"
+    });
+  }
+});
 
 export default router;

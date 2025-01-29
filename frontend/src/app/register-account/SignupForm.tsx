@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import InputField from "../components/input/InputField";
 import SubmitButton from "../components/input/SubmitButton";
@@ -27,6 +27,8 @@ import { Separator } from "@/app/components/ui/separator";
 import Image from "next/image";
 import LogoButton from "../components/navbar/LogoButton";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const initialSubmitStatus = {
   message: "",
   textClass: "text-black",
@@ -35,6 +37,40 @@ const initialSubmitStatus = {
 export function SignupForm() {
   const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
   const router = useRouter();
+  const [invitedTeam, setInvitedTeam] = useState<{ team_name: string } | null>(null);
+
+  useEffect(() => {
+    const fetchInvitedTeam = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const inviteToken = searchParams.get('invite');
+      
+      if (inviteToken) {
+        try {
+          const response = await fetch(`${API_URL}/api/teams/validate-invite`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ inviteToken }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to validate invite:', await response.text());
+            return;
+          }
+          
+          const data = await response.json();
+          if (data.success) {
+            setInvitedTeam(data.team);
+          }
+        } catch (error) {
+          console.error('Error validating invite:', error);
+        }
+      }
+    };
+
+    fetchInvitedTeam();
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,12 +87,29 @@ export function SignupForm() {
       data[key] = value as string;
     });
 
+    const searchParams = new URLSearchParams(window.location.search);
+    const inviteToken = searchParams.get('invite');
+
     // Verify that passwords match
     if (data["password"] !== data["confirm-password"]) {
       setSubmitStatus({
         message: "Error: passwords don't match",
         textClass: "text-red-600",
       });
+      return;
+    }
+
+    // If league account type is selected, store basic info and redirect
+    if (data["account-type"] === "league") {
+      sessionStorage.setItem('leagueRegistration', JSON.stringify({
+        email: data["email"],
+        password: data["password"],
+        firstName: data["first-name"],
+        lastName: data["last-name"],
+        inviteToken: inviteToken || undefined
+      }));
+      
+      router.push('/register-league');
       return;
     }
 
@@ -68,6 +121,7 @@ export function SignupForm() {
         firstName: data["first-name"],
         lastName: data["last-name"],
         role: data["account-type"],
+        inviteToken: inviteToken || undefined
       };
 
       await signUpUser(userData); // This will now call your backend
@@ -106,6 +160,13 @@ export function SignupForm() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {invitedTeam && (
+          <div className="mb-4 p-4 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-600">
+              You've been invited to join {invitedTeam.team_name}
+            </p>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">

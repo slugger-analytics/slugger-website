@@ -145,7 +145,7 @@ const emptyUser: UserType = {
   last: "",
   email: "",
   role: "",
-  team_id: "-1",
+  team_id: "",
 };
 
 export const $user = persistentMap<UserType>("user:", emptyUser);
