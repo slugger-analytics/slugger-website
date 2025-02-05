@@ -73,4 +73,8 @@ export const users = pgTable("users", {
 
   // Array of favorite widget IDs associated with the user (optional)
   favWidgetsIds: integer("fav_widgets_ids").array(),
+
+  teamId: integer("team_id").references(() => teams.id),
+  teamRole: varchar("team_role"),
+  isAdmin: boolean("is_admin").default(false)
 });

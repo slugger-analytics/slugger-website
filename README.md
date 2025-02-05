@@ -1,8 +1,8 @@
 # ALPB Analytics
-A centralized platform for analysts, players, coaches, and other members of the Atlantic League of Professional Baseball to share and discover baseball analytics tools.
+A centralized platform for analysts, players, coaches, and other members of the Atlantic League of Professional Baseball to share and discover baseball analytics tools. Our API uses official Trackman data from the Atlantic League.
 
 ## Accessing the Platform
-The platform can be accessed at `http://alpb-analytics.com`!
+The platform can be accessed at `https://alpb-analytics.com`!
 
 ## Deploying Locally
 1. Clone this repository and navigate to the project directory.

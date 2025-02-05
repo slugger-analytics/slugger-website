@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import InputField from "../components/input/InputField";
 import SubmitButton from "../components/input/SubmitButton";
@@ -27,6 +27,8 @@ import { Separator } from "@/app/components/ui/separator";
 import Image from "next/image";
 import LogoButton from "../components/navbar/LogoButton";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 const initialSubmitStatus = {
   message: "",
   textClass: "text-black",
@@ -35,6 +37,40 @@ const initialSubmitStatus = {
 export function SignupForm() {
   const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
   const router = useRouter();
+  const [invitedTeam, setInvitedTeam] = useState<{ team_name: string } | null>(null);
+
+  useEffect(() => {
+    const fetchInvitedTeam = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const inviteToken = searchParams.get('invite');
+      
+      if (inviteToken) {
+        try {
+          const response = await fetch(`${API_URL}/api/teams/validate-invite`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ inviteToken }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to validate invite:', await response.text());
+            return;
+          }
+          
+          const data = await response.json();
+          if (data.success) {
+            setInvitedTeam(data.team);
+          }
+        } catch (error) {
+          console.error('Error validating invite:', error);
+        }
+      }
+    };
+
+    fetchInvitedTeam();
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,12 +87,28 @@ export function SignupForm() {
       data[key] = value as string;
     });
 
+    const searchParams = new URLSearchParams(window.location.search);
+    const inviteToken = searchParams.get('invite');
+
     // Verify that passwords match
     if (data["password"] !== data["confirm-password"]) {
       setSubmitStatus({
         message: "Error: passwords don't match",
         textClass: "text-red-600",
       });
+      return;
+    }
+
+    // Only redirect to league registration if there's no invite token
+    if (data["account-type"] === "league" && !inviteToken) {
+      sessionStorage.setItem('leagueRegistration', JSON.stringify({
+        email: data["email"],
+        password: data["password"],
+        firstName: data["first-name"],
+        lastName: data["last-name"]
+      }));
+      
+      router.push('/register-league');
       return;
     }
 
@@ -68,9 +120,11 @@ export function SignupForm() {
         firstName: data["first-name"],
         lastName: data["last-name"],
         role: data["account-type"],
+        teamRole: data["team-role"],
+        inviteToken: inviteToken || undefined
       };
 
-      await signUpUser(userData); // This will now call your backend
+      await signUpUser(userData);
       setSubmitStatus({
         message: "Sign up successful! Redirecting...",
         textClass: "text-green-600",
@@ -106,6 +160,13 @@ export function SignupForm() {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        {invitedTeam && (
+          <div className="mb-4 p-4 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-600">
+              You&apos;ve been invited to join {invitedTeam.team_name}
+            </p>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
@@ -157,23 +218,34 @@ export function SignupForm() {
               />
             </div>
             <Separator className="my-4" />
-            <div className="flex flex-col space-y-1.5">
-              {/* <Label htmlFor="account-type">Account type</Label> */}
-              <Select name="account-type" required={true}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select an account type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="widget developer">
-                      Widget Developer
-                    </SelectItem>
-                    <SelectItem value="league">League</SelectItem>
-                    <SelectItem value="master">Master</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
+            {!invitedTeam ? (
+              <div className="flex flex-col space-y-1.5">
+                <Select name="account-type" required={true}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an account type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="widget developer">Widget Developer</SelectItem>
+                      <SelectItem value="league">League</SelectItem>
+                      <SelectItem value="master">Master</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="flex flex-col space-y-1.5">
+                <Label htmlFor="team-role">Your Role</Label>
+                <Input
+                  id="team-role"
+                  name="team-role"
+                  type="text"
+                  required={true}
+                  placeholder="e.g., General Manager, Analytics Director"
+                />
+                <input type="hidden" name="account-type" value="league" />
+              </div>
+            )}
           </div>
           <SubmitButton btnText="Sign up" className="mt-8" />
         </form>

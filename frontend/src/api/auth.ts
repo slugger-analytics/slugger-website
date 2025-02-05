@@ -19,6 +19,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
  * @param {string} data.firstName - The user's first name.
  * @param {string} data.lastName - The user's last name.
  * @param {string} data.role - The user's role (e.g., "admin", "editor").
+ * @param {string} data.teamId - The user's team ID.
+ * @param {string} data.teamRole - The user's team role.
+ * @param {string} data.inviteToken - The user's invite token.
  * @returns {Promise<Object>} - The response from the API if successful.
  * @throws {Error} - Throws an error if the API call fails or the response is not successful.
  */
@@ -28,32 +31,35 @@ export async function signUpUser(data: {
   firstName: string;
   lastName: string;
   role: string;
+  teamId?: string;
+  teamRole?: string;
+  inviteToken?: string;
 }) {
   try {
+    console.log(data);
     const startTime = performance.now();
     const response = await fetch(`${API_URL}/api/users/sign-up`, {
-      method: "POST", // HTTP POST request
+      method: "POST",
       credentials: 'include',
       headers: {
-        "Content-Type": "application/json", // Content type for JSON payload
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(data), // Convert user data to JSON format
+      body: JSON.stringify(data),
     });
     const endTime = performance.now();
     const authTime = endTime - startTime;
     DEBUG && console.log(`Time to sign up: ${authTime}`);
 
-    const result = await response.json(); // Parse the JSON response
+    const result = await response.json();
 
     if (!response.ok) {
-      // Handle unsuccessful responses
       throw new Error(result.message || "Failed to sign up");
     }
 
-    return result; // Return the API response for successful signup
+    return result;
   } catch (error) {
     console.error("Error signing up user:", error);
-    throw error; // Rethrow the error for handling in the caller
+    throw error;
   }
 }
 

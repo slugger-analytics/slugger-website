@@ -12,21 +12,26 @@ export async function getTeams() {
 
 export async function getTeam(id) {
   try {
-    console.log({ id });
-    const result = await pool.query(`SELECT * FROM team WHERE team_id = $1`, [
-      id,
-    ]);
+    console.log('Getting team with ID:', id);
+    const result = await pool.query(
+      `SELECT * FROM team WHERE team_id = $1`,
+      [id]
+    );
     if (result.rowCount === 0) {
-      throw new error(`Team with id ${id} not found`);
+      return null;
     }
     const team = result.rows[0];
     return team;
   } catch (error) {
-    throw new error(error.message ?? `Error getting team with id ${id}`);
+    console.error('Error in getTeam:', error);
+    throw new Error(`Error getting team with id ${id}`);
   }
 }
 
 export async function getTeamMembers(teamId) {
+  console.log("TeamID");
+  console.log(teamId);
+  console.log("Actually getting team members");
   try {
     const result = await pool.query(
       `
