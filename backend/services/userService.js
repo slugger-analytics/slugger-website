@@ -6,8 +6,13 @@
 import pkg from "aws-sdk"; // Import AWS SDK
 const { APIGateway } = pkg; // Extract the API Gateway class
 const apiGateway = new APIGateway({ region: "us-east-2" }); // Initialize API Gateway (not directly used in this code)
-
+import crypto from "crypto";
 import pool from "../db.js"; // PostgreSQL database connection
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const TOKEN_SECRET = process.env.TOKEN_SECRET;
 
 /**
  * Adds a widget to a user's list of favorite widgets.
@@ -98,4 +103,14 @@ export async function getFavorites(userId) {
     console.error("Error fetching favorite widget ids:", error);
     throw new Error("Failed to fetch favorite widget ids");
   }
+}
+
+const algorithm = 'aes-256-cbc';
+const iv = crypto.randomBytes(16); // Initialization vector
+
+export function encryptToken(payload) {
+  const cipher = crypto.createCipheriv(algorithm, TOKEN_SECRET, iv);
+  let encrypted = cipher.update(JSON.stringify(payload), 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
 }

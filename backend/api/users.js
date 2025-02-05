@@ -3,18 +3,22 @@ import pkg from "aws-sdk";
 import dotenv from "dotenv";
 import pool from "../db.js";
 import {
+  encryptToken,
   favoriteWidget,
   getFavorites,
   unfavoriteWidget,
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
 import authGuard from "../middleware/auth-guard.js";
+import { validationMiddleware } from "../middleware/validation-middleware.js";
+import { generateTokenSchema } from "../validators/schemas.js";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
 const cognito = new CognitoIdentityServiceProvider({
   region: process.env.AWS_REGION,
 });
+const JWT_SECRET = process.env.JWT_SECRET;
 const router = Router();
 
 /**
@@ -112,7 +116,7 @@ router.post("/sign-in", async (req, res) => {
     }
     const user = dbResult.rows[0];
 
-    req.session.user = user; // IMPORTANT stores session in DB
+    req.session.user = user; // IMPORTANT stores session in req body
 
     res.status(200).json({
       success: true,
@@ -252,5 +256,76 @@ router.post("/validate-session", authGuard, async (req, res) => {
     message: "Session is valid"
   })
 });
+
+router.post("/generate-token", authGuard, validationMiddleware(generateTokenSchema), async (req, res) => {
+  const { userId, publicWidgetId, sessionId } = req.body;
+
+  try {
+    const sessionRes = await pool.query(
+      "SELECT * FROM session WHERE sid = $1",
+      [sessionId]
+    );
+
+    // Ensure session is valid (w/ corresponding user)
+    if (sessionRes.rowCount === 0 || sessionRes.rows[0]["sess"]["user"]["user_id"] !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid session"
+      });
+    }
+
+    // Lookup internal widget ID from public ID
+    const widgetRes = await pool.query(
+        "SELECT widget_id FROM widgets WHERE public_id = $1",
+        [publicWidgetId]
+    );
+
+    if (widgetRes.rowCount === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "Widget not found",
+      })
+    }
+
+    const widgetId = widgetRes.rows[0].widget_id;
+
+    // Ensure user has access to this widget
+    const widgetAccessRes = await pool.query(
+      "SELECT * FROM user_widget WHERE user_id = $1 AND widget_id = $2",
+      [userId, widgetId]
+    );
+
+    if (widgetAccessRes.rowCount === 0) {
+      return res.status(403).json({
+        success: false,
+        message: "User does not have access to this widget"
+      });
+    }
+
+    // const token = jwt.sign({ U: userId, p: publicWidgetId, s: sessionId }, JWT_SECRET, { expiresIn: "8h", algorithm: "HS256" });
+    const token = encryptToken({
+      userId,
+      publicWidgetId,
+      sessionId
+    })
+    res.json({
+      succes: true,
+      message: "Token generated successfully",
+      data: {
+        token,
+      }
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error generating token " + error.message 
+    });
+  }
+})
+
+router.post("/validate-token", async (req, res) => {
+
+});
+
 
 export default router;
