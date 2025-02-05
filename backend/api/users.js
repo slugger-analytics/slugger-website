@@ -10,6 +10,8 @@ import {
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
 import authGuard from "../middleware/auth-guard.js";
+import jwt from "jsonwebtoken";
+import { getTeam } from "../services/teamService";
 import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
 
@@ -47,46 +49,79 @@ router.get("/", async (req, res) => {
  * Register a new user.
  */
 router.post("/sign-up", async (req, res) => {
-  const { email, password, firstName, lastName, role } = req.body;
-  const params = {
-    ClientId: process.env.COGNITO_APP_CLIENT_ID,
-    Username: email,
-    Password: password,
-    UserAttributes: [
-      { Name: "email", Value: email },
-      { Name: "given_name", Value: firstName },
-      { Name: "family_name", Value: lastName },
-    ],
-  };
+  console.log("Sign-up request received:", req.body);
+  const { email, password, firstName, lastName, role, inviteToken, teamId, teamRole } = req.body;
+  
   try {
-    const cognitoResult = await cognito.signUp(params).promise();
-    const cognitoUserId = cognitoResult.UserSub;
+    let finalTeamId = null;
 
-    const query = `
-      INSERT INTO users (cognito_user_id, email, first_name, last_name, role)
-      VALUES ($1, $2, $3, $4, $5) RETURNING *;
-    `;
-    const result = await pool.query(query, [
-      cognitoUserId,
-      email,
-      firstName,
-      lastName,
-      role,
-    ]);
+    if (inviteToken) {
+      try {
+        const decoded = jwt.verify(inviteToken, process.env.SESSION_SECRET);
+        finalTeamId = decoded.teamId;
+      } catch (err) {
+        console.error("Invite token verification failed:", err);
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired invite link"
+        });
+      }
+    } else if (teamId) {
+      finalTeamId = teamId;
+    }
 
-    const user = result.rows[0];
+    // Cognito signup
+    const params = {
+      ClientId: process.env.COGNITO_APP_CLIENT_ID,
+      Username: email,
+      Password: password,
+      UserAttributes: [
+        { Name: "email", Value: email },
+        { Name: "given_name", Value: firstName },
+        { Name: "family_name", Value: lastName }
+      ]
+    };
 
-    req.session.user = user; // IMPORTANT stores session in DB
+    try {
+      const cognitoResult = await cognito.signUp(params).promise();
+      const cognitoUserId = cognitoResult.UserSub;
 
-    res.status(200).json({
-      success: true,
-      message: "User registered successfully",
-      data: { userId: user.user_id, cognitoUserId },
-    });
+      // Database insertion
+      const query = `
+        INSERT INTO users (cognito_user_id, email, first_name, last_name, role, team_id, team_role)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING user_id;
+      `;
+
+      const values = [
+        cognitoUserId,
+        email,
+        firstName,
+        lastName,
+        'league',
+        teamId,
+        teamRole || 'Team Member'
+      ];
+
+      const result = await pool.query(query, values);
+
+      res.status(200).json({
+        success: true,
+        message: "User registered successfully",
+        userId: result.rows[0].user_id
+      });
+    } catch (cognitoError) {
+      console.error("Cognito signup failed:", cognitoError);
+      res.status(400).json({
+        success: false,
+        message: cognitoError.message || "Failed to create user account"
+      });
+    }
   } catch (error) {
+    console.error("Server error during signup:", error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: "Error registering user"
     });
   }
 });
@@ -132,7 +167,9 @@ router.post("/sign-in", async (req, res) => {
           first: user.first_name,
           last: user.last_name,
           role: user.role,
-          id: user.user_id
+          id: user.user_id,
+          teamId: user.team_id,
+          teamRole: user.team_role
         }
       },
     });
@@ -322,10 +359,6 @@ router.post("/generate-token", authGuard, validationMiddleware(generateTokenSche
     });
   }
 })
-
-router.post("/validate-token", async (req, res) => {
-
-});
 
 
 export default router;

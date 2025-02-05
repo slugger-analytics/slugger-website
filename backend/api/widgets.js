@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { validationMiddleware } from "../middleware/validation-middleware.js";
+import { validationMiddleware } from "../middleware/validation-middleware.ts";
 import sendApiKeyEmail from "../services/emailService.js";
 import pool from "../db.js";
 import {
   editWidgetSchema,
   queryParamsSchema,
   registerWidgetSchema,
-} from "../validators/schemas.js";
+} from "../validators/schemas.ts";
 import {
   createApprovedWidget,
   getUserData,
