@@ -9,6 +9,16 @@ const DEBUG = false;
 const emptyWidget: WidgetType = {
   id: -1,
   name: "empty widget",
+  description: "",
+  visibility: "",
+  status: "",
+  createdAt: "",
+  redirectLink: "",
+  imageUrl: "",
+  categoryIds: [],
+  developerIds: [],
+  publicId: "",
+  restrictedAccess: false
 };
 
 export const $widgets = atom<WidgetType[]>([]);
