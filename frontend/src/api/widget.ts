@@ -11,7 +11,6 @@ import {
   WidgetType,
 } from "@/data/types";
 import dotenv from "dotenv";
-import { error } from "console";
 
 dotenv.config();
 
@@ -132,6 +131,8 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
       redirectLink: w.redirect_link || "",
       imageUrl: w.image_url || undefined,
       developerIds: w.developer_ids || [],
+      publicId: w.public_id,
+      restrictedAccess: w.restricted_access,
     }));
 
     return cleanedData;
@@ -148,8 +149,11 @@ export const updateWidget = async ({
   redirectLink,
   visibility,
   imageUrl,
+  publicId,
+  restrictedAccess,
 }: WidgetType): Promise<Response> => {
   try {
+    console.log({ restrictedAccess });
     const response = await fetch(`${API_URL}/api/widgets/${id}`, {
       method: "PATCH",
       headers: {
@@ -161,6 +165,8 @@ export const updateWidget = async ({
         redirectLink,
         visibility,
         imageUrl,
+        publicId,
+        restrictedAccess,
       }),
     });
 

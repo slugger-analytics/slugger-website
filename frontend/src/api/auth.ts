@@ -40,7 +40,7 @@ export async function signUpUser(data: {
     const startTime = performance.now();
     const response = await fetch(`${API_URL}/api/users/sign-up`, {
       method: "POST",
-      credentials: 'include',
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -79,7 +79,7 @@ export const loginUser = async (email: string, password: string) => {
       headers: {
         "Content-Type": "application/json", // Content type for JSON payload
       },
-      credentials: 'include',
+      credentials: "include",
       body: JSON.stringify({ email, password }), // Convert credentials to JSON format
     });
     const endTime = performance.now();
@@ -104,17 +104,17 @@ export const logoutUser = async (): Promise<boolean> => {
     const response = await fetch(`${API_URL}/api/users/logout`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      credentials: "include"
+      credentials: "include",
     });
     const res = await response.json();
     return res.success;
   } catch (error) {
     console.error("Error logging out:", error);
-    throw error
+    throw error;
   }
-}
+};
 
 export const validateSession = async () => {
   try {
@@ -123,11 +123,11 @@ export const validateSession = async () => {
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: 'include',
+      credentials: "include",
     });
     const res = await response.json();
     return res.success;
   } catch {
     return false;
   }
-}
+};

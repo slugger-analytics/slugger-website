@@ -9,7 +9,11 @@ import {
 import ProtectedRoute from "../components/ProtectedRoutes";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import { UserPlus, Link as LinkIcon, Clipboard as ClipboardIcon } from "lucide-react";
+import {
+  UserPlus,
+  Link as LinkIcon,
+  Clipboard as ClipboardIcon,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
@@ -38,11 +42,14 @@ export default function TeamPage() {
 
   const generateInviteLink = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/teams/${user.teamId}/invite`, {
-        method: 'POST',
-      });
+      const response = await fetch(
+        `${API_URL}/api/teams/${user.teamId}/invite`,
+        {
+          method: "POST",
+        },
+      );
       const data = await response.json();
-      
+
       if (data.success) {
         const link = `${window.location.origin}/register?invite=${data.token}`;
         setInviteLink(link);
@@ -62,9 +69,11 @@ export default function TeamPage() {
       try {
         console.log("TeamID");
         console.log(user.teamId);
-        const response = await fetch(`${API_URL}/api/teams/${user.teamId}/members`);
+        const response = await fetch(
+          `${API_URL}/api/teams/${user.teamId}/members`,
+        );
         const data = await response.json();
-        
+
         if (data.success) {
           setMembers(data.data);
         } else {
@@ -88,7 +97,9 @@ export default function TeamPage() {
         <SidebarInset>
           <SidebarTrigger />
           <div className="container mx-auto p-8">
-            <h1 className="text-2xl font-bold text-center mb-8">Team Members</h1>
+            <h1 className="text-2xl font-bold text-center mb-8">
+              Team Members
+            </h1>
 
             {status && (
               <p className="text-center text-red-600 mb-4">{status}</p>
@@ -96,7 +107,9 @@ export default function TeamPage() {
 
             <div className="max-w-2xl mx-auto grid gap-4">
               {members.length === 0 ? (
-                <p className="text-center text-gray-600">No team members found.</p>
+                <p className="text-center text-gray-600">
+                  No team members found.
+                </p>
               ) : (
                 members.map((member) => (
                   <Card key={member.user_id}>
@@ -117,7 +130,7 @@ export default function TeamPage() {
             </div>
 
             <div className="mt-8 flex flex-col items-center gap-4">
-              <Button 
+              <Button
                 variant="outline"
                 className="flex items-center gap-2"
                 onClick={generateInviteLink}

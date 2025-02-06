@@ -14,8 +14,7 @@ function useQueryWidgets() {
     try {
       const fetchedWidgets = await fetchWidgets();
       // Check if the user is a Widget Developer
-      const isDev =
-        user.role === "widget developer" ? true : false;
+      const isDev = user.role === "widget developer" ? true : false;
 
       // Filter widgets based on the user role and developer IDs
       const filteredWidgets = fetchedWidgets.filter((widget) =>
@@ -36,7 +35,6 @@ function useQueryWidgets() {
     if (user.id) {
       loadWidgets();
     }
-
   }, [user.id]); // eslint-disable-line
 
   return { widgets };

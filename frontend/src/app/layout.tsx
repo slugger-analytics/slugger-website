@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
+import { Toaster } from "./components/ui/toaster";
 
 export const metadata = {
   title: "ALPB Analytics Platform widget registration example",
@@ -17,6 +18,7 @@ export default function RootLayout({
       <html lang="en">
         <body>
           <main>{children}</main>
+          <Toaster />
         </body>
       </html>
     </AuthProvider>

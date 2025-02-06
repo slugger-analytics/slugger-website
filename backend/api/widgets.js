@@ -63,7 +63,9 @@ router.patch(
   "/:id",
   validationMiddleware({ bodySchema: editWidgetSchema }),
   async (req, res) => {
-    const { name, description, redirectLink, visibility, imageUrl } = req.body;
+    const { name, description, redirectLink, visibility, imageUrl, publicId, restrictedAccess } = req.body;
+
+    console.log({restrictedAccess})
 
     try {
       const id = parseInt(req.params.id);
@@ -85,6 +87,8 @@ router.patch(
         redirectLink,
         visibility,
         imageUrl,
+        publicId,
+        restrictedAccess
       });
 
       res.status(200).json({
