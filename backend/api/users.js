@@ -318,7 +318,7 @@ router.post("/generate-token", authGuard, validationMiddleware(generateTokenSche
       });
     }
 
-    const sessionId = sessionIdRes.rows[0];
+    const sessionId = sessionIdRes.rows[0].sid;
 
     // Lookup internal widget ID from public ID
     const widgetRes = await pool.query(
