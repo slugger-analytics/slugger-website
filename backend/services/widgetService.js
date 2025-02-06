@@ -51,6 +51,8 @@ export async function updateWidget({
   redirectLink,
   visibility,
   imageUrl,
+  publicId,
+  restrictedAccess
 }) {
   const updates = [];
   const values = [];
@@ -76,6 +78,15 @@ export async function updateWidget({
   if (imageUrl !== undefined) {
     updates.push(`image_url = $${index++}`);
     values.push(imageUrl);
+  }
+  if (publicId !== undefined) {
+    updates.push(`public_id = $${index++}`);
+    values.push(publicId);
+  }
+  if (restrictedAccess !== undefined) {
+    console.log({restrictedAccess})
+    updates.push(`restricted_access = $${index++}`);
+    values.push(restrictedAccess);
   }
 
   values.push(id);

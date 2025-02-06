@@ -48,7 +48,6 @@ const LoginForm = () => {
       } else {
         router.push("/dashboard"); // Redirect to dashboard for other roles
       }
-      
     } catch (error) {
       setSubmitStatus({
         message: "Login failed. Please try again", // Display error message on login failure

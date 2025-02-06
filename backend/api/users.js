@@ -297,21 +297,30 @@ router.post("/validate-session", authGuard, async (req, res) => {
 });
 
 router.post("/generate-token", authGuard, validationMiddleware(generateTokenSchema), async (req, res) => {
-  const { userId, publicWidgetId, sessionId } = req.body;
-
+  const { userId, publicWidgetId } = req.body;
+  console.log("session:", req.session)
   try {
-    const sessionRes = await pool.query(
-      "SELECT * FROM session WHERE sid = $1",
-      [sessionId]
+    // Ensure session is valid (w/ corresponding user)
+    // if (req.session.user.user_id !== userId) {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: "Invalid session"
+    //   });
+    // }
+
+    const sessionIdRes = await pool.query(
+      "SELECT sid FROM session WHERE (sess->'user'->>'user_id')::int = $1",
+      [userId]
     );
 
-    // Ensure session is valid (w/ corresponding user)
-    if (sessionRes.rowCount === 0 || sessionRes.rows[0]["sess"]["user"]["user_id"] !== userId) {
+    if (sessionIdRes.rowCount === 0) {
       return res.status(403).json({
         success: false,
         message: "Invalid session"
       });
     }
+
+    const sessionId = sessionIdRes.rows[0].sid;
 
     // Lookup internal widget ID from public ID
     const widgetRes = await pool.query(
@@ -348,12 +357,13 @@ router.post("/generate-token", authGuard, validationMiddleware(generateTokenSche
       sessionId
     })
     res.json({
-      succes: true,
+      success: true,
       message: "Token generated successfully",
       data: {
         token,
       }
     })
+    res.status(200);
   } catch (error) {
     res.status(500).json({
       success: false,

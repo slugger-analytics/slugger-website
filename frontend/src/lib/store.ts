@@ -57,6 +57,8 @@ export function updateStoreWidget({
   visibility,
   redirectLink,
   imageUrl,
+  publicId,
+  restrictedAccess,
 }: WidgetType) {
   $widgets.set(
     $widgets.get().map((widget) => {
@@ -68,6 +70,8 @@ export function updateStoreWidget({
           ...(visibility !== undefined && { visibility }),
           ...(redirectLink !== undefined && { redirectLink }),
           ...(imageUrl !== undefined && { imageUrl }),
+          ...(publicId !== undefined && { publicId }),
+          ...(restrictedAccess !== undefined && { restrictedAccess }),
         };
       } else {
         return widget;

@@ -85,9 +85,12 @@ export const removeFavorite = async (userId: number, widgetId: number) => {
  */
 export const getFavorites = async (userId: number) => {
   try {
-    const response = await fetch(`${API_URL}/api/users/${userId}/favorite-widgets/`, {
-      method: "GET", // HTTP GET request to retrieve user's favorites
-    });
+    const response = await fetch(
+      `${API_URL}/api/users/${userId}/favorite-widgets/`,
+      {
+        method: "GET", // HTTP GET request to retrieve user's favorites
+      },
+    );
 
     const res: FavoritesAPIRes = await response.json();
 
@@ -98,6 +101,32 @@ export const getFavorites = async (userId: number) => {
     return res.data; // Return the array of favorite widget IDs
   } catch (error) {
     console.error("Error fetching favorite widgets:", error);
+    throw error; // Rethrow the error for handling in the caller
+  }
+};
+
+export const generateToken = async (userId: number, publicWidgetId: string) => {
+  try {
+    const response = await fetch(`${API_URL}/api/users/generate-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        userId,
+        publicWidgetId,
+      }),
+    });
+
+    const res = await response.json();
+
+    console.log(res);
+
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+    return res.data.token;
+  } catch (error) {
+    console.error("Error generating token:", error);
     throw error; // Rethrow the error for handling in the caller
   }
 };
