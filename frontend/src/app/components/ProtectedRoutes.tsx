@@ -48,7 +48,7 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
             router.push("/sign-in");
           } else if (role && user.role.toLowerCase() !== role) {
             // Redirect users without the required role to the unauthorized page
-            router.push("/unauthorized");
+            router.push("/dashboard");
           }
         }
       } catch (error) {
@@ -66,7 +66,7 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
 
   // Render the children if the user is authenticated
   // return isAuthenticated ? <>{children}</> : null;
-  return <>{children}</>
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

@@ -9,7 +9,11 @@ import {
 import ProtectedRoute from "../components/ProtectedRoutes";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import { UserPlus, Link as LinkIcon, Clipboard as ClipboardIcon } from "lucide-react";
+import {
+  UserPlus,
+  Link as LinkIcon,
+  Clipboard as ClipboardIcon,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
@@ -57,11 +61,14 @@ export default function TeamPage() {
 
   const generateInviteLink = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/teams/${user.teamId}/invite`, {
-        method: 'POST',
-      });
+      const response = await fetch(
+        `${API_URL}/api/teams/${user.teamId}/invite`,
+        {
+          method: "POST",
+        },
+      );
       const data = await response.json();
-      
+
       if (data.success) {
         const link = `${window.location.origin}/register?invite=${data.token}`;
         setInviteLink(link);

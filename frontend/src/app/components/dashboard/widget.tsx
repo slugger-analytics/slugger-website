@@ -27,9 +27,10 @@ import {
 import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Widget edit dialog
 import { WidgetType } from "@/data/types"; // Type definitions for widgets
 import { useStore } from "@nanostores/react"; // Nanostores for state management
-import { $favWidgetIds, setTargetWidget } from "@/lib/store"; // Global state and actions
+import { $favWidgetIds, $user, setTargetWidget } from "@/lib/store"; // Global state and actions
 import useMutationWidgets from "@/app/hooks/use-mutation-widgets"; // Custom hook for widget mutations
 import { Separator } from "../ui/separator";
+import { generateToken } from "@/api/user";
 
 /**
  * WidgetProps Interface
@@ -57,19 +58,28 @@ export default function Widget({
   isDev,
   visibility,
   redirectLink,
+  publicId,
+  restrictedAccess,
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Local state for dialog visibility
   const { toggleFavWidget } = useMutationWidgets(); // Custom hook for toggling favorites
   const favWidgets = useStore($favWidgetIds); // Global state for favorite widgets
+  const { id: userId } = useStore($user);
 
   const router = useRouter();
   /**
    * Handles widget redirection.
    * @TODO Implement redirect logic.
    */
-  const redirect = () => {
+  const redirect = async () => {
     if (redirectLink) {
-      router.push(redirectLink);
+      const url = new URL(redirectLink, window.location.origin);
+
+      if (restrictedAccess) {
+        const token = await generateToken(parseInt(userId), publicId);
+        url.searchParams.set("alpb_token", token);
+      }
+      router.push(url.toString());
     } else {
       console.error("Redirect link is missing or invalid.");
     }
@@ -94,6 +104,8 @@ export default function Widget({
       imageUrl,
       visibility,
       redirectLink,
+      publicId,
+      restrictedAccess,
     });
     setIsDialogOpen(true);
   };

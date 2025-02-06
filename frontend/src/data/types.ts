@@ -16,8 +16,8 @@ export interface WidgetType {
   imageUrl?: string;
   categoryIds?: number[];
   developerIds?: number[];
-  publicId?: string;
-  restrictedAccess?: boolean;
+  publicId: string;
+  restrictedAccess: boolean;
 }
 
 export interface RegisterWidgetDataType {

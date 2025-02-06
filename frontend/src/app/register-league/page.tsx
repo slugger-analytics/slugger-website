@@ -12,7 +12,14 @@ import {
 } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 import { Button } from "@/app/components/ui/button";
 import LogoButton from "../components/navbar/LogoButton";
 
@@ -26,22 +33,22 @@ export default function LeagueRegistrationPage() {
   const [basicInfo, setBasicInfo] = useState<any>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<string>("");
-  
+
   useEffect(() => {
     const fetchTeams = async () => {
       try {
         const teamsData = await getTeams();
         setTeams(teamsData);
       } catch (error) {
-        console.error('Error fetching teams:', error);
+        console.error("Error fetching teams:", error);
       }
     };
 
     fetchTeams();
-    
-    const stored = sessionStorage.getItem('leagueRegistration');
+
+    const stored = sessionStorage.getItem("leagueRegistration");
     if (!stored) {
-      router.push('/register-account');
+      router.push("/register-account");
       return;
     }
     setBasicInfo(JSON.parse(stored));
@@ -50,27 +57,27 @@ export default function LeagueRegistrationPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    
+
     if (!selectedTeam) {
-      console.error('No team selected');
+      console.error("No team selected");
       return;
     }
 
     const userData = {
       ...basicInfo,
-      role: 'league',
+      role: "league",
       teamId: selectedTeam,
-      teamRole: formData.get('team-role'),
+      teamRole: formData.get("team-role"),
     };
-    
-    console.log('Submitting user data:', userData);
-    
+
+    console.log("Submitting user data:", userData);
+
     try {
       await signUpUser(userData);
-      sessionStorage.removeItem('leagueRegistration');
-      router.push('/confirm');
+      sessionStorage.removeItem("leagueRegistration");
+      router.push("/confirm");
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error("Registration error:", error);
     }
   };
 
@@ -91,9 +98,9 @@ export default function LeagueRegistrationPage() {
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="team-select">Select Team</Label>
-              <Select 
+              <Select
                 onValueChange={(value) => {
-                  console.log('Selected value:', value); // Debug
+                  console.log("Selected value:", value); // Debug
                   setSelectedTeam(value);
                 }}
                 required
@@ -104,10 +111,7 @@ export default function LeagueRegistrationPage() {
                 <SelectContent>
                   <SelectGroup>
                     {teams.map((team) => (
-                      <SelectItem 
-                        key={team.team_id} 
-                        value={team.team_id}
-                      >
+                      <SelectItem key={team.team_id} value={team.team_id}>
                         {team.team_name}
                       </SelectItem>
                     ))}

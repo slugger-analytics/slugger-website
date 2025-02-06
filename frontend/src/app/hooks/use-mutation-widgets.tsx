@@ -22,6 +22,8 @@ function useMutationWidgets() {
     redirectLink,
     visibility,
     imageUrl,
+    publicId,
+    restrictedAccess,
   }: WidgetType) => {
     try {
       const updatedWidget = await updateWidget({
@@ -31,6 +33,8 @@ function useMutationWidgets() {
         redirectLink,
         visibility,
         imageUrl,
+        publicId,
+        restrictedAccess,
       });
       updateStoreWidget({
         id,
@@ -39,6 +43,8 @@ function useMutationWidgets() {
         visibility,
         redirectLink,
         imageUrl,
+        publicId,
+        restrictedAccess,
       }); // Update the widget in the store
     } catch (error) {
       console.error("Error updating widget:", error);

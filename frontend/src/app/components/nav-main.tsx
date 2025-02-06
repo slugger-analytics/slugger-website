@@ -34,8 +34,9 @@ export function NavMain({
   return (
     <SidebarMenu>
       {items.map((item) =>
-        (item.title !== "Register Widget" || user.role === "widget developer") &&
-        (item.title !== "Team" || user.role.toLowerCase() === "league") ? (
+        (item.title !== "Register Widget" ||
+          user.role === "widget developer") &&
+        (item.title !== "My Team" || user.role.toLowerCase() === "league") ? (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton asChild onClick={() => handleRedirect(item.url)}>
               <button className="flex items-start p-5">
