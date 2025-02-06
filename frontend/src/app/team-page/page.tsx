@@ -19,7 +19,7 @@ import { getTeamMembers, promoteTeamMember, removeTeamMember, getTeam } from "@/
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 type TeamMember = {
-  user_id: number;
+  user_id: string;
   first: string;
   last: string;
   email: string;
@@ -87,10 +87,10 @@ export default function TeamPage() {
     }
   };
 
-  const promoteMember = async (memberId: number) => {
+  const promoteMember = async (memberId: string) => {
     if (!user.teamId) return;
     try {
-      const promotedMember = await promoteTeamMember(user.teamId, memberId);
+      const promotedMember = await promoteTeamMember(user.teamId, parseInt(memberId));
       toast.success("Member promoted to admin!");
       fetchTeamMembers();
     } catch (error) {
@@ -99,10 +99,10 @@ export default function TeamPage() {
     }
   };
 
-  const removeMember = async (memberId: number) => {
+  const removeMember = async (memberId: string) => {
     if (!user.teamId) return;
     try {
-      await removeTeamMember(user.teamId, memberId);
+      await removeTeamMember(user.teamId, parseInt(memberId));
       toast.success("Member removed from the team!");
       fetchTeamMembers();
     } catch (error) {
@@ -157,11 +157,16 @@ export default function TeamPage() {
                                   Member
                                 </span>
                               )}
+                              {member.user_id === user.id && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  You
+                                </span>
+                              )}
                             </div>
                             <p className="text-sm text-gray-500 mt-1">{member.email}</p>
                             <p className="text-sm text-gray-500 mt-1">{member.team_role}</p>
                           </div>
-                          {user.is_admin && (
+                          {user.is_admin && member.user_id !== user.id && (
                             <div className="flex items-center gap-2">
                               {!member.is_admin && (
                                 <Button
@@ -172,14 +177,17 @@ export default function TeamPage() {
                                   Promote to Admin
                                 </Button>
                               )}
-                              <Button
-                                size="sm"
-                                variant="destructive"
+                              {member.user_id !== user.id && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
                                 onClick={() => removeMember(member.user_id)}
                               >
                                 Remove
                               </Button>
+                              )}
                             </div>
+                          
                           )}
                         </div>
                       </div>

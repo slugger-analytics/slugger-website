@@ -6,7 +6,7 @@ interface Team {
 }
 
 interface TeamMember {
-  user_id: number;
+  user_id: string;
   first: string;
   last: string;
   email: string;

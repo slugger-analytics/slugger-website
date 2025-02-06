@@ -16,6 +16,8 @@ export interface WidgetType {
   imageUrl?: string;
   categoryIds?: number[];
   developerIds?: number[];
+  publicId?: string;
+  restrictedAccess?: boolean;
 }
 
 export interface RegisterWidgetDataType {
@@ -26,7 +28,6 @@ export interface RegisterWidgetDataType {
 
 export interface UserType {
   id: string;
-  user_id: string;
   first: string;
   last: string;
   email: string;
