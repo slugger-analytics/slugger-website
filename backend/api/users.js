@@ -50,7 +50,7 @@ router.get("/", async (req, res) => {
  */
 router.post("/sign-up", async (req, res) => {
   console.log("Sign-up request received:", req.body);
-  const { email, password, firstName, lastName, role, inviteToken, teamId, teamRole } = req.body;
+  const { email, password, firstName, lastName, role, inviteToken, teamId, teamRole, is_admin } = req.body;
   
   try {
     let finalTeamId = null;
@@ -88,7 +88,7 @@ router.post("/sign-up", async (req, res) => {
 
       // Database insertion
       const query = `
-        INSERT INTO users (cognito_user_id, email, first_name, last_name, role, team_id, team_role)
+        INSERT INTO users (cognito_user_id, email, first_name, last_name, role, team_id, team_role, is_admin)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING user_id;
       `;
@@ -100,7 +100,8 @@ router.post("/sign-up", async (req, res) => {
         lastName,
         'league',
         teamId,
-        teamRole || 'Team Member'
+        teamRole || 'Team Member',
+        is_admin || false
       ];
 
       const result = await pool.query(query, values);
@@ -169,7 +170,8 @@ router.post("/sign-in", async (req, res) => {
           role: user.role,
           id: user.user_id,
           teamId: user.team_id,
-          teamRole: user.team_role
+          teamRole: user.team_role,
+          is_admin: user.is_admin
         }
       },
     });

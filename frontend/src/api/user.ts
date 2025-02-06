@@ -37,7 +37,6 @@ export const addFavorite = async (userId: number, widgetId: number) => {
 
     return res.data;
 
-    return await response.json(); // Parse and return the JSON response
   } catch (error) {
     console.error("Error adding widget to favorites:", error);
     throw error; // Rethrow the error for handling in the caller
