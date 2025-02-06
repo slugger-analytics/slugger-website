@@ -24,14 +24,17 @@ export interface RegisterWidgetDataType {
   visibility: string; // Visibility status ('Public', 'Private', etc.)
 }
 
-export type UserType = {
+export interface UserType {
   id: string;
+  user_id: string;
   first: string;
   last: string;
   email: string;
   role: string;
-  teamId?: string;
-};
+  teamId: string;
+  is_admin: string;
+  [key: string]: string | undefined;
+}
 
 export type UserAPIResType = {
   authData: {

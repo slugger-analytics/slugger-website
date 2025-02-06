@@ -174,7 +174,7 @@ router.patch(
   },
 );
 
-// Add this route after your existing team routes
+// invite a new member to a team
 router.post("/:teamId/invite", async (req, res) => {
   try {
     console.log("Invite route hit");
