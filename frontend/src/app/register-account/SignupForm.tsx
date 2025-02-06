@@ -37,34 +37,36 @@ const initialSubmitStatus = {
 export function SignupForm() {
   const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
   const router = useRouter();
-  const [invitedTeam, setInvitedTeam] = useState<{ team_name: string } | null>(null);
+  const [invitedTeam, setInvitedTeam] = useState<{ team_name: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchInvitedTeam = async () => {
       const searchParams = new URLSearchParams(window.location.search);
-      const inviteToken = searchParams.get('invite');
-      
+      const inviteToken = searchParams.get("invite");
+
       if (inviteToken) {
         try {
           const response = await fetch(`${API_URL}/api/teams/validate-invite`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({ inviteToken }),
           });
-          
+
           if (!response.ok) {
-            console.error('Failed to validate invite:', await response.text());
+            console.error("Failed to validate invite:", await response.text());
             return;
           }
-          
+
           const data = await response.json();
           if (data.success) {
             setInvitedTeam(data.team);
           }
         } catch (error) {
-          console.error('Error validating invite:', error);
+          console.error("Error validating invite:", error);
         }
       }
     };
@@ -88,7 +90,7 @@ export function SignupForm() {
     });
 
     const searchParams = new URLSearchParams(window.location.search);
-    const inviteToken = searchParams.get('invite');
+    const inviteToken = searchParams.get("invite");
 
     // Verify that passwords match
     if (data["password"] !== data["confirm-password"]) {
@@ -101,14 +103,17 @@ export function SignupForm() {
 
     // Only redirect to league registration if there's no invite token
     if (data["account-type"] === "league" && !inviteToken) {
-      sessionStorage.setItem('leagueRegistration', JSON.stringify({
-        email: data["email"],
-        password: data["password"],
-        firstName: data["first-name"],
-        lastName: data["last-name"]
-      }));
-      
-      router.push('/register-league');
+      sessionStorage.setItem(
+        "leagueRegistration",
+        JSON.stringify({
+          email: data["email"],
+          password: data["password"],
+          firstName: data["first-name"],
+          lastName: data["last-name"],
+        }),
+      );
+
+      router.push("/register-league");
       return;
     }
 
@@ -121,7 +126,7 @@ export function SignupForm() {
         lastName: data["last-name"],
         role: data["account-type"],
         teamRole: data["team-role"],
-        inviteToken: inviteToken || undefined
+        inviteToken: inviteToken || undefined,
       };
 
       await signUpUser(userData);
@@ -226,7 +231,9 @@ export function SignupForm() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="widget developer">Widget Developer</SelectItem>
+                      <SelectItem value="widget developer">
+                        Widget Developer
+                      </SelectItem>
                       <SelectItem value="league">League</SelectItem>
                       <SelectItem value="master">Master</SelectItem>
                     </SelectGroup>

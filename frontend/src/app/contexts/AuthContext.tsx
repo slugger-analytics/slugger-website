@@ -69,7 +69,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error(error);
     }
-
   };
 
   return (
@@ -82,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIdToken,
         setAccessToken,
         logout,
-        setLoading
+        setLoading,
       }}
     >
       {children}

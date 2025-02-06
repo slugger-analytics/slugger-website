@@ -12,4 +12,4 @@ export default function RegisterPage() {
       <SignupForm />
     </div>
   );
-} 
+}

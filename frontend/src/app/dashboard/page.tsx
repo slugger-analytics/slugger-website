@@ -20,7 +20,6 @@ export default function Page() {
   const user = useStore($user);
   const { loading } = useAuth();
 
-
   return (
     <ProtectedRoute>
       <SidebarProvider>

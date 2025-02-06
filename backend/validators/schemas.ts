@@ -94,5 +94,5 @@ export const getTeamMemberSchema = z.object({
 export const generateTokenSchema = z.object({
   userId: z.coerce.number().int().positive(),
   publicWidgetId: z.string().uuid(),
-  sessionId: z.string().min(1) // TODO refine based on documentation?
+  // sessionId: z.string().min(1) // TODO refine based on documentation?
 });
