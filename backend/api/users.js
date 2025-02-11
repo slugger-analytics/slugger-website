@@ -7,6 +7,7 @@ import {
   favoriteWidget,
   getFavorites,
   unfavoriteWidget,
+  createUser,
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
 import authGuard from "../middleware/auth-guard.js";
@@ -50,7 +51,7 @@ router.get("/", async (req, res) => {
  */
 router.post("/sign-up", async (req, res) => {
   console.log("Sign-up request received:", req.body);
-  const { email, password, firstName, lastName, role, inviteToken, teamId, teamRole, is_admin } = req.body;
+  const { email, password, firstName, lastName, role, inviteToken, teamId, teamRole } = req.body;
   
   try {
     let finalTeamId = null;
@@ -86,30 +87,22 @@ router.post("/sign-up", async (req, res) => {
       const cognitoResult = await cognito.signUp(params).promise();
       const cognitoUserId = cognitoResult.UserSub;
 
-      // Database insertion
-      const query = `
-        INSERT INTO users (cognito_user_id, email, first_name, last_name, role, team_id, team_role, is_admin)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING user_id;
-      `;
-
-      const values = [
+      // Create user in database using the service function
+      const newUser = await createUser({
         cognitoUserId,
         email,
-        firstName,
-        lastName,
-        'league',
-        teamId,
-        teamRole || 'Team Member',
-        is_admin || false
-      ];
-
-      const result = await pool.query(query, values);
+        first: firstName,
+        last: lastName,
+        role: 'league',
+        teamId: finalTeamId,
+        teamRole: teamRole || 'Team Member'
+      });
 
       res.status(200).json({
         success: true,
         message: "User registered successfully",
-        userId: result.rows[0].user_id
+        userId: newUser.user_id,
+        data: newUser
       });
     } catch (cognitoError) {
       console.error("Cognito signup failed:", cognitoError);
