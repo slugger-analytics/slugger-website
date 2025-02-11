@@ -2,8 +2,13 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark as markdownStyle } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { Components } from 'react-markdown';
 
-const MarkdownRenderer = ({ content }) => {
+interface MarkdownRendererProps {
+  content: string;
+}
+
+const MarkdownRenderer = ({ content }: MarkdownRendererProps) => {
   return (
     <div className="prose dark:prose-invert max-w-none text-sm">
       <ReactMarkdown
@@ -20,36 +25,24 @@ const MarkdownRenderer = ({ content }) => {
           ul: ({ children }) => <ul className="list-disc pl-6 mb-3 text-sm">{children}</ul>,
           ol: ({ children }) => <ol className="list-decimal pl-6 mb-3 text-sm">{children}</ol>,
           
-          code: ({ node, inline, className, children, ...props }) => {
+          code: ({ node, inline, className, children, ...props }: any) => {
             const match = /language-(\w+)/.exec(className || '');
-            const language = match ? match[1] : '';
-            
-            const isStandalone = (
-              String(children).startsWith('\n') || 
-              String(children).endsWith('\n')
-            );
-            
-            if (!inline && (isStandalone || language)) {
-              return (
-                <div className="rounded-lg overflow-hidden my-3 w-full">
-                  <SyntaxHighlighter
-                    style={markdownStyle}
-                    language={language}
-                    PreTag="div"
-                    className="!mt-0 !mb-0 text-sm"
-                    customStyle={{ fontSize: '0.875rem' }}  // 14px to match text-sm
-                    {...props}
-                  >
-                    {String(children).replace(/\n$/, '')}
-                  </SyntaxHighlighter>
-                </div>
-              );
-            }
-            
-            return (
+            return inline ? (
               <code className="bg-gray-100 dark:bg-gray-800 rounded px-1 py-0.5 whitespace-normal text-sm" {...props}>
                 {children}
               </code>
+            ) : (
+              <div className="rounded-lg overflow-hidden my-3 w-full">
+                <SyntaxHighlighter
+                  language={match ? match[1] : ''}
+                  style={markdownStyle}
+                  PreTag="div"
+                  customStyle={{ fontSize: '0.875rem' }}
+                  {...props}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              </div>
             );
           },
           
@@ -61,7 +54,7 @@ const MarkdownRenderer = ({ content }) => {
           ),
           
           // Links with smaller text
-          a: ({ children, href }) => (
+          a: ({ href, children }) => (
             <a href={href} className="text-blue-600 dark:text-blue-400 hover:underline text-sm">
               {children}
             </a>
