@@ -18,7 +18,7 @@ const emptyWidget: WidgetType = {
   categoryIds: [],
   developerIds: [],
   publicId: "",
-  restrictedAccess: false
+  restrictedAccess: false,
 };
 
 export const $widgets = atom<WidgetType[]>([]);

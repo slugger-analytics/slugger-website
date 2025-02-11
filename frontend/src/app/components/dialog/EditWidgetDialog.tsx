@@ -107,133 +107,131 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Edit Widget</AlertDialogTitle>
-              <AlertDialogDescription>
-                {/* {"Update the widget's details below and save your changes."} */}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Edit Widget</AlertDialogTitle>
+          <AlertDialogDescription>
+            {/* {"Update the widget's details below and save your changes."} */}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
 
-            <div className="space-y-4">
-              {/* Title Input */}
-              <div>
-                <Label htmlFor="title">Title</Label>
-                <Input
-                  id="title"
-                  value={name}
-                  onChange={(e) => setName(e.target.value.slice(0, 30))}
-                  placeholder="Widget Title"
-                  maxLength={30}
+        <div className="space-y-4">
+          {/* Title Input */}
+          <div>
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={name}
+              onChange={(e) => setName(e.target.value.slice(0, 30))}
+              placeholder="Widget Title"
+              maxLength={30}
+            />
+          </div>
+
+          {/* Description Input */}
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Input
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value.slice(0, 100))}
+              placeholder="Widget Description"
+              maxLength={100}
+            />
+          </div>
+
+          {/* Deployment Link Input */}
+          <div>
+            <Label htmlFor="deploymentLink">Deployment Link</Label>
+            <Input
+              id="deploymentLink"
+              value={deploymentLink}
+              onChange={(e) => setDeploymentLink(e.target.value.slice(0, 100))}
+              placeholder="https://example.com"
+              maxLength={100}
+            />
+          </div>
+
+          <div>
+            <Label>Icon</Label>
+            <IconSelector setImgUrl={setImageUrl} imgUrl={imageUrl} />
+          </div>
+          <Separator></Separator>
+          {/* Visibility Options */}
+          <div>
+            <Label>Visibility</Label>
+            <div className="flex items-center space-x-4 mt-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="visibility-private"
+                  checked={visibility === "Private"}
+                  onCheckedChange={() => setVisibility("Private")}
                 />
+                <Label htmlFor="visibility-private">Private</Label>
               </div>
-
-              {/* Description Input */}
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value.slice(0, 100))}
-                  placeholder="Widget Description"
-                  maxLength={100}
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="visibility-public"
+                  checked={visibility === "Public"}
+                  onCheckedChange={() => handleSetVisibility("Public")}
                 />
-              </div>
-
-              {/* Deployment Link Input */}
-              <div>
-                <Label htmlFor="deploymentLink">Deployment Link</Label>
-                <Input
-                  id="deploymentLink"
-                  value={deploymentLink}
-                  onChange={(e) =>
-                    setDeploymentLink(e.target.value.slice(0, 100))
-                  }
-                  placeholder="https://example.com"
-                  maxLength={100}
-                />
-              </div>
-
-              <div>
-                <Label>Icon</Label>
-                <IconSelector setImgUrl={setImageUrl} imgUrl={imageUrl} />
-              </div>
-              <Separator></Separator>
-              {/* Visibility Options */}
-              <div>
-                <Label>Visibility</Label>
-                <div className="flex items-center space-x-4 mt-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="visibility-private"
-                      checked={visibility === "Private"}
-                      onCheckedChange={() => setVisibility("Private")}
-                    />
-                    <Label htmlFor="visibility-private">Private</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="visibility-public"
-                      checked={visibility === "Public"}
-                      onCheckedChange={() => handleSetVisibility("Public")}
-                    />
-                    <Label htmlFor="visibility-public">Public</Label>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label>Restricted Access</Label>
-                <div className="flex items-center space-x-4 mt-2">
-                  <Checkbox
-                    id="restricted-access"
-                    checked={restrictedAccess}
-                    disabled={visibility === "Private"}
-                    onCheckedChange={() => setRestrictedAccess((prev) => !prev)}
-                  />
-                  <Label htmlFor="restricted-access">
-                    Enable Restricted Access
-                  </Label>
-                </div>
-              </div>
-              <div>
-                <Label>widgetId</Label>
-                <div className="flex items-center space-x-2 mt-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setVisible(!visible)}
-                  >
-                    {visible ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </Button>
-                  <div className="w-80 py-2 bg-gray-50 rounded-lg border border-gray-200 break-all text-sm font-mono text-center text-gray-700">
-                    {visible
-                      ? targetWidget.publicId
-                      : "••••••••••••••••••••••••••••••••••••"}
-                  </div>
-                      <Button
-                        variant="secondary"
-                        className="flex items-center gap-2"
-                        onClick={() => {
-                          navigator.clipboard.writeText(targetWidget.publicId);
-                          toast({
-                            title: "widgetId copied successfully!"
-                          })
-                        }}
-                      >
-                        <ClipboardIcon className="h-5 w-5" />
-                      </Button>
-                </div>
+                <Label htmlFor="visibility-public">Public</Label>
               </div>
             </div>
+          </div>
 
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
-            </AlertDialogFooter>
+          <div>
+            <Label>Restricted Access</Label>
+            <div className="flex items-center space-x-4 mt-2">
+              <Checkbox
+                id="restricted-access"
+                checked={restrictedAccess}
+                disabled={visibility === "Private"}
+                onCheckedChange={() => setRestrictedAccess((prev) => !prev)}
+              />
+              <Label htmlFor="restricted-access">
+                Generate validation tokens
+              </Label>
+            </div>
+          </div>
+          <div>
+            <Label>widget_id</Label>
+            <div className="flex items-center space-x-2 mt-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setVisible(!visible)}
+              >
+                {visible ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </Button>
+              <div className="w-80 py-2 bg-gray-50 rounded-lg border border-gray-200 break-all text-sm font-mono text-center text-gray-700">
+                {visible
+                  ? targetWidget.publicId
+                  : "••••••••••••••••••••••••••••••••••••"}
+              </div>
+              <Button
+                variant="secondary"
+                className="flex items-center gap-2"
+                onClick={() => {
+                  navigator.clipboard.writeText(targetWidget.publicId);
+                  toast({
+                    title: "widgetId copied successfully!",
+                  });
+                }}
+              >
+                <ClipboardIcon className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
+        </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
