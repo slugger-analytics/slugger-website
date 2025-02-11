@@ -1,7 +1,6 @@
 "use client";
 
 import { type LucideIcon } from "lucide-react";
-
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -31,12 +30,20 @@ export function NavMain({
     router.push(url);
   };
 
+  const shouldShowItem = (title: string) => {
+    if (title === "Register Widget" || title === "API Documentation") {
+      return user.role === "widget developer";
+    }
+    if (title === "My Team") {
+      return user.role.toLowerCase() === "league";
+    }
+    return true;
+  };
+
   return (
     <SidebarMenu>
       {items.map((item) =>
-        (item.title !== "Register Widget" ||
-          user.role === "widget developer") &&
-        (item.title !== "My Team" || user.role.toLowerCase() === "league") ? (
+        shouldShowItem(item.title) ? (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton asChild onClick={() => handleRedirect(item.url)}>
               <button className="flex items-start p-5">
@@ -45,7 +52,7 @@ export function NavMain({
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
-        ) : null,
+        ) : null
       )}
     </SidebarMenu>
   );

@@ -18,7 +18,12 @@ import { useState, useEffect } from "react";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
 import { toast } from "sonner";
-import { getTeamMembers, promoteTeamMember, removeTeamMember, getTeam } from "@/api/teams";
+import {
+  getTeamMembers,
+  promoteTeamMember,
+  removeTeamMember,
+  getTeam,
+} from "@/api/teams";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -97,7 +102,10 @@ export default function TeamPage() {
   const promoteMember = async (memberId: string) => {
     if (!user.teamId) return;
     try {
-      const promotedMember = await promoteTeamMember(user.teamId, parseInt(memberId));
+      const promotedMember = await promoteTeamMember(
+        user.teamId,
+        parseInt(memberId),
+      );
       toast.success("Member promoted to admin!");
       fetchTeamMembers();
     } catch (error) {
@@ -128,7 +136,9 @@ export default function TeamPage() {
             <div className="max-w-4xl mx-auto">
               <div className="mb-8 text-center">
                 <h1 className="text-3xl font-bold mb-2">{teamName}</h1>
-                <p className="text-gray-500">Manage your team members and permissions</p>
+                <p className="text-gray-500">
+                  Manage your team members and permissions
+                </p>
               </div>
 
               {status && (
@@ -148,7 +158,10 @@ export default function TeamPage() {
                     </div>
                   ) : (
                     members.map((member) => (
-                      <div key={member.user_id} className="p-4 hover:bg-gray-50">
+                      <div
+                        key={member.user_id}
+                        className="p-4 hover:bg-gray-50"
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -170,8 +183,12 @@ export default function TeamPage() {
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-gray-500 mt-1">{member.email}</p>
-                            <p className="text-sm text-gray-500 mt-1">{member.team_role}</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {member.email}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {member.team_role}
+                            </p>
                           </div>
                           {user.is_admin && member.user_id !== user.id && (
                             <div className="flex items-center gap-2">
@@ -188,13 +205,12 @@ export default function TeamPage() {
                                 <Button
                                   size="sm"
                                   variant="destructive"
-                                onClick={() => removeMember(member.user_id)}
-                              >
-                                Remove
-                              </Button>
+                                  onClick={() => removeMember(member.user_id)}
+                                >
+                                  Remove
+                                </Button>
                               )}
                             </div>
-                          
                           )}
                         </div>
                       </div>
@@ -207,7 +223,8 @@ export default function TeamPage() {
                 <div className="flex flex-col items-center gap-4">
                   <h2 className="text-xl font-semibold">Invite New Members</h2>
                   <p className="text-gray-500 text-center max-w-md">
-                    Generate an invite link to allow new members to join your team
+                    Generate an invite link to allow new members to join your
+                    team
                   </p>
                   <Button
                     variant="outline"

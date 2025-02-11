@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, Home, Inbox, BookOpenCheck } from "lucide-react";
+import { Home, BookOpenCheck, BookText } from "lucide-react";
 
 import { NavUser } from "@/app/components/nav-user";
 import { NavMain } from "@/app/components/nav-main";
@@ -41,6 +41,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "My Team",
       url: "/team-page",
       icon: Users,
+      isActive: false,
+    },
+    {
+      title: "API Documentation",
+      url: "/api-docs",
+      icon: BookText,
       isActive: false,
     },
   ]);
