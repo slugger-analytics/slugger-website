@@ -114,3 +114,46 @@ export function encryptToken(payload) {
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
 }
+
+export async function createUser(userData) {
+  const {
+    cognitoUserId,
+    email,
+    first,
+    last,
+    role,
+    teamId = null,  // Default to null if not provided
+    teamRole = null // Default to null if not provided
+  } = userData;
+
+  const query = `
+    INSERT INTO users (
+      cognito_user_id,
+      email,
+      first_name,
+      last_name,
+      role,
+      team_id,
+      team_role,
+      is_admin,
+      fav_widgets_ids,
+      created_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+    RETURNING *
+  `;
+
+  const values = [
+    cognitoUserId,
+    email,
+    first,
+    last,
+    role,
+    teamId,
+    teamRole,
+    false,  // is_admin defaults to false
+    []      // empty fav_widgets_ids array
+  ];
+
+  const result = await pool.query(query, values);
+  return result.rows[0];
+}
