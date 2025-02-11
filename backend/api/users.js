@@ -330,19 +330,6 @@ router.post("/generate-token", authGuard, validationMiddleware(generateTokenSche
 
     const widgetId = widgetRes.rows[0].widget_id;
 
-    // Ensure user has access to this widget
-    const widgetAccessRes = await pool.query(
-      "SELECT * FROM user_widget WHERE user_id = $1 AND widget_id = $2",
-      [userId, widgetId]
-    );
-
-    if (widgetAccessRes.rowCount === 0) {
-      return res.status(403).json({
-        success: false,
-        message: "User does not have access to this widget"
-      });
-    }
-
     // const token = jwt.sign({ U: userId, p: publicWidgetId, s: sessionId }, JWT_SECRET, { expiresIn: "8h", algorithm: "HS256" });
     const token = encryptToken({
       userId,
@@ -364,6 +351,7 @@ router.post("/generate-token", authGuard, validationMiddleware(generateTokenSche
     });
   }
 })
+
 
 
 export default router;
