@@ -96,3 +96,22 @@ export const generateTokenSchema = z.object({
   publicWidgetId: z.string().uuid(),
   // sessionId: z.string().min(1) // TODO refine based on documentation?
 });
+
+export const createCategorySchema = z.object({
+  name: z.string().min(1),
+  hex_code: z.string().optional()
+})
+
+export const updateCategorySchema = z.object({
+  name: z.string().optional(),
+  hex_code: z.string().optional()
+})
+
+export const addCategoryToWidgetSchema = z.object({
+  categoryId: z.number().int().positive()
+})
+
+export const removeCategoryFromWidgetSchema = z.object({
+  categoryId: z.number().int().positive(),
+  widgetId: z.number().int().positive()
+})
