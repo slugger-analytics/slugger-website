@@ -14,10 +14,15 @@ export interface WidgetType {
   createdAt?: string;
   redirectLink?: string;
   imageUrl?: string;
-  categoryIds?: number[];
   developerIds?: number[];
   publicId: string;
   restrictedAccess: boolean;
+  categories: CategoryType[];
+}
+
+export interface CategoryType {
+  name: string,
+  hexCode?: string
 }
 
 export interface RegisterWidgetDataType {

@@ -277,11 +277,21 @@ export async function getAllWidgets(widget_name, categories, page, limit) {
   const widgetsQuery = `
         SELECT
             w.*,
-            ARRAY_AGG(uw.user_id) AS developer_ids
+            ARRAY_AGG(uw.user_id) AS developer_ids,
+            COALESCE(
+                JSON_AGG(
+                    DISTINCT JSONB_BUILD_OBJECT('name', c.name, 'hex_code', c.hex_code)
+                ) FILTER (WHERE c.name IS NOT NULL),
+                '[]'
+            ) AS categories
         FROM
             widgets w
         LEFT JOIN
             user_widget uw ON w.widget_id = uw.widget_id
+        LEFT JOIN 
+            widget_categories as wc ON w.widget_id = wc.widget_id
+        LEFT JOIN
+            categories as c ON wc.category_id = c.id
         GROUP BY
             w.widget_id;
         `;

@@ -9,7 +9,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button"; // Styled button component
 import Image from "next/image"; // Next.js image optimization component
-import { HeartIcon, HeartFilledIcon, AngleIcon } from "@radix-ui/react-icons"; // Radix UI icons
+import { HeartIcon, HeartFilledIcon, AngleIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"; // Radix UI icons
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -19,11 +19,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card"; // Card UI components
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/app/components/ui/avatar"; // Avatar UI components
 import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Widget edit dialog
 import { WidgetType } from "@/data/types"; // Type definitions for widgets
 import { useStore } from "@nanostores/react"; // Nanostores for state management
@@ -31,6 +26,7 @@ import { $favWidgetIds, $user, setTargetWidget } from "@/lib/store"; // Global s
 import useMutationWidgets from "@/app/hooks/use-mutation-widgets"; // Custom hook for widget mutations
 import { Separator } from "../ui/separator";
 import { generateToken } from "@/api/user";
+import CategoryTag from "./category-tag";
 
 /**
  * WidgetProps Interface
@@ -60,13 +56,27 @@ export default function Widget({
   redirectLink,
   publicId,
   restrictedAccess,
+  categories
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Local state for dialog visibility
+  const [isExpanded, setIsExpanded] = useState(false); // Local state for description expansion
   const { toggleFavWidget } = useMutationWidgets(); // Custom hook for toggling favorites
   const favWidgets = useStore($favWidgetIds); // Global state for favorite widgets
   const { id: userId } = useStore($user);
 
   const router = useRouter();
+
+  // Character limit for truncated description
+  const CHAR_LIMIT = 111;
+  const isLongDescription = description ? description.length > CHAR_LIMIT : false;
+  const truncatedDescription = isLongDescription && description
+    ? `${description.slice(0, CHAR_LIMIT)}...`
+    : description;
+
+  useEffect(() => {
+    console.log(categories);
+  }, [categories]);
+
   /**
    * Handles widget redirection.
    * @TODO Implement redirect logic.
@@ -106,51 +116,74 @@ export default function Widget({
       redirectLink,
       publicId,
       restrictedAccess,
+      categories
     });
     setIsDialogOpen(true);
   };
 
   return (
-    <Card className="w-[350px]">
+    <Card className="w-[300px]">
       {/* Image Section */}
-      <div className="flex justify-center w-full mb-5">
-        <div className="h-[175px] py-5 bg-gray-50 w-full flex justify-center items-center rounded-t-xl">
+      <div className="flex justify-center w-full mb-3">
+        <div className="h-[150px] py-4 bg-gray-50 w-full flex justify-center items-center rounded-t-xl">
           {imageUrl && imageUrl !== "default" ? (
             <Image
               src={imageUrl}
               alt={name}
-              width="150"
-              height="150"
+              width="130"
+              height="130"
               className="rounded-full"
             />
           ) : (
-            <AngleIcon className="size-10 fill-current text-gray-400" />
+            <AngleIcon className="size-8 fill-current text-gray-400" />
           )}
         </div>
       </div>
 
       {/* Content Section */}
       <CardContent>
-        <CardTitle className="mb-3">{name}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="mb-2 text-lg">{name}</CardTitle>
+        <CardDescription className="text-sm">
+          {isExpanded ? description : truncatedDescription}
+          {isLongDescription && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="mt-1 ml-1 p-0 h-auto text-xs text-gray-400 hover:text-gray-600"
+            >
+              {isExpanded ? (
+                <span className="flex items-center">Less <ChevronUpIcon className="ml-1" /></span>
+              ) : (
+                <span className="flex items-center">More <ChevronDownIcon className="ml-1" /></span>
+              )}
+            </Button>
+          )}
+          <div className="flex gap-2 py-3">
+            {categories.map((category) => (
+              <CategoryTag key={category.name} categoryName={category.name} hexCode={category.hexCode} />
+            ))}
+          </div>
+
+        </CardDescription>
       </CardContent>
 
       {/* Footer Section */}
-      <CardFooter className="flex justify-between">
+      <CardFooter className="flex justify-between h-12">
         {/* Edit Button for Developers */}
-        {isDev && (
-          <Button variant="outline" onClick={handleOpenDialog}>
+        {isDev ? (
+          <Button variant="outline" size="sm" onClick={handleOpenDialog}>
             Edit
           </Button>
-        )}
+        ) : <div></div>}
         <div>
           {/* Launch Button */}
-          <Button className="ml-3" onClick={redirect}>
+          <Button size="sm" className="ml-3" onClick={redirect}>
             Launch
           </Button>
 
           {/* Favorite Button */}
-          <Button variant="ghost" onClick={handleToggleFav}>
+          <Button variant="ghost" size="sm" onClick={handleToggleFav}>
             {favWidgets.has(id) ? <HeartFilledIcon /> : <HeartIcon />}
           </Button>
         </div>
