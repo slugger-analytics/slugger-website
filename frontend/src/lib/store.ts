@@ -1,6 +1,6 @@
 import { atom, map } from "nanostores";
 import { persistentMap } from "@nanostores/persistent";
-import { UserType, WidgetType } from "@/data/types";
+import { UserType, WidgetType, CategoryType } from "@/data/types";
 import { logger } from "@nanostores/logger";
 
 // Allow debug messages
@@ -15,7 +15,7 @@ const emptyWidget: WidgetType = {
   createdAt: "",
   redirectLink: "",
   imageUrl: "",
-  categoryIds: [],
+  categories: [],
   developerIds: [],
   publicId: "",
   restrictedAccess: false,
@@ -25,10 +25,13 @@ export const $widgets = atom<WidgetType[]>([]);
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
 export const $favWidgetIds = atom<Set<number>>(new Set());
+
 export const $filters = atom<Set<string>>(new Set());
-export const $activeCategoryIds = atom<Set<number>>(new Set([1, 2, 3]));
+export const $activeCategoryIds = atom<Set<number>>(new Set([]));
+
 export const $widgetsVersion = atom<number>(0);
 export const $filtersVersion = atom<number>(0);
+export const $categories = atom<CategoryType[]>([]);
 
 // Adds a new widget to the $widgets store and increments the widgets version
 export function addWidget(widget: WidgetType) {
@@ -59,6 +62,7 @@ export function updateStoreWidget({
   imageUrl,
   publicId,
   restrictedAccess,
+  categories
 }: WidgetType) {
   $widgets.set(
     $widgets.get().map((widget) => {
@@ -72,6 +76,7 @@ export function updateStoreWidget({
           ...(imageUrl !== undefined && { imageUrl }),
           ...(publicId !== undefined && { publicId }),
           ...(restrictedAccess !== undefined && { restrictedAccess }),
+          ...(categories !== undefined && { categories }),
         };
       } else {
         return widget;
@@ -171,6 +176,10 @@ export function setUser(user: UserType) {
 
 export function clearUser() {
   $user.set(emptyUser);
+}
+
+export function setCategories(categories: CategoryType[]) {
+  $categories.set(categories);
 }
 
 // Logger for nanostores

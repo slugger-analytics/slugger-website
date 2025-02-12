@@ -52,7 +52,7 @@ export function NavMain({
               </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
-        ) : null
+        ) : null,
       )}
     </SidebarMenu>
   );

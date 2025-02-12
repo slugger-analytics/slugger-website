@@ -9,7 +9,7 @@ import {
   PendingWidgetsAPIRes,
   RegisterWidgetDataType,
   WidgetType,
-  CategoryType
+  CategoryType,
 } from "@/data/types";
 import dotenv from "dotenv";
 
@@ -134,12 +134,15 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
       developerIds: w.developer_ids || [],
       publicId: w.public_id,
       restrictedAccess: w.restricted_access,
-      categories: (w.categories || []).map((category: {name: string, hex_code: string | undefined} ) => ({
-        name: category.name,
-        hexCode: category.hex_code
-      }))
+      categories: (w.categories || []).map(
+        (category: { id: number; name: string; hex_code: string | undefined }) => ({
+          id: category.id,
+          name: category.name,
+          hexCode: category.hex_code,
+        }),
+      ),
     }));
-
+    console.log(cleanedData);
     return cleanedData;
   } catch (error) {
     console.error("Error fetching widgets:", error);
@@ -156,6 +159,7 @@ export const updateWidget = async ({
   imageUrl,
   publicId,
   restrictedAccess,
+  categories
 }: WidgetType): Promise<Response> => {
   try {
     console.log({ restrictedAccess });
@@ -183,6 +187,52 @@ export const updateWidget = async ({
     return res.data;
   } catch (error) {
     console.error("Error updating widget:", error);
+    throw error;
+  }
+};
+
+export const addCategoryToWidget = async (widgetId: number, categoryId: number): Promise<Response> => {
+  try {
+    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/categories`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        categoryId,
+      }),
+    });
+
+    const res = await response.json();
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("Error adding category to widget:", error);
+    throw error;
+  }
+};
+
+export const removeCategoryFromWidget = async (widgetId: number, categoryId: number): Promise<Response> => {
+  try {
+    console.log({widgetId, categoryId});
+    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/categories/${categoryId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const res = await response.json();
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("Error removing category from widget:", error);
     throw error;
   }
 };

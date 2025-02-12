@@ -352,7 +352,7 @@ router.post("/:id/categories", validationMiddleware({ bodySchema: addCategoryToW
 });
 
 // Remove a category from a widget
-router.delete("/:widgetId/categories/:categoryId", validationMiddleware({ paramsSchema: removeCategoryFromWidgetSchema }), async (req, res) => {
+router.delete("/:widgetId/categories/:categoryId", async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const categoryId = parseInt(req.params.categoryId);

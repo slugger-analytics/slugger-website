@@ -21,8 +21,9 @@ export interface WidgetType {
 }
 
 export interface CategoryType {
-  name: string,
-  hexCode?: string
+  id: number;
+  name: string;
+  hexCode?: string;
 }
 
 export interface RegisterWidgetDataType {
@@ -79,3 +80,5 @@ export interface LoginType {
 export type LoginAPIRes = APIResponse<LoginType>;
 
 export type FavoritesAPIRes = APIResponse<number[]>;
+
+export type CategoriesAPIRes = APIResponse<CategoryType[]>;

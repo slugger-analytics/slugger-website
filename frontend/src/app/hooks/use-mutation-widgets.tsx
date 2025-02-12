@@ -1,12 +1,13 @@
-import { WidgetType } from "@/data/types";
+import { CategoryType, WidgetType } from "@/data/types";
 import {
   $favWidgetIds,
+  $targetWidget,
   $user,
   addFavWidgetId,
   removeFavWidgetId,
   updateStoreWidget,
 } from "@/lib/store";
-import { updateWidget } from "@/api/widget";
+import { updateWidget, addCategoryToWidget, removeCategoryFromWidget } from "@/api/widget";
 import { useAuth } from "../contexts/AuthContext";
 import { addFavorite, removeFavorite } from "@/api/user";
 import { useStore } from "@nanostores/react";
@@ -14,6 +15,7 @@ import { useStore } from "@nanostores/react";
 function useMutationWidgets() {
   const user = useStore($user);
   const favWidgetIds = useStore($favWidgetIds); // Get the favorite widget IDs from the store
+  const targetWidget = useStore($targetWidget);
 
   const editWidget = async ({
     id,
@@ -24,18 +26,25 @@ function useMutationWidgets() {
     imageUrl,
     publicId,
     restrictedAccess,
-  }: WidgetType) => {
+    categories,
+  }: WidgetType, {categoriesToAdd, categoriesToRemove}: {categoriesToAdd: Set<CategoryType>, categoriesToRemove: Set<CategoryType>}) => {
     try {
-      const updatedWidget = await updateWidget({
-        id,
-        name,
-        description,
-        redirectLink,
-        visibility,
-        imageUrl,
-        publicId,
-        restrictedAccess,
-      });
+
+      const [updatedWidget] = await Promise.all([
+        updateWidget({
+          id,
+          name,
+          description,
+          redirectLink,
+          visibility,
+          imageUrl,
+          publicId,
+          restrictedAccess,
+          categories,
+        }),
+        Promise.all(Array.from(categoriesToAdd).map(category => addCategoryToWidget(id, category.id))),
+        Promise.all(Array.from(categoriesToRemove).map(category => removeCategoryFromWidget(id, category.id)))
+      ]);
       updateStoreWidget({
         id,
         name,
@@ -45,6 +54,7 @@ function useMutationWidgets() {
         imageUrl,
         publicId,
         restrictedAccess,
+        categories,
       }); // Update the widget in the store
     } catch (error) {
       console.error("Error updating widget:", error);

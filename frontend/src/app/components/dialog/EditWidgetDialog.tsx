@@ -21,7 +21,7 @@ import { Label } from "../ui/label"; // Label component
 import { Checkbox } from "../ui/checkbox"; // Checkbox component
 import { useEffect, useState } from "react"; // React state management
 import { useStore } from "@nanostores/react"; // Hook to access nanostores
-import { $targetWidget } from "@/lib/store"; // Store to manage the target widget being edited
+import { $categories, $targetWidget } from "@/lib/store"; // Store to manage the target widget being edited
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
@@ -31,6 +31,8 @@ import { Eye, EyeOff } from "lucide-react";
 import { Separator } from "../ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { ClipboardIcon } from "lucide-react";
+import CategorySelector from "../dashboard/category-selector";
+import { CategoryType } from "@/data/types";
 
 /**
  * Props for the EditWidgetDialog component.
@@ -70,9 +72,13 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   const [restrictedAccess, setRestrictedAccess] = useState(
     targetWidget.restrictedAccess,
   );
+  const [targetWidgetCategories, setTargetWidgetCategories] = useState(targetWidget.categories);
 
   const { editWidget } = useMutationWidgets(); // Hook for editing widgets
   const [visible, setVisible] = useState(false);
+  const categories = useStore($categories);
+  const [categoriesToAdd, setCategoriesToAdd] = useState(new Set<CategoryType>());
+  const [categoriesToRemove, setCategoriesToRemove] = useState(new Set<CategoryType>());
 
   const { toast } = useToast();
 
@@ -91,7 +97,8 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
         imageUrl,
         publicId: targetWidget.publicId,
         restrictedAccess,
-      });
+        categories
+      }, {categoriesToAdd, categoriesToRemove});
       onClose(); // Close the dialog after saving
     } catch (error) {
       console.error("Error updating widget:", error);
@@ -155,6 +162,17 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           <div>
             <Label>Icon</Label>
             <IconSelector setImgUrl={setImageUrl} imgUrl={imageUrl} />
+          </div>
+          <div>
+            <Label htmlFor="tags">Tags</Label>
+            <CategorySelector
+              categories={categories}
+              selectedCategories={targetWidgetCategories}
+              categoriesToAdd={categoriesToAdd}
+              categoriesToRemove={categoriesToRemove}
+              setCategoriesToAdd={setCategoriesToAdd}
+              setCategoriesToRemove={setCategoriesToRemove}
+            ></CategorySelector>
           </div>
           <Separator></Separator>
           {/* Visibility Options */}
