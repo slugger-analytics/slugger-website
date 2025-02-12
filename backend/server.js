@@ -15,6 +15,7 @@ dotenv.config(); // Load environment variables from a `.env` file
 import widgets from "./api/widgets.js";
 import users from "./api/users.js";
 import teams from "./api/teams.js";
+import categories from "./api/widget-categories.js";
 
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
@@ -76,6 +77,8 @@ app.use("/api/widgets", widgets);
 app.use("/api/users", users);
 
 app.use("/api/teams", teams);
+
+app.use("/api/widget-categories", categories);
 
 // ---------------------------------------------------
 // Root Route

@@ -3,9 +3,11 @@ import { validationMiddleware } from "../middleware/validation-middleware.ts";
 import sendApiKeyEmail from "../services/emailService.js";
 import pool from "../db.js";
 import {
+  addCategoryToWidgetSchema,
   editWidgetSchema,
   queryParamsSchema,
   registerWidgetSchema,
+  removeCategoryFromWidgetSchema,
 } from "../validators/schemas.ts";
 import {
   createApprovedWidget,
@@ -249,5 +251,147 @@ router.post(
     }
   },
 );
+
+// Get categories for a widget
+router.get("/:id/categories", async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.id);
+
+    // Check if widget exists
+    const widgetExists = await pool.query(selectWidgetById, [widgetId]);
+    if (widgetExists.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Widget not found"
+      });
+    }
+
+    // Get all categories for this widget
+    const categoriesResult = await pool.query(
+      `SELECT c.* 
+       FROM categories c
+       JOIN widget_categories wc ON c.id = wc.category_id
+       WHERE wc.widget_id = $1`,
+      [widgetId]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Categories retrieved successfully",
+      data: categoriesResult.rows
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+});
+
+// Add a category to a widget
+router.post("/:id/categories", validationMiddleware({ bodySchema: addCategoryToWidgetSchema }), async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.id);
+    const { categoryId } = req.body;
+
+    if (!categoryId) {
+      return res.status(400).json({
+        success: false,
+        message: "Category ID is required"
+      });
+    }
+
+    // Check if widget exists
+    const widgetExists = await pool.query(selectWidgetById, [widgetId]);
+    if (widgetExists.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Widget not found"
+      });
+    }
+
+    // Check if category exists
+    const categoryExists = await pool.query(
+      "SELECT * FROM categories WHERE id = $1",
+      [categoryId]
+    );
+    if (categoryExists.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    // Add relation to widget_categories
+    const result = await pool.query(
+      `INSERT INTO widget_categories (widget_id, category_id)
+       VALUES ($1, $2)
+       RETURNING *`,
+      [widgetId, categoryId]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Category added to widget successfully",
+      data: result.rows[0]
+    });
+  } catch (error) {
+    // Handle duplicate entry
+    if (error.code === '23505') {
+      return res.status(400).json({
+        success: false,
+        message: "This category is already associated with this widget"
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+});
+
+// Remove a category from a widget
+router.delete("/:widgetId/categories/:categoryId", validationMiddleware({ paramsSchema: removeCategoryFromWidgetSchema }), async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.widgetId);
+    const categoryId = parseInt(req.params.categoryId);
+
+    // Check if widget exists
+    const widgetExists = await pool.query(selectWidgetById, [widgetId]);
+    if (widgetExists.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Widget not found"
+      });
+    }
+
+    // Delete the relation
+    const result = await pool.query(
+      `DELETE FROM widget_categories 
+       WHERE widget_id = $1 AND category_id = $2
+       RETURNING *`,
+      [widgetId, categoryId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found for this widget"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Category removed from widget successfully",
+      data: result.rows[0]
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+});
 
 export default router;
