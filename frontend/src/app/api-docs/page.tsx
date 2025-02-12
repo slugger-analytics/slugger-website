@@ -28,10 +28,9 @@ export default function APIDocs() {
         <AppSidebar />
         <SidebarInset>
           <SidebarTrigger />
-            <div className="p-10">
-                <MarkdownRenderer content={markdownContent}></MarkdownRenderer>
-            </div>
-
+          <div className="p-10">
+            <MarkdownRenderer content={markdownContent}></MarkdownRenderer>
+          </div>
         </SidebarInset>
       </SidebarProvider>
     </ProtectedRoute>

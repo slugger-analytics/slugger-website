@@ -2,7 +2,7 @@
  * FilterDropdown Component
  *
  * This component renders a dropdown menu for managing filters. It includes functionality to toggle
- * a "Favorites" filter and provides a placeholder for additional filters like categories.
+ * a "Favorites" filter and category filters.
  * The state is managed using React's `useState` and `useEffect` hooks, along with `@nanostores/react` for shared state.
  */
 
@@ -19,9 +19,8 @@ import {
 import { MixerVerticalIcon } from "@radix-ui/react-icons"; // Icon used for the dropdown trigger
 import { Button } from "../ui/button"; // Button component (not currently used but imported for possible extension)
 import { useStore } from "@nanostores/react"; // React hook for accessing nanostores
-import { $filters, addFilter, removeFilter } from "@/lib/store"; // Nanostores state and actions for filters
+import { $filters, addFilter, removeFilter, $categories, $activeCategoryIds, addCategoryId, removeCategoryId, $filtersVersion } from "@/lib/store"; // Nanostores state and actions for filters
 import { useState, useEffect } from "react"; // React hooks for managing component state and lifecycle
-import CategoriesDropdown from "./categories-dropdown"; // CategoriesDropdown component (currently commented out)
 
 /**
  * FilterDropdown Component
@@ -32,8 +31,11 @@ function FilterDropdown() {
   // Local state to track whether the "Favorites" filter is active
   const [favsFilterActive, setFavsFilterActive] = useState(false);
 
-  // Accessing the shared filters state using nanostores
+  // Accessing the shared state using nanostores
   const filters = useStore($filters);
+  const categories = useStore($categories);
+  const activeCategoryIds = useStore($activeCategoryIds);
+  const filtersVersion = useStore($filtersVersion);
 
   /**
    * Sync local state with the global filters state.
@@ -56,6 +58,19 @@ function FilterDropdown() {
     } else {
       addFilter("favorites"); // Add the "favorites" filter globally
       setFavsFilterActive(true); // Update local state to active
+    }
+  };
+
+  /**
+   * Toggles a category filter.
+   * Adds or removes the category ID from active categories.
+   */
+  const toggleCategoryFilter = (categoryId: number) => {
+    console.log("toggleCategoryFilter", categoryId);
+    if (activeCategoryIds.has(categoryId)) {
+      removeCategoryId(categoryId);
+    } else {
+      addCategoryId(categoryId);
     }
   };
 
@@ -88,12 +103,19 @@ function FilterDropdown() {
 
         <DropdownMenuSeparator />
 
-        {/* Placeholder for additional filters, such as categories */}
+        {/* Categories filter section */}
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            {/* Uncomment and use the CategoriesDropdown for additional category filters */}
-            {/* <CategoriesDropdown /> */}
-          </DropdownMenuItem>
+          <DropdownMenuLabel className="px-2 py-1.5 text-sm font-semibold">Categories</DropdownMenuLabel>
+          {categories.map((category) => (
+            <DropdownMenuItem key={category.id}>
+              <DropdownMenuCheckboxItem
+                checked={activeCategoryIds.has(category.id)}
+                onCheckedChange={() => toggleCategoryFilter(category.id)}
+              >
+                {category.name}
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>

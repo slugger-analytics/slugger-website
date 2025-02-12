@@ -20,6 +20,7 @@ import {
   $widgetQuery,
   $widgetsVersion,
   $user,
+  $activeCategoryIds,
 } from "@/lib/store"; // Nanostores for managing application state
 import { useStore } from "@nanostores/react"; // Hook to access the store
 
@@ -42,6 +43,7 @@ export default function Widgets() {
   const filtersVersion = useStore($filtersVersion);
   const widgetQuery = useStore($widgetQuery);
   const filters = useStore($filters);
+  const activeCategoryIds = useStore($activeCategoryIds);
   const user = useStore($user);
 
   /**
@@ -92,6 +94,11 @@ export default function Widgets() {
 
       // If "favorites" filter is enabled, only show widgets in the favorites list
       if (filters.has("favorites") && !favWidgetIds.has(widget.id)) {
+        return false;
+      }
+
+      // If "categories" filter is enabled, only show widgets in the active category list
+      if (activeCategoryIds.size > 0 && !widget.categories.some((category) => activeCategoryIds.has(category.id))) {
         return false;
       }
 

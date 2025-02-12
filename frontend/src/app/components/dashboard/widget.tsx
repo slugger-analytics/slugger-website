@@ -9,7 +9,13 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button"; // Styled button component
 import Image from "next/image"; // Next.js image optimization component
-import { HeartIcon, HeartFilledIcon, AngleIcon, ChevronDownIcon, ChevronUpIcon } from "@radix-ui/react-icons"; // Radix UI icons
+import {
+  HeartIcon,
+  HeartFilledIcon,
+  AngleIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "@radix-ui/react-icons"; // Radix UI icons
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -56,7 +62,7 @@ export default function Widget({
   redirectLink,
   publicId,
   restrictedAccess,
-  categories
+  categories,
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Local state for dialog visibility
   const [isExpanded, setIsExpanded] = useState(false); // Local state for description expansion
@@ -68,15 +74,13 @@ export default function Widget({
 
   // Character limit for truncated description
   const CHAR_LIMIT = 111;
-  const isLongDescription = description ? description.length > CHAR_LIMIT : false;
-  const truncatedDescription = isLongDescription && description
-    ? `${description.slice(0, CHAR_LIMIT)}...`
-    : description;
-
-  useEffect(() => {
-    console.log(categories);
-  }, [categories]);
-
+  const isLongDescription = description
+    ? description.length > CHAR_LIMIT
+    : false;
+  const truncatedDescription =
+    isLongDescription && description
+      ? `${description.slice(0, CHAR_LIMIT)}...`
+      : description;
   /**
    * Handles widget redirection.
    * @TODO Implement redirect logic.
@@ -116,13 +120,13 @@ export default function Widget({
       redirectLink,
       publicId,
       restrictedAccess,
-      categories
+      categories,
     });
     setIsDialogOpen(true);
   };
 
   return (
-    <Card className="w-[300px]">
+    <Card className="w-[300px] flex flex-col min-h-[400px]">
       {/* Image Section */}
       <div className="flex justify-center w-full mb-3">
         <div className="h-[150px] py-4 bg-gray-50 w-full flex justify-center items-center rounded-t-xl">
@@ -141,41 +145,50 @@ export default function Widget({
       </div>
 
       {/* Content Section */}
-      <CardContent>
+      <CardContent className="flex-grow">
         <CardTitle className="mb-2 text-lg">{name}</CardTitle>
         <CardDescription className="text-sm">
           {isExpanded ? description : truncatedDescription}
           {isLongDescription && (
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
               className="mt-1 ml-1 p-0 h-auto text-xs text-gray-400 hover:text-gray-600"
             >
               {isExpanded ? (
-                <span className="flex items-center">Less <ChevronUpIcon className="ml-1" /></span>
+                <span className="flex items-center">
+                  Less <ChevronUpIcon className="ml-1" />
+                </span>
               ) : (
-                <span className="flex items-center">More <ChevronDownIcon className="ml-1" /></span>
+                <span className="flex items-center">
+                  More <ChevronDownIcon className="ml-1" />
+                </span>
               )}
             </Button>
           )}
           <div className="flex gap-2 py-3">
             {categories.map((category) => (
-              <CategoryTag key={category.name} categoryName={category.name} hexCode={category.hexCode} />
+              <CategoryTag
+                key={category.name}
+                categoryName={category.name}
+                hexCode={category.hexCode}
+              />
             ))}
           </div>
-
         </CardDescription>
       </CardContent>
 
       {/* Footer Section */}
-      <CardFooter className="flex justify-between h-12">
+      <CardFooter className="flex justify-between h-12 mt-auto">
         {/* Edit Button for Developers */}
         {isDev ? (
           <Button variant="outline" size="sm" onClick={handleOpenDialog}>
             Edit
           </Button>
-        ) : <div></div>}
+        ) : (
+          <div></div>
+        )}
         <div>
           {/* Launch Button */}
           <Button size="sm" className="ml-3" onClick={redirect}>

@@ -1,10 +1,16 @@
 import { fetchWidgets } from "@/api/widget";
 import { WidgetType } from "@/data/types";
-import { setWidgets, $widgets, setFavWidgetIds, $user } from "@/lib/store";
+import {
+  setWidgets,
+  $widgets,
+  setFavWidgetIds,
+  $user,
+  setCategories,
+} from "@/lib/store";
 import { useStore } from "@nanostores/react";
 import { useEffect } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import { getFavorites } from "@/api/user";
+import { getCategories } from "@/api/categories";
 
 function useQueryWidgets() {
   const widgets = useStore($widgets);
@@ -12,7 +18,10 @@ function useQueryWidgets() {
 
   const loadWidgets = async () => {
     try {
-      const fetchedWidgets = await fetchWidgets();
+      const [fetchedWidgets, categories] = await Promise.all([
+        fetchWidgets(),
+        getCategories(),
+      ]);
       // Check if the user is a Widget Developer
       const isDev = user.role === "widget developer" ? true : false;
 
@@ -26,6 +35,10 @@ function useQueryWidgets() {
       // Fetch favorite widget IDs for the user
       const favWidgetIds = (await getFavorites(parseInt(user.id))) as number[];
       setFavWidgetIds(favWidgetIds);
+
+      if (isDev) {
+        setCategories(categories);
+      }
     } catch (error) {
       console.error("Error fetching widgets", error);
     }
