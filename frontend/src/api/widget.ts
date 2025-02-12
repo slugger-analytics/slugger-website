@@ -9,6 +9,7 @@ import {
   PendingWidgetsAPIRes,
   RegisterWidgetDataType,
   WidgetType,
+  CategoryType
 } from "@/data/types";
 import dotenv from "dotenv";
 
@@ -133,6 +134,10 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
       developerIds: w.developer_ids || [],
       publicId: w.public_id,
       restrictedAccess: w.restricted_access,
+      categories: (w.categories || []).map((category: {name: string, hex_code: string | undefined} ) => ({
+        name: category.name,
+        hexCode: category.hex_code
+      }))
     }));
 
     return cleanedData;

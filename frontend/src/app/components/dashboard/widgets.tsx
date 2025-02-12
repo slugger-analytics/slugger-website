@@ -124,6 +124,7 @@ export default function Widgets() {
           isDev={isDev} // Pass developer status
           visibility={widget.visibility ?? "Private"} // Pass visibility status (default to "Private")
           isFavorite={favWidgetIds.has(widget.id)} // Pass whether the widget is in favorites
+          categories={widget.categories}
         />
       ))}
     </div>

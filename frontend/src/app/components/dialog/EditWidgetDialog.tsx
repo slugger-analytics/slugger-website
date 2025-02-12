@@ -24,6 +24,7 @@ import { useStore } from "@nanostores/react"; // Hook to access nanostores
 import { $targetWidget } from "@/lib/store"; // Store to manage the target widget being edited
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
 import useMutationWidgets from "@/app/hooks/use-mutation-widgets"; // Hook for widget mutations
 import IconSelector from "./IconSelector";
 import { Eye, EyeOff } from "lucide-react";
@@ -130,12 +131,12 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           {/* Description Input */}
           <div>
             <Label htmlFor="description">Description</Label>
-            <Input
+            <Textarea
               id="description"
               value={description}
-              onChange={(e) => setDescription(e.target.value.slice(0, 100))}
-              placeholder="Widget Description"
-              maxLength={100}
+              onChange={(e) => setDescription(e.target.value.slice(0, 500))}
+              placeholder="Brief description of your widget"
+              maxLength={500}
             />
           </div>
 

@@ -55,7 +55,7 @@ router.post('/', validationMiddleware({ bodySchema: createCategorySchema }), asy
 
 // PATCH - Update a widget category
 router.patch('/:id', validationMiddleware({ bodySchema: updateCategorySchema }), async (req, res) => {
-  const { id } = parseInt(req.params);
+  const id = parseInt(req.params.id);
   const { name, hexCode } = req.body;
   
   if (!name && !hexCode) {
@@ -82,6 +82,7 @@ router.patch('/:id', validationMiddleware({ bodySchema: updateCategorySchema }),
     }
 
     values.push(id);
+    console.log(id)
     const result = await pool.query(
       `UPDATE categories SET ${updateFields.join(', ')} WHERE id = $${valueCount} RETURNING *`,
       values
