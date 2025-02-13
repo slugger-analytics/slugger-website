@@ -13,7 +13,7 @@ export default function CategoryTag({
   className = "",
   style = {},
   textColor = "text-slate-700",
-  onClick = () => {}
+  onClick = () => {},
 }: PropsType) {
   return (
     <div
