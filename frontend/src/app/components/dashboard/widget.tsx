@@ -15,6 +15,7 @@ import {
   AngleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  OpenInNewWindowIcon,
 } from "@radix-ui/react-icons"; // Radix UI icons
 import { useRouter } from "next/navigation";
 import {
@@ -34,6 +35,7 @@ import { Separator } from "../ui/separator";
 import { generateToken } from "@/api/user";
 import CategoryTag from "./category-tag";
 import { recordWidgetInteraction } from "@/api/widget";
+import { prettyNumber } from "@based/pretty-number";
 /**
  * WidgetProps Interface
  *
@@ -185,20 +187,28 @@ export default function Widget({
       {/* Footer Section */}
       <CardFooter className="flex justify-between h-12 mt-auto">
         {/* Edit Button for Developers */}
-        {isDev ? (
-          <Button variant="outline" size="sm" onClick={handleOpenDialog}>
-            Edit
-          </Button>
-        ) : (
-          <div></div>
-        )}
-        <div>
+        <div className="flex">
+          {isDev ? (
+            <Button variant="outline" size="sm" onClick={handleOpenDialog}>
+              Edit
+            </Button>
+          ) : (
+            <></>
+          )}
+        </div>
+        <div className="flex">
+          {/* <div className="flex flex-col gap-2"> */}
           {/* Launch Button */}
           <Button size="sm" className="ml-3" onClick={redirect}>
             Launch
+            <div className="text-xs text-gray-500 w-5">
+              {prettyNumber(metrics.allTimeLaunches, "number-short")}
+            </div>
           </Button>
+          {/* </div> */}
 
           {/* Favorite Button */}
+
           <Button variant="ghost" size="sm" onClick={handleToggleFav}>
             {favWidgets.has(id) ? <HeartFilledIcon /> : <HeartIcon />}
           </Button>

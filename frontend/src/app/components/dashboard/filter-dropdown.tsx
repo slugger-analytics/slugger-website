@@ -19,7 +19,16 @@ import {
 import { MixerVerticalIcon } from "@radix-ui/react-icons"; // Icon used for the dropdown trigger
 import { Button } from "../ui/button"; // Button component (not currently used but imported for possible extension)
 import { useStore } from "@nanostores/react"; // React hook for accessing nanostores
-import { $filters, addFilter, removeFilter, $categories, $activeCategoryIds, addCategoryId, removeCategoryId, $filtersVersion } from "@/lib/store"; // Nanostores state and actions for filters
+import {
+  $filters,
+  addFilter,
+  removeFilter,
+  $categories,
+  $activeCategoryIds,
+  addCategoryId,
+  removeCategoryId,
+  $filtersVersion,
+} from "@/lib/store"; // Nanostores state and actions for filters
 import { useState, useEffect } from "react"; // React hooks for managing component state and lifecycle
 
 /**
@@ -35,7 +44,6 @@ function FilterDropdown() {
   const categories = useStore($categories);
   const activeCategoryIds = useStore($activeCategoryIds);
   const filtersVersion = useStore($filtersVersion);
-
 
   /**
    * Sync local state with the global filters state.
@@ -104,7 +112,9 @@ function FilterDropdown() {
 
         {/* Categories filter section */}
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="px-2 py-1.5 text-sm font-semibold">Categories</DropdownMenuLabel>
+          <DropdownMenuLabel className="px-2 py-1.5 text-sm font-semibold">
+            Categories
+          </DropdownMenuLabel>
           {categories.map((category) => (
             <DropdownMenuItem key={category.id}>
               <DropdownMenuCheckboxItem

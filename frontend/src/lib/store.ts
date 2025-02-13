@@ -95,7 +95,10 @@ export function updateStoreWidget({
       if (widget.id === id) {
         const updatedCategories = [
           ...widget.categories.filter(
-            (cat) => !categoriesToRemove?.has(Array.from(categoriesToRemove).find(c => c.id === cat.id)),
+            (cat) =>
+              !categoriesToRemove?.has(
+                Array.from(categoriesToRemove).find((c) => c.id === cat.id),
+              ),
           ),
           ...(categoriesToAdd ? Array.from(categoriesToAdd) : []),
         ];
@@ -109,7 +112,9 @@ export function updateStoreWidget({
           ...(imageUrl !== undefined && { imageUrl }),
           ...(publicId !== undefined && { publicId }),
           ...(restrictedAccess !== undefined && { restrictedAccess }),
-          ...(updatedCategories !== undefined && { categories: updatedCategories }),
+          ...(updatedCategories !== undefined && {
+            categories: updatedCategories,
+          }),
         };
       } else {
         return widget;

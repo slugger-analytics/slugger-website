@@ -20,15 +20,14 @@ export default function CategorySelector({
   categoriesToAdd,
   categoriesToRemove,
   setCategoriesToAdd,
-  setCategoriesToRemove
+  setCategoriesToRemove,
 }: CategorySelectorProps) {
-
-
   const isSelected = (category: CategoryType) => {
     return (
-      selectedCategories.some((selected) => selected.name === category.name) ||
-      categoriesToAdd.has(category)
-    ) && !categoriesToRemove.has(category);
+      (selectedCategories.some((selected) => selected.name === category.name) ||
+        categoriesToAdd.has(category)) &&
+      !categoriesToRemove.has(category)
+    );
   };
 
   const handleClick = (category: CategoryType) => {
@@ -71,9 +70,9 @@ export default function CategorySelector({
           hexCode={category.hexCode}
           key={category.name}
           style={{
-            fontSize: '14px',
-            border: isSelected(category) ? '2px solid gray' : '2px solid white',
-            cursor: 'pointer'
+            fontSize: "14px",
+            border: isSelected(category) ? "2px solid gray" : "2px solid white",
+            cursor: "pointer",
           }}
           onClick={() => handleClick(category)}
         ></CategoryTag>
