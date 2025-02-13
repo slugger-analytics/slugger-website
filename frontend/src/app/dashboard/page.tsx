@@ -15,6 +15,8 @@ import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
 import { useAuth } from "../contexts/AuthContext";
 import SortDropdown from "../components/dashboard/sort-dropdown";
+import ViewToggle from "../components/dashboard/view-toggle";
+
 export default function Page() {
   const { widgets } = useQueryWidgets();
   const user = useStore($user);
@@ -29,12 +31,16 @@ export default function Page() {
           {/* Ensures the route is protected and only accessible to authenticated users */}
           <SidebarTrigger />
           {!loading && widgets.length > 0 && (
-            <div className="flex justify-center w-full mt-10">
-              <Search /> {/* Search component for filtering widgets */}
-              <FilterDropdown />{" "}
-              <SortDropdown />
-              {/* Dropdown for additional filtering options */}
-            </div>
+            <>
+              <div className="flex flex-col items-center w-full mt-10">
+                <div className="flex justify-center w-full">
+                  <Search />
+                  <FilterDropdown />
+                  <SortDropdown />
+                </div>
+                <ViewToggle />
+              </div>
+            </>
           )}
           <div className="flex justify-center p-10">
             {!loading && widgets.length > 0 && (
