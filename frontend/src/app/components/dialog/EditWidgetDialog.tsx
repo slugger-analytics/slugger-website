@@ -72,13 +72,19 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   const [restrictedAccess, setRestrictedAccess] = useState(
     targetWidget.restrictedAccess,
   );
-  const [targetWidgetCategories, setTargetWidgetCategories] = useState(targetWidget.categories);
+  const [targetWidgetCategories, setTargetWidgetCategories] = useState(
+    targetWidget.categories,
+  );
 
   const { editWidget } = useMutationWidgets(); // Hook for editing widgets
   const [visible, setVisible] = useState(false);
   const categories = useStore($categories);
-  const [categoriesToAdd, setCategoriesToAdd] = useState(new Set<CategoryType>());
-  const [categoriesToRemove, setCategoriesToRemove] = useState(new Set<CategoryType>());
+  const [categoriesToAdd, setCategoriesToAdd] = useState(
+    new Set<CategoryType>(),
+  );
+  const [categoriesToRemove, setCategoriesToRemove] = useState(
+    new Set<CategoryType>(),
+  );
 
   const { toast } = useToast();
 
@@ -88,17 +94,20 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
    */
   const handleSave = async () => {
     try {
-      await editWidget({
-        id: targetWidget.id,
-        name,
-        description,
-        redirectLink: deploymentLink,
-        visibility,
-        imageUrl,
-        publicId: targetWidget.publicId,
-        restrictedAccess,
-        categories
-      }, {categoriesToAdd, categoriesToRemove});
+      await editWidget(
+        {
+          id: targetWidget.id,
+          name,
+          description,
+          redirectLink: deploymentLink,
+          visibility,
+          imageUrl,
+          publicId: targetWidget.publicId,
+          restrictedAccess,
+          categories,
+        },
+        { categoriesToAdd, categoriesToRemove },
+      );
       onClose(); // Close the dialog after saving
     } catch (error) {
       console.error("Error updating widget:", error);

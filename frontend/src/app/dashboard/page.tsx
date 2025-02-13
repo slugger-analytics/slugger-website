@@ -31,8 +31,7 @@ export default function Page() {
           {!loading && widgets.length > 0 && (
             <div className="flex justify-center w-full mt-10">
               <Search /> {/* Search component for filtering widgets */}
-              <FilterDropdown />{" "}
-              <SortDropdown />
+              <FilterDropdown /> <SortDropdown />
               {/* Dropdown for additional filtering options */}
             </div>
           )}

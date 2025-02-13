@@ -7,7 +7,11 @@ import {
   removeFavWidgetId,
   updateStoreWidget,
 } from "@/lib/store";
-import { updateWidget, addCategoryToWidget, removeCategoryFromWidget } from "@/api/widget";
+import {
+  updateWidget,
+  addCategoryToWidget,
+  removeCategoryFromWidget,
+} from "@/api/widget";
 import { useAuth } from "../contexts/AuthContext";
 import { addFavorite, removeFavorite } from "@/api/user";
 import { useStore } from "@nanostores/react";
@@ -17,20 +21,28 @@ function useMutationWidgets() {
   const favWidgetIds = useStore($favWidgetIds); // Get the favorite widget IDs from the store
   const targetWidget = useStore($targetWidget);
 
-  const editWidget = async ({
-    id,
-    name,
-    description,
-    redirectLink,
-    visibility,
-    imageUrl,
-    publicId,
-    restrictedAccess,
-    categories,
-    metrics,
-  }: WidgetType, {categoriesToAdd, categoriesToRemove}: {categoriesToAdd: Set<CategoryType>, categoriesToRemove: Set<CategoryType>}) => {
+  const editWidget = async (
+    {
+      id,
+      name,
+      description,
+      redirectLink,
+      visibility,
+      imageUrl,
+      publicId,
+      restrictedAccess,
+      categories,
+      metrics,
+    }: WidgetType,
+    {
+      categoriesToAdd,
+      categoriesToRemove,
+    }: {
+      categoriesToAdd: Set<CategoryType>;
+      categoriesToRemove: Set<CategoryType>;
+    },
+  ) => {
     try {
-
       const [updatedWidget] = await Promise.all([
         updateWidget({
           id,
@@ -44,8 +56,16 @@ function useMutationWidgets() {
           categories,
           metrics,
         }),
-        Promise.all(Array.from(categoriesToAdd).map(category => addCategoryToWidget(id, category.id))),
-        Promise.all(Array.from(categoriesToRemove).map(category => removeCategoryFromWidget(id, category.id)))
+        Promise.all(
+          Array.from(categoriesToAdd).map((category) =>
+            addCategoryToWidget(id, category.id),
+          ),
+        ),
+        Promise.all(
+          Array.from(categoriesToRemove).map((category) =>
+            removeCategoryFromWidget(id, category.id),
+          ),
+        ),
       ]);
       updateStoreWidget({
         id,

@@ -135,7 +135,11 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
       publicId: w.public_id,
       restrictedAccess: w.restricted_access,
       categories: (w.categories || []).map(
-        (category: { id: number; name: string; hex_code: string | undefined }) => ({
+        (category: {
+          id: number;
+          name: string;
+          hex_code: string | undefined;
+        }) => ({
           id: category.id,
           name: category.name,
           hexCode: category.hex_code,
@@ -159,7 +163,7 @@ export const updateWidget = async ({
   imageUrl,
   publicId,
   restrictedAccess,
-  categories
+  categories,
 }: WidgetType): Promise<Response> => {
   try {
     console.log({ restrictedAccess });
@@ -191,17 +195,23 @@ export const updateWidget = async ({
   }
 };
 
-export const addCategoryToWidget = async (widgetId: number, categoryId: number): Promise<Response> => {
+export const addCategoryToWidget = async (
+  widgetId: number,
+  categoryId: number,
+): Promise<Response> => {
   try {
-    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/categories`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_URL}/api/widgets/${widgetId}/categories`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          categoryId,
+        }),
       },
-      body: JSON.stringify({
-        categoryId,
-      }),
-    });
+    );
 
     const res = await response.json();
     if (!res.success) {
@@ -215,15 +225,21 @@ export const addCategoryToWidget = async (widgetId: number, categoryId: number):
   }
 };
 
-export const removeCategoryFromWidget = async (widgetId: number, categoryId: number): Promise<Response> => {
+export const removeCategoryFromWidget = async (
+  widgetId: number,
+  categoryId: number,
+): Promise<Response> => {
   try {
-    console.log({widgetId, categoryId});
-    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/categories/${categoryId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
+    console.log({ widgetId, categoryId });
+    const response = await fetch(
+      `${API_URL}/api/widgets/${widgetId}/categories/${categoryId}`,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     const res = await response.json();
     if (!res.success) {
@@ -237,7 +253,11 @@ export const removeCategoryFromWidget = async (widgetId: number, categoryId: num
   }
 };
 
-export const recordWidgetInteraction = async (widgetId: number, userId: number, metricType: string): Promise<Response> => {
+export const recordWidgetInteraction = async (
+  widgetId: number,
+  userId: number,
+  metricType: string,
+): Promise<Response> => {
   try {
     const response = await fetch(`${API_URL}/api/widgets/metrics`, {
       method: "POST",
