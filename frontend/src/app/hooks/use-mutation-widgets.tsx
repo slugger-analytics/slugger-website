@@ -27,6 +27,7 @@ function useMutationWidgets() {
     publicId,
     restrictedAccess,
     categories,
+    metrics,
   }: WidgetType, {categoriesToAdd, categoriesToRemove}: {categoriesToAdd: Set<CategoryType>, categoriesToRemove: Set<CategoryType>}) => {
     try {
 
@@ -41,6 +42,7 @@ function useMutationWidgets() {
           publicId,
           restrictedAccess,
           categories,
+          metrics,
         }),
         Promise.all(Array.from(categoriesToAdd).map(category => addCategoryToWidget(id, category.id))),
         Promise.all(Array.from(categoriesToRemove).map(category => removeCategoryFromWidget(id, category.id)))
@@ -54,7 +56,8 @@ function useMutationWidgets() {
         imageUrl,
         publicId,
         restrictedAccess,
-        categories,
+        categoriesToAdd,
+        categoriesToRemove,
       }); // Update the widget in the store
     } catch (error) {
       console.error("Error updating widget:", error);

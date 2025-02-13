@@ -76,11 +76,30 @@ export function updateStoreWidget({
   imageUrl,
   publicId,
   restrictedAccess,
-  categories
-}: WidgetType) {
+  categoriesToAdd,
+  categoriesToRemove,
+}: {
+  id: number;
+  name?: string;
+  description?: string;
+  visibility?: string;
+  redirectLink?: string;
+  imageUrl?: string;
+  publicId?: string;
+  restrictedAccess?: boolean;
+  categoriesToAdd?: Set<CategoryType>;
+  categoriesToRemove?: Set<CategoryType>;
+}) {
   $widgets.set(
     $widgets.get().map((widget) => {
       if (widget.id === id) {
+        const updatedCategories = [
+          ...widget.categories.filter(
+            (cat) => !categoriesToRemove?.has(Array.from(categoriesToRemove).find(c => c.id === cat.id)),
+          ),
+          ...(categoriesToAdd ? Array.from(categoriesToAdd) : []),
+        ];
+        console.log("updatedCategories", updatedCategories);
         return {
           ...widget,
           ...(name !== undefined && { name }),
@@ -90,7 +109,7 @@ export function updateStoreWidget({
           ...(imageUrl !== undefined && { imageUrl }),
           ...(publicId !== undefined && { publicId }),
           ...(restrictedAccess !== undefined && { restrictedAccess }),
-          ...(categories !== undefined && { categories }),
+          ...(updatedCategories !== undefined && { categories: updatedCategories }),
         };
       } else {
         return widget;
