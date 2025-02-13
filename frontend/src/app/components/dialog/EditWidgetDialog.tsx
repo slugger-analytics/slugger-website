@@ -105,6 +105,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           publicId: targetWidget.publicId,
           restrictedAccess,
           categories,
+          metrics: targetWidget.metrics,
         },
         { categoriesToAdd, categoriesToRemove },
       );
