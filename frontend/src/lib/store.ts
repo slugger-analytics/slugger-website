@@ -19,6 +19,16 @@ const emptyWidget: WidgetType = {
   developerIds: [],
   publicId: "",
   restrictedAccess: false,
+  metrics: {
+    weeklyLaunches: 0,
+    monthlyLaunches: 0,
+    yearlyLaunches: 0,
+    allTimeLaunches: 0,
+    weeklyUniqueLaunches: 0,
+    monthlyUniqueLaunches: 0,
+    yearlyUniqueLaunches: 0,
+    allTimeUniqueLaunches: 0,
+  },
 };
 
 export const $widgets = atom<WidgetType[]>([]);
@@ -28,6 +38,10 @@ export const $favWidgetIds = atom<Set<number>>(new Set());
 
 export const $filters = atom<Set<string>>(new Set());
 export const $activeCategoryIds = atom<Set<number>>(new Set([]));
+
+export const $sortBy = atom<string>("launch_count");
+export const $sortDirection = atom<string>("asc");
+export const $timeFrame = atom<string>("weekly");
 
 export const $widgetsVersion = atom<number>(0);
 export const $filtersVersion = atom<number>(0);
@@ -180,6 +194,18 @@ export function clearUser() {
 
 export function setCategories(categories: CategoryType[]) {
   $categories.set(categories);
+}
+
+export function setSortBy(sortBy: string) {
+  $sortBy.set(sortBy);
+}
+
+export function setSortDirection(sortDirection: string) {
+  $sortDirection.set(sortDirection);
+}
+
+export function setTimeFrame(timeFrame: string) {
+  $timeFrame.set(timeFrame);
 }
 
 // Logger for nanostores

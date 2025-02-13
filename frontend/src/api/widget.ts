@@ -141,8 +141,8 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
           hexCode: category.hex_code,
         }),
       ),
+      metrics: w.metrics,
     }));
-    console.log(cleanedData);
     return cleanedData;
   } catch (error) {
     console.error("Error fetching widgets:", error);
@@ -233,6 +233,32 @@ export const removeCategoryFromWidget = async (widgetId: number, categoryId: num
     return res.data;
   } catch (error) {
     console.error("Error removing category from widget:", error);
+    throw error;
+  }
+};
+
+export const recordWidgetInteraction = async (widgetId: number, userId: number, metricType: string): Promise<Response> => {
+  try {
+    const response = await fetch(`${API_URL}/api/widgets/metrics`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        widgetId,
+        userId,
+        metricType,
+      }),
+    });
+
+    const res = await response.json();
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("Error recording widget interaction:", error);
     throw error;
   }
 };

@@ -33,7 +33,7 @@ import useMutationWidgets from "@/app/hooks/use-mutation-widgets"; // Custom hoo
 import { Separator } from "../ui/separator";
 import { generateToken } from "@/api/user";
 import CategoryTag from "./category-tag";
-
+import { recordWidgetInteraction } from "@/api/widget";
 /**
  * WidgetProps Interface
  *
@@ -63,6 +63,7 @@ export default function Widget({
   publicId,
   restrictedAccess,
   categories,
+  metrics,
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Local state for dialog visibility
   const [isExpanded, setIsExpanded] = useState(false); // Local state for description expansion
@@ -93,6 +94,7 @@ export default function Widget({
         const token = await generateToken(parseInt(userId), publicId);
         url.searchParams.set("alpb_token", token);
       }
+      recordWidgetInteraction(id, parseInt(userId), "launch");
       router.push(url.toString());
     } else {
       console.error("Redirect link is missing or invalid.");
@@ -121,6 +123,7 @@ export default function Widget({
       publicId,
       restrictedAccess,
       categories,
+      metrics,
     });
     setIsDialogOpen(true);
   };

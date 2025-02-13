@@ -18,6 +18,16 @@ export interface WidgetType {
   publicId: string;
   restrictedAccess: boolean;
   categories: CategoryType[];
+  metrics: {
+    weeklyLaunches: number;
+    yearlyLaunches: number;
+    allTimeLaunches: number;
+    monthlyLaunches: number;
+    weeklyUniqueLaunches: number;
+    yearlyUniqueLaunches: number;
+    allTimeUniqueLaunches: number;
+    monthlyUniqueLaunches: number;
+  };
 }
 
 export interface CategoryType {

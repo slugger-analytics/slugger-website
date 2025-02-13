@@ -36,9 +36,7 @@ function useQueryWidgets() {
       const favWidgetIds = (await getFavorites(parseInt(user.id))) as number[];
       setFavWidgetIds(favWidgetIds);
 
-      if (isDev) {
-        setCategories(categories);
-      }
+      setCategories(categories);
     } catch (error) {
       console.error("Error fetching widgets", error);
     }
