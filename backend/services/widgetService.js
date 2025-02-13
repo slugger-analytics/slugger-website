@@ -274,27 +274,46 @@ export async function getPendingWidgets() {
 export async function getAllWidgets(widget_name, categories, page, limit) {
   // When we select * from widgets,
   // need to get all user_ids from user_widget where user_widget.widget_id === widgets.widget_id
-  const widgetsQuery = `
-        SELECT
-            w.*,
-            ARRAY_AGG(uw.user_id) AS developer_ids,
-            COALESCE(
-                JSON_AGG(
-                    DISTINCT JSONB_BUILD_OBJECT('id', c.id, 'name', c.name, 'hex_code', c.hex_code)
-                ) FILTER (WHERE c.name IS NOT NULL),
-                '[]'
-            ) AS categories
-        FROM
-            widgets w
-        LEFT JOIN
-            user_widget uw ON w.widget_id = uw.widget_id
-        LEFT JOIN 
-            widget_categories as wc ON w.widget_id = wc.widget_id
-        LEFT JOIN
-            categories as c ON wc.category_id = c.id
-        GROUP BY
-            w.widget_id;
-        `;
+const widgetsQuery = `
+    SELECT
+        w.*,
+        ARRAY_AGG(uw.user_id) AS developer_ids,
+        COALESCE(
+            JSON_AGG(
+                DISTINCT JSONB_BUILD_OBJECT('id', c.id, 'name', c.name, 'hex_code', c.hex_code)
+            ) FILTER (WHERE c.name IS NOT NULL),
+            '[]'
+        ) AS categories,
+        JSONB_BUILD_OBJECT(
+            'weeklyLaunches', COALESCE(MAX(wm_weekly.total_launches), 0),
+            'weeklyUniqueLaunches', COALESCE(MAX(wm_weekly.unique_launches), 0),
+            'monthlyLaunches', COALESCE(MAX(wm_monthly.total_launches), 0),
+            'monthlyUniqueLaunches', COALESCE(MAX(wm_monthly.unique_launches), 0),
+            'yearlyLaunches', COALESCE(MAX(wm_yearly.total_launches), 0),
+            'yearlyUniqueLaunches', COALESCE(MAX(wm_yearly.unique_launches), 0),
+            'allTimeLaunches', COALESCE(MAX(wm_all_time.total_launches), 0),
+            'allTimeUniqueLaunches', COALESCE(MAX(wm_all_time.unique_launches), 0)
+        ) AS metrics
+    FROM
+        widgets w
+    LEFT JOIN
+        user_widget uw ON w.widget_id = uw.widget_id
+    LEFT JOIN 
+        widget_categories AS wc ON w.widget_id = wc.widget_id
+    LEFT JOIN
+        categories AS c ON wc.category_id = c.id
+    LEFT JOIN
+        widget_metrics wm_weekly ON w.widget_id = wm_weekly.widget_id AND wm_weekly.timeframe_type = 'weekly'
+    LEFT JOIN
+        widget_metrics wm_monthly ON w.widget_id = wm_monthly.widget_id AND wm_monthly.timeframe_type = 'monthly'
+    LEFT JOIN
+        widget_metrics wm_yearly ON w.widget_id = wm_yearly.widget_id AND wm_yearly.timeframe_type = 'yearly'
+    LEFT JOIN
+        widget_metrics wm_all_time ON w.widget_id = wm_all_time.widget_id AND wm_all_time.timeframe_type = 'all_time'
+    GROUP BY
+        w.widget_id;
+`;
+
   // const result = await pool
   //     .select({
   //         widget: widgets,

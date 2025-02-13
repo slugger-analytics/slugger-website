@@ -30,12 +30,12 @@ import { useState, useEffect } from "react"; // React hooks for managing compone
 function FilterDropdown() {
   // Local state to track whether the "Favorites" filter is active
   const [favsFilterActive, setFavsFilterActive] = useState(false);
-
   // Accessing the shared state using nanostores
   const filters = useStore($filters);
   const categories = useStore($categories);
   const activeCategoryIds = useStore($activeCategoryIds);
   const filtersVersion = useStore($filtersVersion);
+
 
   /**
    * Sync local state with the global filters state.
@@ -66,7 +66,6 @@ function FilterDropdown() {
    * Adds or removes the category ID from active categories.
    */
   const toggleCategoryFilter = (categoryId: number) => {
-    console.log("toggleCategoryFilter", categoryId);
     if (activeCategoryIds.has(categoryId)) {
       removeCategoryId(categoryId);
     } else {

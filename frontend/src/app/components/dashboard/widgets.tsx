@@ -21,6 +21,9 @@ import {
   $widgetsVersion,
   $user,
   $activeCategoryIds,
+  $sortBy,
+  $sortDirection,
+  $timeFrame,
 } from "@/lib/store"; // Nanostores for managing application state
 import { useStore } from "@nanostores/react"; // Hook to access the store
 
@@ -45,6 +48,9 @@ export default function Widgets() {
   const filters = useStore($filters);
   const activeCategoryIds = useStore($activeCategoryIds);
   const user = useStore($user);
+  const sortBy = useStore($sortBy);
+  const sortDirection = useStore($sortDirection);
+  const timeFrame = useStore($timeFrame);
 
   /**
    * Sets the user role (whether the user is a "Widget Developer").
@@ -104,6 +110,31 @@ export default function Widgets() {
 
       // Show all widgets that match the search and filtering criteria
       return true;
+    }).sort((a, b) => {
+      let res = 0;
+      if (sortBy === "launch_count") {
+        if (timeFrame === "weekly") {
+          res = b.metrics.weeklyLaunches - a.metrics.weeklyLaunches;
+        } else if (timeFrame === "monthly") {
+          res = b.metrics.monthlyLaunches - a.metrics.monthlyLaunches;
+        } else if (timeFrame === "yearly") {
+          res = b.metrics.yearlyLaunches - a.metrics.yearlyLaunches;
+        } else {
+          res = b.metrics.allTimeLaunches - a.metrics.allTimeLaunches;
+        }
+      } else {
+        if (timeFrame === "weekly") {
+          res = b.metrics.weeklyUniqueLaunches - a.metrics.weeklyUniqueLaunches;
+        } else if (timeFrame === "monthly") {
+          res = b.metrics.monthlyUniqueLaunches - a.metrics.monthlyUniqueLaunches;
+        } else if (timeFrame === "yearly") {
+          res = b.metrics.yearlyUniqueLaunches - a.metrics.yearlyUniqueLaunches;
+        } else {
+          res = b.metrics.allTimeUniqueLaunches - a.metrics.allTimeUniqueLaunches;
+        }
+      }
+      return sortDirection === "asc" ? res : -res;
+
     });
   }, [
     filtersVersion,
@@ -114,6 +145,9 @@ export default function Widgets() {
     isDev,
     user,
     filters,
+    sortBy,
+    sortDirection,
+    timeFrame,
   ]);
 
   // Display loading message while widgets are being fetched

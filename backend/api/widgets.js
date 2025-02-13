@@ -394,4 +394,46 @@ router.delete("/:widgetId/categories/:categoryId", async (req, res) => {
   }
 });
 
+router.post("/metrics", async (req, res) => {
+  try {
+    const { widgetId, userId, metricType } = req.body;
+
+    if (metricType === "launch") {
+      const result = await pool.query(`
+        INSERT INTO widget_launches (widget_id, user_id)
+        VALUES ($1, $2)
+        RETURNING *
+      `, [widgetId, userId]);
+
+      return res.status(201).json({
+        success: true,
+        message: "Widget launch metric recorded successfully",
+        data: result.rows[0]
+      })
+    }
+
+    // if (metricType === "favorite") {
+    //   const result = await pool.query(`
+    //     INSERT INTO widget_favorites (widget_id, user_id)
+    //     VALUES ($1, $2)
+    //     RETURNING *
+    //   `, [widgetId, userId]);
+
+    //   return res.status(201).json({
+    //     success: true,
+    //     message: "Widget favorite metric recorded successfully",
+    //     data: result.rows[0]
+    //   })
+    // }
+
+    else {throw new Error("Invalid metric type")}
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+})
+
+
 export default router;

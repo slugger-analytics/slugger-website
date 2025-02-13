@@ -14,7 +14,7 @@ import Widgets from "../components/dashboard/widgets";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
 import { useAuth } from "../contexts/AuthContext";
-
+import SortDropdown from "../components/dashboard/sort-dropdown";
 export default function Page() {
   const { widgets } = useQueryWidgets();
   const user = useStore($user);
@@ -32,6 +32,7 @@ export default function Page() {
             <div className="flex justify-center w-full mt-10">
               <Search /> {/* Search component for filtering widgets */}
               <FilterDropdown />{" "}
+              <SortDropdown />
               {/* Dropdown for additional filtering options */}
             </div>
           )}
