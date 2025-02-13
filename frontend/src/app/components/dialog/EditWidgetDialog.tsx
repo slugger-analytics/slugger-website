@@ -94,6 +94,16 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
    */
   const handleSave = async () => {
     try {
+      const updatedCategories = [
+        ...targetWidget.categories.filter(
+          (cat) => {
+            const matchingCategory = Array.from(categoriesToRemove).find((c) => c.id === cat.id);
+            return !matchingCategory; // Keep categories that aren't in categoriesToRemove
+          }
+        ),
+        ...(categoriesToAdd ? Array.from(categoriesToAdd) : []),
+      ];
+
       await editWidget(
         {
           id: targetWidget.id,
@@ -104,10 +114,13 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           imageUrl,
           publicId: targetWidget.publicId,
           restrictedAccess,
-          categories,
+          categories: updatedCategories,
           metrics: targetWidget.metrics,
         },
-        { categoriesToAdd, categoriesToRemove },
+        {
+          categoriesToAdd,
+          categoriesToRemove,
+        }
       );
       onClose(); // Close the dialog after saving
     } catch (error) {
