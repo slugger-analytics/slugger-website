@@ -83,59 +83,69 @@ export default function Widgets() {
    * @returns {WidgetType[]} - Filtered list of widgets based on the active filters.
    */
   const filteredWidgets = useMemo(() => {
-    return widgets.filter((widget) => {
-      const lowerName = widget.name.toLowerCase();
-      const lowerDescription = widget.description?.toLowerCase();
-      const lowerQuery = widgetQuery.toLowerCase();
+    return widgets
+      .filter((widget) => {
+        const lowerName = widget.name.toLowerCase();
+        const lowerDescription = widget.description?.toLowerCase();
+        const lowerQuery = widgetQuery.toLowerCase();
 
-      // Check if widget name or description matches the search query
-      if (
-        !(
-          lowerName.includes(lowerQuery) ||
-          lowerDescription?.includes(lowerQuery)
-        )
-      ) {
-        return false;
-      }
-
-      // If "favorites" filter is enabled, only show widgets in the favorites list
-      if (filters.has("favorites") && !favWidgetIds.has(widget.id)) {
-        return false;
-      }
-
-      // If "categories" filter is enabled, only show widgets in the active category list
-      if (activeCategoryIds.size > 0 && !widget.categories.some((category) => activeCategoryIds.has(category.id))) {
-        return false;
-      }
-
-      // Show all widgets that match the search and filtering criteria
-      return true;
-    }).sort((a, b) => {
-      let res = 0;
-      if (sortBy === "launch_count") {
-        if (timeFrame === "weekly") {
-          res = b.metrics.weeklyLaunches - a.metrics.weeklyLaunches;
-        } else if (timeFrame === "monthly") {
-          res = b.metrics.monthlyLaunches - a.metrics.monthlyLaunches;
-        } else if (timeFrame === "yearly") {
-          res = b.metrics.yearlyLaunches - a.metrics.yearlyLaunches;
-        } else {
-          res = b.metrics.allTimeLaunches - a.metrics.allTimeLaunches;
+        // Check if widget name or description matches the search query
+        if (
+          !(
+            lowerName.includes(lowerQuery) ||
+            lowerDescription?.includes(lowerQuery)
+          )
+        ) {
+          return false;
         }
-      } else {
-        if (timeFrame === "weekly") {
-          res = b.metrics.weeklyUniqueLaunches - a.metrics.weeklyUniqueLaunches;
-        } else if (timeFrame === "monthly") {
-          res = b.metrics.monthlyUniqueLaunches - a.metrics.monthlyUniqueLaunches;
-        } else if (timeFrame === "yearly") {
-          res = b.metrics.yearlyUniqueLaunches - a.metrics.yearlyUniqueLaunches;
-        } else {
-          res = b.metrics.allTimeUniqueLaunches - a.metrics.allTimeUniqueLaunches;
-        }
-      }
-      return sortDirection === "asc" ? res : -res;
 
-    });
+        // If "favorites" filter is enabled, only show widgets in the favorites list
+        if (filters.has("favorites") && !favWidgetIds.has(widget.id)) {
+          return false;
+        }
+
+        // If "categories" filter is enabled, only show widgets in the active category list
+        if (
+          activeCategoryIds.size > 0 &&
+          !widget.categories.some((category) =>
+            activeCategoryIds.has(category.id),
+          )
+        ) {
+          return false;
+        }
+
+        // Show all widgets that match the search and filtering criteria
+        return true;
+      })
+      .sort((a, b) => {
+        let res = 0;
+        if (sortBy === "launch_count") {
+          if (timeFrame === "weekly") {
+            res = b.metrics.weeklyLaunches - a.metrics.weeklyLaunches;
+          } else if (timeFrame === "monthly") {
+            res = b.metrics.monthlyLaunches - a.metrics.monthlyLaunches;
+          } else if (timeFrame === "yearly") {
+            res = b.metrics.yearlyLaunches - a.metrics.yearlyLaunches;
+          } else {
+            res = b.metrics.allTimeLaunches - a.metrics.allTimeLaunches;
+          }
+        } else {
+          if (timeFrame === "weekly") {
+            res =
+              b.metrics.weeklyUniqueLaunches - a.metrics.weeklyUniqueLaunches;
+          } else if (timeFrame === "monthly") {
+            res =
+              b.metrics.monthlyUniqueLaunches - a.metrics.monthlyUniqueLaunches;
+          } else if (timeFrame === "yearly") {
+            res =
+              b.metrics.yearlyUniqueLaunches - a.metrics.yearlyUniqueLaunches;
+          } else {
+            res =
+              b.metrics.allTimeUniqueLaunches - a.metrics.allTimeUniqueLaunches;
+          }
+        }
+        return sortDirection === "asc" ? res : -res;
+      });
   }, [
     filtersVersion,
     widgetsVersion,
