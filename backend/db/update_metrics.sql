@@ -56,7 +56,12 @@ WITH all_time_metrics AS (
 INSERT INTO widget_metrics (widget_id, timeframe_type, timeframe_start, total_launches, unique_launches)
 SELECT widget_id, 
        'all_time', 
-       '1970-01-01'::timestamp,  -- or the earliest date you want to track fro 
+       '1970-01-01'::timestamp,  -- or the earliest date you want to track from
        total_launches, 
        unique_views
-FROM all_time_metrics;
+FROM all_time_metrics
+ON CONFLICT (widget_id, timeframe_type, timeframe_start) 
+DO UPDATE SET 
+    total_launches = EXCLUDED.total_launches,
+    unique_launches = EXCLUDED.unique_launches;
+

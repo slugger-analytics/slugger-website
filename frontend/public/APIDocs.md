@@ -22,6 +22,16 @@ This API requires a key for authorization. Once you have your API key, include i
 
 ## API Endpoints
 
+### Expected Response
+```json
+{
+  "success": "boolean",
+  "message": "string",
+  "data": "object | object[]", // optional
+  "meta": "object" // optional
+}
+```
+
 ### 1. Ballpark Management
 
 #### Get Ballpark Details
@@ -36,7 +46,8 @@ GET /ballparks
 {
   "ballpark_name": "string",
   "city": "string",
-  "state": "string"
+  "state": "string",
+  "order": "string", // <"ASC" | "DESC"> by ballpark_name, default="ASC"
 }
 ```
 
@@ -53,9 +64,12 @@ GET /games
 ```json
 {
   "ballpark_name": "string",
-  "date": "date",
+  "date": "string",
   "home_team_name": "string",
-  "visiting_team_name": "string"
+  "visiting_team_name": "string",
+  "limit": "int", // range=[1, 1000], default=20 
+  "page": "int",
+  "order": "string" // <"ASC" | "DESC"> by date, default="DESC"
 }
 ```
 
@@ -81,11 +95,14 @@ GET /pitches
   "game_id": "UUID",
   "inning": "int",
   "outs": "int",
-  "pitch_call": "string",
+  "pitch_call": "string", // <"Single" | "Double" | "Triple" | "Error" | "FieldersChoice" | "HomeRun" | "Out" | "Sacrifice" | "Undefined" | null>
   "pitcher_id": "int",
   "play_result": "string",
   "strikes": "int",
-  "top_or_bottom": "string"
+  "top_or_bottom": "string",
+  "limit": "int", // range=[1, 1000], default=20 
+  "page": "int",
+  "order": "string" // <"ASC" | "DESC"> by (date, time), default="DESC"
 }
 ```
 
@@ -106,7 +123,10 @@ GET /players
   "player_pitching_handedness": "string",
   "player_position": "string",
   "team_id": "UUID",
-  "team_name": "string"
+  "team_name": "string",
+  "limit": "int", // range=[1, 1000], default=20 
+  "page": "int",
+  "order": "string" // <"ASC" | "DESC"> by player_name, default="ASC"
 }
 ```
 
@@ -124,7 +144,11 @@ GET /teams
 {
   "home_ballpark_name": "string",
   "league": "string",
-  "team_name": "string"
+  "team_name": "string",
+  "ballpark": "Ballpark", // refer to ballpark endpoint documentation
+  "limit": "int", // range=[1, 1000], default=20 
+  "page": "int",
+  "order": "string" // <"ASC" | "DESC"> by team_name, default="DESC"
 }
 ```
 
@@ -156,21 +180,10 @@ Your widget can validate the token to ensure it is being accessed only by an aut
 POST /validate-token
 ```
 
-#### Request
-
 ```json
 {
   "alpb_token": "string", // From your widget's url query parameters
   "widget_id": "string" // From 'Home' -> 'Edit' -> 'widget_id' on ALPB Analytics
-}
-```
-
-#### Response
-
-```json
-{
-  "success": "boolean",
-  "message": "string"
 }
 ```
 
