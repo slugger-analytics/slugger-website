@@ -81,8 +81,6 @@ export function SignupForm() {
     const searchParams = new URLSearchParams(window.location.search);
     const inviteToken = searchParams.get("invite");
 
-    console.log("Invited team:", invitedTeam);
-
     try {
       const userData = {
         email: data["email"] as string,

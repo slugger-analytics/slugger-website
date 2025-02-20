@@ -84,7 +84,6 @@ export async function updateWidget({
     values.push(publicId);
   }
   if (restrictedAccess !== undefined) {
-    console.log({restrictedAccess})
     updates.push(`restricted_access = $${index++}`);
     values.push(restrictedAccess);
   }
@@ -121,7 +120,6 @@ export async function removeRequest(requestId) {
   try {
     const result = await pool.query(query, [requestId]);
     if (result.rowCount === 0) {
-      console.log("Debug A");
       throw new Error("Pending widget not found");
     }
     return result.rows[0]; // Return the deleted request data if necessary
@@ -159,13 +157,11 @@ export async function generateApiKeyForUser(user_id, email) {
     stageKeys: [], // You can specify stages if needed
   };
 
-  console.log("Params:", params);
 
   DEBUG && logWithFunctionName(params);
 
   try {
     const apiKey = await apiGateway.createApiKey(params).promise();
-    console.log("API Key:", apiKey);
     DEBUG && logWithFunctionName(apiKey);
     if (!apiKey.id) {
       throw new Error("Failed to generate API key: no ID returned");
@@ -188,7 +184,6 @@ export async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
   DEBUG && logWithFunctionName(params);
   try {
     await apiGateway.createUsagePlanKey(params).promise();
-    console.log("API Key associated with Usage Plan");
   } catch (err) {
     console.error("Error associating API Key with Usage Plan:", err);
   }
@@ -196,7 +191,7 @@ export async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
 
 export async function saveApiKeyToDatabase(user_id, apiKey) {
   const query = `
-        UPDATE user_widget
+        UPDATE users
         SET api_key = $1
         WHERE user_id = $2;
     `;
@@ -211,7 +206,6 @@ export async function getRequestData(request_id) {
     const result = await pool.query(query, [request_id]);
 
     if (result.rows.length === 0) {
-      console.log("Debug B");
       throw new Error("Pending widget not found");
     }
 
@@ -230,7 +224,6 @@ export async function getUserData(userId) {
     const result = await pool.query(query, [userId]);
 
     if (result.rowCount === 0) {
-      console.log("Debug C");
       throw new Error("User not found");
     }
 
@@ -325,7 +318,6 @@ const widgetsQuery = `
 export async function deleteWidget(id) {
   const widgetsQuery = `DELETE FROM widgets WHERE widget_id = $1 RETURNING *`;
   const result = await pool.query(widgetsQuery, [id]);
-  console.log(result.rows);
   const deletedWidget = result.rows[0];
 
   return deletedWidget;
