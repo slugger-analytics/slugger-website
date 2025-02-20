@@ -164,14 +164,13 @@ export async function generateApiKeyForUser(user_id, email) {
 
   try {
     const apiKey = await apiGateway.createApiKey(params).promise();
-    console.log(apiKey)
     DEBUG && logWithFunctionName(apiKey);
     if (!apiKey.id) {
       throw new Error("Failed to generate API key: no ID returned");
     }
     await associateApiKeyWithUsagePlan(apiKey.id, process.env.USAGE_PLAN_ID);
     await saveApiKeyToDatabase(user_id, apiKey.id);
-    return apiKey.id;
+    return apiKey.value;
   } catch (err) {
     DEBUG && logWithFunctionName(err);
     throw new Error("Failed to generate API key");
@@ -246,18 +245,19 @@ export async function createApprovedWidget({
   visibility,
 }) {
   try {
+    
     const query = `
             INSERT INTO widgets (widget_name, description, visibility, status, created_at)
             VALUES ($1, $2, $3, $4, NOW())
             RETURNING widget_id;
         `;
+  
     const result = await pool.query(query, [
       widget_name,
       description,
       visibility,
       "approved",
     ]);
-
     return result.rows[0]["widget_id"]; // Return the newly created widget ID
   } catch (error) {
     console.error("Error creating approved widget:", error.message);

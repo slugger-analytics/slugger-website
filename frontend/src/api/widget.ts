@@ -68,6 +68,7 @@ export const fetchPendingWidgets = async (): Promise<PendingWidget[]> => {
 
 export const approveWidget = async (requestId: string): Promise<string> => {
   try {
+    console.log("Here 1");
     const response = await fetch(
       `${API_URL}/api/widgets/pending/${requestId}/approve`,
       {
@@ -75,8 +76,10 @@ export const approveWidget = async (requestId: string): Promise<string> => {
         headers: { "Content-Type": "application/json" },
       },
     );
-
+    
+    console.log("Here 2");
     const res = await response.json();
+
 
     if (!res.success) {
       throw new Error(res.message);

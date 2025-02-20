@@ -137,7 +137,9 @@ router.delete("/:id", async (req, res) => {
 // approve a widget
 router.post("/pending/:id/approve", async (req, res) => {
   try {
+   
     const id = parseInt(req.params.id);
+
     const targetRequestRes = await pool.query(selectRequestById, [id]);
     // Ensure target request exists
     if (targetRequestRes.rowCount === 0) {
@@ -147,7 +149,6 @@ router.post("/pending/:id/approve", async (req, res) => {
       });
       return;
     }
-
     const targetRequest = targetRequestRes.rows[0];
     const userId = targetRequest["user_id"];
 
@@ -156,6 +157,7 @@ router.post("/pending/:id/approve", async (req, res) => {
 
     // Retrieve user data using the user's Cognito ID
     const user = await getUserData(userId);
+
     const userEmail = user["email"];
 
     // Generate an API key for the user
