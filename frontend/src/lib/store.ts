@@ -93,16 +93,14 @@ export function updateStoreWidget({
   $widgets.set(
     $widgets.get().map((widget) => {
       if (widget.id === id) {
-        const updatedCategories = [
-          ...widget.categories.filter(
-            (cat) =>
-              !categoriesToRemove?.has(
-                Array.from(categoriesToRemove).find((c) => c.id === cat.id),
-              ),
-          ),
-          ...(categoriesToAdd ? Array.from(categoriesToAdd) : []),
-        ];
-        console.log("updatedCategories", updatedCategories);
+        const updatedCategories = widget.categories.filter((cat) => {
+          return !categoriesToRemove || !Array.from(categoriesToRemove).some(c => c.id === cat.id);
+        });
+
+        if (categoriesToAdd) {
+          updatedCategories.push(...Array.from(categoriesToAdd));
+        }
+
         return {
           ...widget,
           ...(name !== undefined && { name }),
@@ -112,13 +110,10 @@ export function updateStoreWidget({
           ...(imageUrl !== undefined && { imageUrl }),
           ...(publicId !== undefined && { publicId }),
           ...(restrictedAccess !== undefined && { restrictedAccess }),
-          ...(updatedCategories !== undefined && {
-            categories: updatedCategories,
-          }),
+          categories: updatedCategories,
         };
-      } else {
-        return widget;
       }
+      return widget;
     }),
   );
   incrementWidgetsVersion();
