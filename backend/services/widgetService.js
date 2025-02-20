@@ -159,10 +159,13 @@ export async function generateApiKeyForUser(user_id, email) {
     stageKeys: [], // You can specify stages if needed
   };
 
+  console.log("Params:", params);
+
   DEBUG && logWithFunctionName(params);
 
   try {
     const apiKey = await apiGateway.createApiKey(params).promise();
+    console.log("API Key:", apiKey);
     DEBUG && logWithFunctionName(apiKey);
     if (!apiKey.id) {
       throw new Error("Failed to generate API key: no ID returned");
