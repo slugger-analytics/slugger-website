@@ -26,11 +26,13 @@ async function sendApiKeyEmail(email, apiKey) {
     Message: {
       Body: {
         Text: {
-          Data: `Here is your API key: ${apiKey}`, // Email body containing the API key
+          Data: `
+          Hello, your developer account has been approved.
+          Here is your API key: ${apiKey}`, // Email body containing the API key
         },
       },
       Subject: {
-        Data: "Your ALPB Widget API Key", // Subject line of the email
+        Data: "ALPB Developer Account Approved", // Subject line of the email
       },
     },
     Source: "ALPB Analytics <noreply@alpb-analytics.com>", // Sender's email address
