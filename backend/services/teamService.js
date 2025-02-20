@@ -29,6 +29,7 @@ export async function getTeam(id) {
 }
 
 export async function getTeamMembers(teamId) {
+  console.log("In the getTeamMembers function");
   console.log("TeamID");
   console.log(teamId);
   console.log("Actually getting team members");

@@ -16,7 +16,6 @@ import {
   createUserWidgetRelation,
   getAllWidgets,
   registerWidget,
-  getPendingWidgets,
   removeRequest,
   updateWidget,
   deleteWidget,
@@ -134,49 +133,30 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// approve a widget
-router.post("/pending/:id/approve", async (req, res) => {
+router.post("/create", async (req, res) => {
   try {
-   
-    const id = parseInt(req.params.id);
+    const userId = req.body.userId;
+    const widgetData = req.body;
 
-    const targetRequestRes = await pool.query(selectRequestById, [id]);
-    // Ensure target request exists
-    if (targetRequestRes.rowCount === 0) {
-      res.status(404).json({
-        success: false,
-        message: "Request does not exist",
-      });
-      return;
-    }
-    const targetRequest = targetRequestRes.rows[0];
-    const userId = targetRequest["user_id"];
+    // Create widget directly using the existing approved widget logic
+    const approvedID = await createApprovedWidget(widgetData);
 
-    // Create an approved widget based on the request data
-    const approvedID = await createApprovedWidget(targetRequest);
-
-    // Retrieve user data using the user's Cognito ID
+    // Get user data
     const user = await getUserData(userId);
-
     const userEmail = user["email"];
 
-    // Generate an API key for the user
-    const apiKey = await generateApiKeyForUser(userId, userEmail);
-
-    // Create a relation between the user and the widget
+    // Create user-widget relation
     const userWidgetRelation = await createUserWidgetRelation(
       userId,
       approvedID,
-      apiKey,
+      "owner"
     );
 
-    // Send the API key to the user via email
-    await sendApiKeyEmail(userEmail, apiKey);
+    
 
     res.status(200).json({
       success: true,
-      message:
-        "Widget approved, user-widget relation created, and API key sent via email",
+      message: "Widget created and API key sent via email",
       data: userWidgetRelation,
     });
   } catch (error) {
@@ -187,44 +167,6 @@ router.post("/pending/:id/approve", async (req, res) => {
   }
 });
 
-// decline a widget
-router.post("/pending/:id/decline", async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    // Attempt to remove the request from the database
-    const removedRequest = await removeRequest(id);
-
-    res.status(200).json({
-      success: true,
-      message: "Request declined and removed",
-      data: removedRequest,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: true,
-      message: `Internal error: ${error.message}`,
-    });
-  }
-});
-
-// fetch all pending widgets
-router.get("/pending", async (req, res) => {
-  try {
-    // Fetch all pending widgets from the service layer
-    const widgets = await getPendingWidgets();
-
-    res.status(200).json({
-      success: true,
-      message: "Pending widgets fetched successfully",
-      data: widgets,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Internal error: ${error.message}`,
-    });
-  }
-});
 
 // register a widget
 router.post(

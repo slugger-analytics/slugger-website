@@ -134,16 +134,15 @@ export async function removeRequest(requestId) {
 export async function createUserWidgetRelation(
   user_id,
   widgetId,
-  apiKey,
   role = "owner",
 ) {
   try {
     const query = `
-            INSERT INTO user_widget (user_id, widget_id, api_key, role, joined_at)
-            VALUES ($1, $2, $3, $4, NOW())
+            INSERT INTO user_widget (user_id, widget_id, role, joined_at)
+            VALUES ($1, $2, $3, NOW())
             RETURNING *;
         `;
-    const result = await pool.query(query, [user_id, widgetId, apiKey, role]);
+    const result = await pool.query(query, [user_id, widgetId, role]);
     return result.rows[0]; // Return the newly created relation
   } catch (error) {
     console.error("Error creating user-widget relation:", error.message);
@@ -265,12 +264,6 @@ export async function createApprovedWidget({
   }
 }
 
-export async function getPendingWidgets() {
-  const query = `
-        SELECT * FROM requests`;
-  const result = await pool.query(query);
-  return result.rows;
-}
 
 export async function getAllWidgets(widget_name, categories, page, limit) {
   // When we select * from widgets,

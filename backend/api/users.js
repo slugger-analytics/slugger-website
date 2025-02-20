@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 import pkg from "aws-sdk";
 import dotenv from "dotenv";
@@ -8,6 +9,7 @@ import {
   getFavorites,
   unfavoriteWidget,
   createUser,
+  signUpUserWithCognito,
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
 import authGuard from "../middleware/auth-guard.js";
@@ -18,9 +20,7 @@ import { generateTokenSchema } from "../validators/schemas.js";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
-const cognito = new CognitoIdentityServiceProvider({
-  region: process.env.AWS_REGION,
-});
+const cognito = new CognitoIdentityServiceProvider({ region: "us-east-2" });
 const JWT_SECRET = process.env.JWT_SECRET;
 const router = Router();
 
@@ -50,72 +50,18 @@ router.get("/", async (req, res) => {
  * Register a new user.
  */
 router.post("/sign-up", async (req, res) => {
-  console.log("Sign-up request received:", req.body);
-  const { email, password, firstName, lastName, role, inviteToken, teamId, teamRole } = req.body;
-  
   try {
-    let finalTeamId = null;
-
-    if (inviteToken) {
-      try {
-        const decoded = jwt.verify(inviteToken, process.env.SESSION_SECRET);
-        finalTeamId = decoded.teamId;
-      } catch (err) {
-        console.error("Invite token verification failed:", err);
-        return res.status(400).json({
-          success: false,
-          message: "Invalid or expired invite link"
-        });
-      }
-    } else if (teamId) {
-      finalTeamId = teamId;
-    }
-
-    // Cognito signup
-    const params = {
-      ClientId: process.env.COGNITO_APP_CLIENT_ID,
-      Username: email,
-      Password: password,
-      UserAttributes: [
-        { Name: "email", Value: email },
-        { Name: "given_name", Value: firstName },
-        { Name: "family_name", Value: lastName }
-      ]
-    };
-
-    try {
-      const cognitoResult = await cognito.signUp(params).promise();
-      const cognitoUserId = cognitoResult.UserSub;
-
-      // Create user in database using the service function
-      const newUser = await createUser({
-        cognitoUserId,
-        email,
-        first: firstName,
-        last: lastName,
-        role: 'league',
-        teamId: finalTeamId,
-        teamRole: teamRole || 'Team Member'
-      });
-
-      res.status(200).json({
-        success: true,
-        message: "User registered successfully",
-        userId: newUser.user_id,
-        data: newUser
-      });
-    } catch (cognitoError) {
-      console.error("Cognito signup failed:", cognitoError);
-      res.status(400).json({
-        success: false,
-        message: cognitoError.message || "Failed to create user account"
-      });
-    }
+    const result = await signUpUserWithCognito(req.body);
+    res.status(200).json({
+      success: true,
+      message: "User registered successfully",
+      userId: result.userId,
+      data: result.user
+    });
   } catch (error) {
-    console.error("Server error during signup:", error);
     res.status(500).json({
       success: false,
-      message: "Error registering user"
+      message: error.message || "Error registering user"
     });
   }
 });

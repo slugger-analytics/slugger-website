@@ -1,7 +1,7 @@
 "use client";
 
 import TextareaInput from "../components/input/TextareaInput";
-import { registerWidget } from "../../api/widget";
+import { registerWidget, createWidget } from "../../api/widget";
 import { useStore } from "@nanostores/react";
 import { useAuth } from "../contexts/AuthContext";
 import { useState } from "react";
@@ -48,7 +48,7 @@ export function WidgetForm() {
     event.preventDefault();
     setSubmitStatus(initialSubmitStatus);
 
-    const formData = new FormData(event.currentTarget); // form data -> key-value pairs
+    const formData = new FormData(event.currentTarget);
     const data: Record<string, string> = {};
 
     formData.forEach((value, key) => {
@@ -57,25 +57,28 @@ export function WidgetForm() {
 
     try {
       if (!idToken) {
-        throw new Error("ID Token not found. Please log in again."); // Ensure the user is authenticated
+        throw new Error("ID Token not found. Please log in again.");
       }
 
       const widgetData = {
-        widgetName: data["widget-name"],
+        widget_name: data["widget-name"],
         description: data["description"],
         visibility: visibility,
-        status: "pending", // Default status for new widgets
+        userId: user.id
       };
 
-      await registerWidget(widgetData, user.id);
-      router.push("/form-submitted"); // Redirect on success
+      await createWidget(widgetData);
+      setSubmitStatus({
+        message: "Widget created successfully! Check your email for the API key.",
+        textClass: "text-green-600",
+      });
+      router.push("/dashboard"); // or wherever you want to redirect after success
     } catch (error) {
       console.error(error);
       setSubmitStatus({
-        message:
-          error instanceof Error ? error.message : "Error registering widget",
+        message: error instanceof Error ? error.message : "Error creating widget",
         textClass: "text-red-600",
-      }); // Update state with error message
+      });
     }
   };
 

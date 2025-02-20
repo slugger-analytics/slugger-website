@@ -44,7 +44,7 @@ const LoginForm = () => {
 
       // Handle successful login and redirect based on user role
       if (result.user.role === "master") {
-        router.push("/pending-widgets"); // Redirect to pending widgets page for master role
+        router.push("/pending-developers"); // Redirect to pending widgets page for master role
       } else {
         router.push("/dashboard"); // Redirect to dashboard for other roles
       }

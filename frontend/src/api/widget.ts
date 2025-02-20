@@ -285,3 +285,29 @@ export const recordWidgetInteraction = async (
     throw error;
   }
 };
+
+export const createWidget = async (
+  widgetData: {
+    widget_name: string;
+    description: string;
+    visibility: string;
+    userId: string;
+  }
+): Promise<any> => {
+  try {
+    const response = await fetch(`${API_URL}/api/widgets/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(widgetData),
+    });
+
+    const res = await response.json();
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+    return res.data;
+  } catch (error) {
+    console.error("Error creating widget:", error);
+    throw error;
+  }
+};
