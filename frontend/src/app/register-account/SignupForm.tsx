@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import InputField from "../components/input/InputField";
 import SubmitButton from "../components/input/SubmitButton";
 import SelectField from "../components/input/SelectField";
-import { signUpUser } from "../../api/auth"; // Now importing from api/auth
+import { signUpUser } from "../../api/auth";
+import { registerPendingDeveloper } from "../../api/developer";
 import {
   Card,
   CardContent,
@@ -37,9 +38,7 @@ const initialSubmitStatus = {
 export function SignupForm() {
   const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
   const router = useRouter();
-  const [invitedTeam, setInvitedTeam] = useState<{ team_name: string } | null>(
-    null,
-  );
+  const [invitedTeam, setInvitedTeam] = useState<{ team_name: string; team_id: string} | null>(null);
 
   useEffect(() => {
     const fetchInvitedTeam = async () => {
@@ -76,80 +75,49 @@ export function SignupForm() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    setSubmitStatus({
-      message: "",
-      textClass: "text-gray-600",
-    });
-
     const formData = new FormData(event.currentTarget);
-    const data: Record<string, string> = {};
-
-    formData.forEach((value, key) => {
-      data[key] = value as string;
-    });
-
+    const data = Object.fromEntries(formData.entries());
+    
     const searchParams = new URLSearchParams(window.location.search);
     const inviteToken = searchParams.get("invite");
 
-    // Verify that passwords match
-    if (data["password"] !== data["confirm-password"]) {
-      setSubmitStatus({
-        message: "Error: passwords don't match",
-        textClass: "text-red-600",
-      });
-      return;
-    }
+    console.log("Invited team:", invitedTeam);
 
-    // Only redirect to league registration if there's no invite token
-    if (data["account-type"] === "league" && !inviteToken) {
-      sessionStorage.setItem(
-        "leagueRegistration",
-        JSON.stringify({
-          email: data["email"],
-          password: data["password"],
-          firstName: data["first-name"],
-          lastName: data["last-name"],
-        }),
-      );
-
-      router.push("/register-league");
-      return;
-    }
-
-    // Call the API to sign up the user
     try {
       const userData = {
-        email: data["email"],
-        password: data["password"],
-        firstName: data["first-name"],
-        lastName: data["last-name"],
-        role: data["account-type"],
-        teamRole: data["team-role"],
+        email: data["email"] as string,
+        password: data["password"] as string,
+        firstName: data["first-name"] as string,
+        lastName: data["last-name"] as string,
+        role: data["account-type"] as string,
+        teamId: invitedTeam ? invitedTeam.team_id : undefined,
+        teamRole: data["team-role"] as string,
         inviteToken: inviteToken || undefined,
       };
 
-      await signUpUser(userData);
-      setSubmitStatus({
-        message: "Sign up successful! Redirecting...",
-        textClass: "text-green-600",
-      });
-
-      // Redirect to the confirmation page
-      setTimeout(() => router.push("/confirm"), 200);
-    } catch (error: unknown) {
-      // Properly handle the error type
-      if (error instanceof Error) {
+      if (userData.role === "widget developer") {
+        // Remove inviteToken for widget developers since they don't need it
+        const { inviteToken, teamRole, ...developerData } = userData;
+        await registerPendingDeveloper(developerData);
         setSubmitStatus({
-          message: error.message || "Sign up failed. Please try again.",
-          textClass: "text-red-600",
+          message: "Registration pending approval. You will receive an email when approved.",
+          textClass: "text-green-600",
         });
+        setTimeout(() => router.push("/pending-approval"), 2000);
       } else {
+        // Existing flow for league accounts
+        await signUpUser(userData);
         setSubmitStatus({
-          message: "Sign up failed. Please try again.",
-          textClass: "text-red-600",
+          message: "Sign up successful! Redirecting...",
+          textClass: "text-green-600",
         });
+        setTimeout(() => router.push("/confirm"), 200);
       }
+    } catch (error) {
+      setSubmitStatus({
+        message: error instanceof Error ? error.message : "Sign up failed. Please try again.",
+        textClass: "text-red-600",
+      });
       console.error("Sign up error:", error);
     }
   };

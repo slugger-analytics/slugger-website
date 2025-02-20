@@ -16,7 +16,7 @@ import widgets from "./api/widgets.js";
 import users from "./api/users.js";
 import teams from "./api/teams.js";
 import categories from "./api/widget-categories.js";
-
+import developers from "./api/developers.js";
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // Initialize the Express app
@@ -79,6 +79,8 @@ app.use("/api/users", users);
 app.use("/api/teams", teams);
 
 app.use("/api/widget-categories", categories);
+
+app.use("/api/developers", developers);
 
 // ---------------------------------------------------
 // Root Route

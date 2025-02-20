@@ -92,3 +92,13 @@ export type LoginAPIRes = APIResponse<LoginType>;
 export type FavoritesAPIRes = APIResponse<number[]>;
 
 export type CategoriesAPIRes = APIResponse<CategoryType[]>;
+
+export interface PendingDeveloper {
+  request_id: string;
+  user_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  created_at: string;
+  status: string;
+}

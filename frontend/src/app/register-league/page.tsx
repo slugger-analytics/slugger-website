@@ -62,6 +62,7 @@ export default function LeagueRegistrationPage() {
       console.error("No team selected");
       return;
     }
+    console.log("Selected team:", selectedTeam);
 
     const userData = {
       ...basicInfo,

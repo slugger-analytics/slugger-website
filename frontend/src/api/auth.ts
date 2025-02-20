@@ -36,7 +36,6 @@ export async function signUpUser(data: {
   inviteToken?: string;
 }) {
   try {
-    console.log(data);
     const startTime = performance.now();
     const response = await fetch(`${API_URL}/api/users/sign-up`, {
       method: "POST",

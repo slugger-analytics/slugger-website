@@ -4,7 +4,7 @@
  */
 
 import pkg from "aws-sdk"; // Import AWS SDK
-const { APIGateway } = pkg; // Extract the API Gateway class
+const { APIGateway, CognitoIdentityServiceProvider } = pkg; // Extract the API Gateway and CognitoIdentityServiceProvider classes
 const apiGateway = new APIGateway({ region: "us-east-2" }); // Initialize API Gateway (not directly used in this code)
 import crypto from "crypto";
 import pool from "../db.js"; // PostgreSQL database connection
@@ -13,6 +13,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const TOKEN_SECRET = process.env.TOKEN_SECRET;
+
+const cognito = new CognitoIdentityServiceProvider({ region: "us-east-2" });
 
 /**
  * Adds a widget to a user's list of favorite widgets.
@@ -156,4 +158,43 @@ export async function createUser(userData) {
 
   const result = await pool.query(query, values);
   return result.rows[0];
+}
+
+export async function signUpUserWithCognito(userData) {
+  const { email, password, firstName, lastName, role, teamId, teamRole } = userData;
+  
+  const params = {
+    ClientId: process.env.COGNITO_APP_CLIENT_ID,
+    Username: email,
+    Password: password,
+    UserAttributes: [
+      { Name: "email", Value: email },
+      { Name: "given_name", Value: firstName },
+      { Name: "family_name", Value: lastName }
+    ]
+  };
+
+  try {
+    const cognitoResult = await cognito.signUp(params).promise();
+    const cognitoUserId = cognitoResult.UserSub;
+
+    // Create user in database using existing createUser function
+    const newUser = await createUser({
+      cognitoUserId,
+      email,
+      first: firstName,
+      last: lastName,
+      role,
+      teamId,
+      teamRole
+    });
+
+    return {
+      userId: newUser.user_id,
+      cognitoUserId,
+      user: newUser
+    };
+  } catch (error) {
+    throw new Error(`Cognito signup failed: ${error.message}`);
+  }
 }
