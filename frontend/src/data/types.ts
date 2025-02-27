@@ -102,3 +102,9 @@ export interface PendingDeveloper {
   created_at: string;
   status: string;
 }
+
+export interface WidgetCollaboratorsType {
+  user_id: number;
+  email: string;
+  role: string; // "member" | "owner"
+}

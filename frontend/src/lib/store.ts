@@ -1,6 +1,6 @@
 import { atom, map } from "nanostores";
 import { persistentMap } from "@nanostores/persistent";
-import { UserType, WidgetType, CategoryType } from "@/data/types";
+import { UserType, WidgetType, CategoryType, WidgetCollaboratorsType } from "@/data/types";
 import { logger } from "@nanostores/logger";
 
 // Allow debug messages
@@ -35,6 +35,7 @@ export const $widgets = atom<WidgetType[]>([]);
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
 export const $favWidgetIds = atom<Set<number>>(new Set());
+export const $targetWidgetCollaborators = atom<WidgetCollaboratorsType[]>([]);
 
 export const $filters = atom<Set<string>>(new Set());
 export const $activeCategoryIds = atom<Set<number>>(new Set([]));
@@ -225,6 +226,11 @@ export function setSortDirection(sortDirection: string) {
 
 export function setTimeFrame(timeFrame: string) {
   $timeFrame.set(timeFrame);
+}
+
+export function setTargetWidgetCollaborators(widgetCollaborators: WidgetCollaboratorsType[]) {
+  $targetWidgetCollaborators.set(widgetCollaborators);
+  console.log("SET TARGET WIDGET DEVS TO:", widgetCollaborators);
 }
 
 // Logger for nanostores
