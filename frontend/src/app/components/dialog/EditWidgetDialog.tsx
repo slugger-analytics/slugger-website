@@ -21,7 +21,7 @@ import { Label } from "../ui/label"; // Label component
 import { Checkbox } from "../ui/checkbox"; // Checkbox component
 import { useEffect, useState } from "react"; // React state management
 import { useStore } from "@nanostores/react"; // Hook to access nanostores
-import { $categories, $targetWidget } from "@/lib/store"; // Store to manage the target widget being edited
+import { $categories, $targetWidget, $targetWidgetCollaborators } from "@/lib/store"; // Store to manage the target widget being edited
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
@@ -85,6 +85,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   const [categoriesToRemove, setCategoriesToRemove] = useState(
     new Set<CategoryType>(),
   );
+  const collaborators = useStore($targetWidgetCollaborators);
 
   const { toast } = useToast();
 
@@ -271,7 +272,9 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           <Separator></Separator>
           <div>
             <Label>Widget Collaborators</Label>
-            
+            {/* {collaborators.map((collaborator) => {
+
+            })} */}
           </div>
           
         </div>
