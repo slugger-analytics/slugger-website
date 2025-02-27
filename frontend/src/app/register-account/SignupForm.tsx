@@ -27,12 +27,38 @@ import {
 import { Separator } from "@/app/components/ui/separator";
 import Image from "next/image";
 import LogoButton from "../components/navbar/LogoButton";
+import dynamic from 'next/dynamic';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const initialSubmitStatus = {
   message: "",
   textClass: "text-black",
+};
+
+const PasswordRequirements = dynamic(
+  () => import('./PasswordRequirements'),
+  { ssr: false }
+);
+
+// Add password validation function
+const validatePassword = (password: string): { isValid: boolean; error: string } => {
+  if (password.length < 8) {
+    return { isValid: false, error: "Password must be at least 8 characters long" };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return { isValid: false, error: "Password must contain at least one uppercase letter" };
+  }
+  if (!/[a-z]/.test(password)) {
+    return { isValid: false, error: "Password must contain at least one lowercase letter" };
+  }
+  if (!/[0-9]/.test(password)) {
+    return { isValid: false, error: "Password must contain at least one number" };
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    return { isValid: false, error: "Password must contain at least one symbol" };
+  }
+  return { isValid: true, error: "" };
 };
 
 export function SignupForm() {
@@ -77,6 +103,27 @@ export function SignupForm() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const data = Object.fromEntries(formData.entries());
+    
+    // Add password validation
+    const password = data["password"] as string;
+    const confirmPassword = data["confirm-password"] as string;
+    
+    const { isValid, error } = validatePassword(password);
+    if (!isValid) {
+      setSubmitStatus({
+        message: error,
+        textClass: "text-red-600",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setSubmitStatus({
+        message: "Passwords do not match",
+        textClass: "text-red-600",
+      });
+      return;
+    }
     
     const searchParams = new URLSearchParams(window.location.search);
     const inviteToken = searchParams.get("invite");
@@ -177,6 +224,7 @@ export function SignupForm() {
                 required={true}
                 placeholder="Password"
               />
+              <PasswordRequirements />
             </div>
             <div className="flex flex-col space-y-1.5">
               <Label htmlFor="confirm-password">Confirm password</Label>
