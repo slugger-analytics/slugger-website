@@ -38,6 +38,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: false,
     },
     {
+      title: "Around the League",
+      url: "/around-league",
+      icon: BookOpenCheck,
+      isActive: false,
+    },
+    {
       title: "My Team",
       url: "/team-page",
       icon: Users,
