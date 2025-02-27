@@ -36,6 +36,7 @@ import { generateToken } from "@/api/user";
 import CategoryTag from "./category-tag";
 import { recordWidgetInteraction } from "@/api/widget";
 import { prettyNumber } from "@based/pretty-number";
+import { callGetWidgetCollaborators } from "@/app/hooks/use-query-widgets";
 /**
  * WidgetProps Interface
  *
@@ -127,6 +128,8 @@ export default function Widget({
       categories,
       metrics,
     });
+    // TODO make API call to get all widget collaborators
+    callGetWidgetCollaborators(id);
     setIsDialogOpen(true);
   };
 

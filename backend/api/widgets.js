@@ -379,5 +379,67 @@ router.post("/metrics", async (req, res) => {
   }
 })
 
+router.get('/:widgetId/developers', async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.widgetId);
+    const response = await pool.query(`
+      SELECT uw.user_id, u.email, uw.role
+      FROM user_widget as uw
+      LEFT JOIN users as u
+        ON u.user_id = uw.user_id
+      WHERE uw.widget_id = $1
+    `, [widgetId])
+
+    return res.status(201).json({
+      success: true,
+      message: `Widget developers fetched successfully`,
+      data: response.rows
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+})
+
+router.get('/:widgetId/developers', async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.widgetId);
+    const developerId = parseInt(req.body.developerId);
+
+    // Check if developer is already added to widget
+    const alreadyDevRes = await pool.query(`
+      SELECT user_id
+      FROM user_widget
+      WHERE
+        widget_id = $1
+        AND user_id = $2
+      `, [widgetId, developerId]);
+
+    if (alreadyDevRes.rowCount > 0) {
+      return res.status(500).json({
+        success: false,
+        message: `Error: user with id ${developerId} is already a collaborator on widget with id ${widgetId}`
+      });
+    }
+
+    // Add dev
+    await pool.query(`
+      INSERT INTO user_widget (user_id, widget_id, role)
+      VALUES ($1, $2, 'member')
+    `, [developerId, widgetId])
+
+    return res.status(201).json({
+      success: true,
+      message: `Widget developer with id ${developerId} added to widget with id ${widgetId}`,
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+})
 
 export default router;

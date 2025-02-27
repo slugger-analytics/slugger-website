@@ -1,16 +1,18 @@
-import { fetchWidgets } from "@/api/widget";
-import { WidgetType } from "@/data/types";
+import { fetchWidgets, getWidgetCollaborators } from "@/api/widget";
+import { WidgetCollaboratorsType, WidgetType } from "@/data/types";
 import {
   setWidgets,
   $widgets,
   setFavWidgetIds,
   $user,
   setCategories,
+  setTargetWidgetCollaborators,
 } from "@/lib/store";
 import { useStore } from "@nanostores/react";
 import { useEffect } from "react";
 import { getFavorites } from "@/api/user";
 import { getCategories } from "@/api/categories";
+import { setTestStorageKey } from "@nanostores/persistent";
 
 function useQueryWidgets() {
   const widgets = useStore($widgets);
@@ -38,7 +40,7 @@ function useQueryWidgets() {
 
       setCategories(categories);
     } catch (error) {
-      console.error("Error fetching widgets", error);
+      console.error("Error fetching widgets:", error);
     }
   };
 
@@ -49,6 +51,15 @@ function useQueryWidgets() {
   }, [user.id]); // eslint-disable-line
 
   return { widgets };
+}
+
+export const callGetWidgetCollaborators = async (widgetId: number) => {
+  try {
+    const widgetCollaborators: WidgetCollaboratorsType[] = await getWidgetCollaborators(widgetId);
+    setTargetWidgetCollaborators(widgetCollaborators);
+  } catch (error) {
+    console.error("Error fetching widget collaborators:", error);
+  }
 }
 
 export default useQueryWidgets;

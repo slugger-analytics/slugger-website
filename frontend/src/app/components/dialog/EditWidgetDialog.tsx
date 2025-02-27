@@ -268,6 +268,12 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
               </Button>
             </div>
           </div>
+          <Separator></Separator>
+          <div>
+            <Label>Widget Collaborators</Label>
+            
+          </div>
+          
         </div>
 
         <AlertDialogFooter>
