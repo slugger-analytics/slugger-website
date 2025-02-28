@@ -298,6 +298,37 @@ router.post("/generate-token", authGuard, validationMiddleware(generateTokenSche
   }
 })
 
+router.get('/search', async (req, res) => {
+  try {
+    const { email } = req.query;
+    
+    const query = `
+      SELECT user_id, email
+      FROM users
+      WHERE email = $1
+    `;
+    
+    const result = await pool.query(query, [email]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+});
+
 
 
 export default router;

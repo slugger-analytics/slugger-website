@@ -327,21 +327,19 @@ export const getWidgetCollaborators = async (widgetId: number): Promise<any> => 
   }
 }
 
-export const addWidgetCollaborator = async (widgetId: number, developerId: number): Promise<any> => {
-  try {
-    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/developers`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({developerId}),
-    });
+export async function addWidgetCollaborator(widgetId: number, email: string) {
+  const response = await fetch(`${API_URL}/api/widgets/${widgetId}/collaborators`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email })
+  });
 
-    const res = await response.json();
-    if (!res.success) {
-      throw new Error(res.message);
-    }
-    return true
-  } catch (error) {
-    console.error("Error creating widget:", error);
-    throw error;
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message);
   }
+
+  return data.data;
 }

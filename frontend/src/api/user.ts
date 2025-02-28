@@ -129,3 +129,18 @@ export const generateToken = async (userId: number, publicWidgetId: string) => {
     throw error; // Rethrow the error for handling in the caller
   }
 };
+
+export const searchUserByEmail = async (email: string): Promise<any> => {
+  try {
+    const response = await fetch(`${API_URL}/api/users/search?email=${email}`);
+    const res = await response.json();
+    
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+    return res.data;
+  } catch (error) {
+    console.error("Error searching for user:", error);
+    throw error;
+  }
+};
