@@ -33,6 +33,8 @@ import { useToast } from "@/hooks/use-toast";
 import { ClipboardIcon } from "lucide-react";
 import CategorySelector from "../dashboard/category-selector";
 import { CategoryType } from "@/data/types";
+import { searchUserByEmail } from "@/api/user";
+import { addWidgetCollaborator, getWidgetCollaborators } from "@/api/widget";
 
 /**
  * Props for the EditWidgetDialog component.
@@ -89,6 +91,9 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
 
   const { toast } = useToast();
 
+  const [newCollaboratorEmail, setNewCollaboratorEmail] = useState("");
+  const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
+
   /**
    * Handles saving the updated widget details.
    * Calls the `editWidget` mutation and closes the dialog on success.
@@ -133,6 +138,35 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
     setVisibility(newVisibility);
     if (newVisibility === "Private") {
       setRestrictedAccess(true);
+    }
+  };
+
+  const handleAddCollaborator = async () => {
+    if (!newCollaboratorEmail) return;
+    
+    setIsAddingCollaborator(true);
+    try {      
+      // Add user as collaborator
+      await addWidgetCollaborator(Number(targetWidget.id), newCollaboratorEmail);
+      
+      // Refresh collaborators list
+      const updatedCollaborators = await getWidgetCollaborators(Number(targetWidget.id));
+      $targetWidgetCollaborators.set(updatedCollaborators);
+      
+      // Clear input
+      setNewCollaboratorEmail("");
+      
+      toast({
+        title: "Collaborator added successfully!",
+      });
+    } catch (error) {
+      toast({
+        title: "Error adding collaborator",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingCollaborator(false);
     }
   };
 
@@ -271,12 +305,45 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           </div>
           <Separator></Separator>
           <div>
-            <Label>Widget Collaborators</Label>
-            {/* {collaborators.map((collaborator) => {
-
-            })} */}
+            <Label>Add Collaborator</Label>
+            <div className="flex items-center gap-2 mt-2">
+              <Input
+                placeholder="Enter email address"
+                value={newCollaboratorEmail}
+                onChange={(e) => setNewCollaboratorEmail(e.target.value)}
+              />
+              <Button 
+                variant="outline" 
+                onClick={handleAddCollaborator}
+                disabled={isAddingCollaborator}
+              >
+                {isAddingCollaborator ? (
+                  <div className="animate-spin">⌛</div>
+                ) : (
+                  "Add"
+                )}
+              </Button>
+            </div>
           </div>
-          
+          <Separator className="my-4" />
+          <div>
+            <Label>Widget Collaborators</Label>
+            <div className="mt-2 space-y-2">
+              {collaborators.map((collaborator) => (
+                <div 
+                  key={collaborator.user_id} 
+                  className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{collaborator.email}</span>
+                    <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
+                      {collaborator.role}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <AlertDialogFooter>

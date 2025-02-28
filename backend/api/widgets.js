@@ -20,6 +20,7 @@ import {
   updateWidget,
   deleteWidget,
 } from "../services/widgetService.js";
+import authGuard from "../middleware/auth-guard.js";
 
 const selectWidgetById = `
     SELECT *
@@ -133,7 +134,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.post("/create", async (req, res) => {
+router.post("/create", authGuard, async (req, res) => {
   try {
     const userId = req.body.userId;
     const widgetData = req.body;
@@ -441,5 +442,120 @@ router.get('/:widgetId/developers', async (req, res) => {
     });
   }
 })
+
+// Add collaborator to widget
+router.post("/:widgetId/collaborators", async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.widgetId);
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required"
+      });
+    }
+
+    // Look up user by email
+    const userQuery = 'SELECT user_id FROM users WHERE email = $1';
+    const userResult = await pool.query(userQuery, [email]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found with this email"
+      });
+    }
+    
+    const userId = userResult.rows[0].user_id;
+
+    // Check if widget exists
+    const widgetExists = await pool.query('SELECT widget_id FROM widgets WHERE widget_id = $1', [widgetId]);
+    if (widgetExists.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Widget not found"
+      });
+    }
+
+    // Check if user is already a collaborator
+    const checkQuery = `
+      SELECT * FROM user_widget 
+      WHERE user_id = $1 AND widget_id = $2
+    `;
+    const checkResult = await pool.query(checkQuery, [userId, widgetId]);
+    
+    if (checkResult.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "User is already a collaborator"
+      });
+    }
+
+    // Add collaborator
+    const query = `
+      INSERT INTO user_widget (user_id, widget_id, role)
+      VALUES ($1, $2, 'member')
+      RETURNING *
+    `;
+    
+    const result = await pool.query(query, [userId, widgetId]);
+    
+    // Get the user's email for the response
+    const userDetails = await pool.query(
+      'SELECT email FROM users WHERE user_id = $1',
+      [userId]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Collaborator added successfully",
+      data: {
+        ...result.rows[0],
+        email: userDetails.rows[0].email
+      }
+    });
+  } catch (error) {
+    console.error('Error adding collaborator:', error);
+    res.status(500).json({
+      success: false,
+      message: `Error adding collaborator: ${error.message}`
+    });
+  }
+});
+
+// Get widget collaborators
+router.get("/:widgetId/collaborators", async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.widgetId);
+    
+    if (!widgetId) {
+      return res.status(400).json({
+        success: false,
+        message: "widgetId is required"
+      });
+    }
+    
+    const query = `
+      SELECT u.user_id, u.email, uw.role
+      FROM user_widget uw
+      JOIN users u ON u.user_id = uw.user_id
+      WHERE uw.widget_id = $1
+    `;
+    
+    const result = await pool.query(query, [widgetId]);
+    
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching collaborators:', error);
+    res.status(500).json({
+      success: false,
+      message: `Error fetching collaborators: ${error.message}`
+    });
+  }
+});
 
 export default router;
