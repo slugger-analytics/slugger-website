@@ -155,7 +155,7 @@ export default function Widget({
       {/* Content Section */}
       <CardContent className="flex-grow">
         <CardTitle className="mb-2 text-lg">{name}</CardTitle>
-        <CardDescription className="text-sm">
+        <div className="text-sm text-gray-500">
           {isExpanded ? description : truncatedDescription}
           {isLongDescription && (
             <Button
@@ -175,7 +175,7 @@ export default function Widget({
               )}
             </Button>
           )}
-          <div className="flex gap-2 py-3">
+          <div className="flex flex-wrap gap-2 py-3">
             {categories.map((category) => (
               <CategoryTag
                 key={category.name}
@@ -184,6 +184,9 @@ export default function Widget({
               />
             ))}
           </div>
+        </div>
+        <CardDescription className="text-sm">
+          
         </CardDescription>
       </CardContent>
 
