@@ -5,12 +5,14 @@ import {
   $user,
   addFavWidgetId,
   removeFavWidgetId,
+  removeStoreWidget,
   updateStoreWidget,
 } from "@/lib/store";
 import {
   updateWidget,
   addCategoryToWidget,
   removeCategoryFromWidget,
+  deleteWidget,
 } from "@/api/widget";
 import { useAuth } from "../contexts/AuthContext";
 import { addFavorite, removeFavorite } from "@/api/user";
@@ -100,9 +102,19 @@ function useMutationWidgets() {
     }
   };
 
+  const handleDeleteWidget = async (widgetId: number) => {
+    try {
+      await deleteWidget(widgetId);
+      removeStoreWidget(widgetId);
+    } catch(error) {
+      console.error('Error handling widget deletion:', error);
+    }
+  }
+
   return {
     editWidget,
     toggleFavWidget,
+    handleDeleteWidget,
   };
 }
 

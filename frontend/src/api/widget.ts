@@ -343,3 +343,20 @@ export async function addWidgetCollaborator(widgetId: number, email: string) {
 
   return data.data;
 }
+
+export async function deleteWidget(widgetId: number) {
+  try {
+    const response = await fetch(`${API_URL}/api/widgets/${widgetId}`, {
+      method: 'DELETE',
+    });
+
+    const res = await response.json();
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+  } catch (error) {
+    console.error("Error deleting widget:", error);
+    throw error;
+  }
+
+}

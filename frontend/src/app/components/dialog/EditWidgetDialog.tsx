@@ -15,6 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger
 } from "@/app/components/ui/alert-dialog"; // UI components for the alert dialog
 import { Input } from "../ui/input"; // Input component
 import { Label } from "../ui/label"; // Label component
@@ -35,6 +36,12 @@ import CategorySelector from "../dashboard/category-selector";
 import { CategoryType } from "@/data/types";
 import { searchUserByEmail } from "@/api/user";
 import { addWidgetCollaborator, getWidgetCollaborators } from "@/api/widget";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/app/components/ui/accordion";
 
 /**
  * Props for the EditWidgetDialog component.
@@ -78,7 +85,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
     targetWidget.categories,
   );
 
-  const { editWidget } = useMutationWidgets(); // Hook for editing widgets
+  const { editWidget, handleDeleteWidget } = useMutationWidgets(); // Hook for editing widgets
   const [visible, setVisible] = useState(false);
   const categories = useStore($categories);
   const [categoriesToAdd, setCategoriesToAdd] = useState(
@@ -343,6 +350,36 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                 </div>
               ))}
             </div>
+          </div>
+          <Separator className="my-4" />
+          <div>
+            <Accordion type="single" collapsible>
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="text-[#EF4444]">Danger Zone</AccordionTrigger>
+                <AccordionContent>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive">Delete widget</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Are sure you want to delete this widget?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction asChild>
+                          <Button className="bg-[#EF4444] hover:bg-[#f05454]" onClick={() => handleDeleteWidget(targetWidget.id)}>Permanently delete</Button>
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
         </div>
 
