@@ -62,6 +62,11 @@ export function setWidgets(widgets: WidgetType[]) {
   // re-renders
 }
 
+export function removeStoreWidget(widgetId: number) {
+  $widgets.set($widgets.get().filter((w) => w.id != widgetId))
+  incrementWidgetsVersion();
+}
+
 // Sets the target widget in the $targetWidget store
 export function setTargetWidget(target: WidgetType) {
   $targetWidget.set(target);
