@@ -44,10 +44,12 @@ GET /ballparks
 
 ```json
 {
-  "ballpark_name": "string",
-  "city": "string",
-  "state": "string",
-  "order": "string", // <"ASC" | "DESC"> by ballpark_name, default="ASC"
+  "ballpark_name": "string", // max_length=100
+  "city": "string", // max_length=100
+  "state": "string", // max_length=2, two-letter state code
+  "limit": "int", // range=[1, 1000], default=20
+  "page": "int", // min=1
+  "order": "string" // Enum: "ASC" or "DESC", default="ASC", sort by ballpark_name
 }
 ```
 
@@ -63,15 +65,27 @@ GET /games
 
 ```json
 {
-  "ballpark_name": "string",
-  "date": "string",
-  "home_team_name": "string",
-  "visiting_team_name": "string",
+  "ballpark_name": "string", // max_length=100
+  "date": "string", // max_length=50, date format validation applied
+  "home_team_name": "string", // Enum of valid team names (see below)
+  "visiting_team_name": "string", // Enum of valid team names (see below)
   "limit": "int", // range=[1, 1000], default=20 
-  "page": "int",
-  "order": "string" // <"ASC" | "DESC"> by date, default="DESC"
+  "page": "int", // min=1, default=1
+  "order": "string" // Enum: "ASC" or "DESC", default="DESC", sort by date
 }
 ```
+#### __Valid Team Names Enum:__
+
+- "York Revolution"
+- "Staten Island FerryHawks"
+- "Southern Maryland Blue Crabs"
+- "Long Island Ducks"
+- "Lexington Legends"
+- "Lancaster Stormers"
+- "High Point Rockers"
+- "Hagerstown Flying Boxcars"
+- "Gastonia Baseball Club"
+- "Charleston Dirty Birds"
 
 ### 3. Pitch Management
 
@@ -85,26 +99,52 @@ GET /pitches
 
 ```json
 {
-  "auto_pitch_type": "string",
-  "balls": "int",
-  "batter_id": "int",
-  "catcher_id": "int",
-  "date": "date",
-  "date_range_end": "string",
-  "date_range_start": "string",
+  "auto_pitch_type": "string", // Enum: "Cutter", "Splitter", "Changeup", "Slider", "Curveball", "Four-Seam", "Sinker", null
+  "balls": "int", // range=[0, 4]
+  "batter_id": "UUID",
+  "catcher_id": "UUID",
+  "date": "string", // date format validation applied
+  "date_range_end": "string", // date format validation applied
+  "date_range_start": "string", // date format validation applied
   "game_id": "UUID",
-  "inning": "int",
-  "outs": "int",
-  "pitch_call": "string", // <"Single" | "Double" | "Triple" | "Error" | "FieldersChoice" | "HomeRun" | "Out" | "Sacrifice" | "Undefined" | null>
-  "pitcher_id": "int",
-  "play_result": "string",
-  "strikes": "int",
-  "top_or_bottom": "string",
+  "inning": "int", // min=1
+  "outs": "int", // range=[0, 3]
+  "pitch_call": "string", // Enum (see below for valid values)
+  "pitcher_id": "UUID",
+  "play_result": "string", // Enum (see below for valid values)
+  "strikes": "int", // range=[0, 3]
+  "top_or_bottom": "string", // Enum: "Top" or "Bottom"
   "limit": "int", // range=[1, 1000], default=20 
-  "page": "int",
-  "order": "string" // <"ASC" | "DESC"> by (date, time), default="DESC"
+  "page": "int", // min=1, default=1
+  "order": "string" // Enum: "ASC" or "DESC", default="DESC", sort by (date, time)
 }
 ```
+#### __Valid Pitch Call Enum Values:__
+
+- "BallIntentional"
+- "InPlay"
+- "BallInDirt"
+- "HitByPitch"
+- "FoulBall"
+- "StrikeSwinging"
+- "FoulBallNotFieldable"
+- "Undefined"
+- "StrikeCalled"
+- "BallCalled"
+- "FoulBallFieldable"
+
+#### __Valid Play Result Enum Values:__
+
+- "Single"
+- "Double"
+- "Triple"
+- "Error"
+- "FieldersChoice"
+- "HomeRun"
+- "Out"
+- "Sacrifice"
+- "Undefined"
+- null
 
 ### 4. Player Management
 
@@ -118,15 +158,14 @@ GET /players
 
 ```json
 {
-  "player_batting_handedness": "string",
+  "player_batting_handedness": "string", // Enum: "Left", "Right", "Switch", "Unknown", null
   "player_name": "string",
-  "player_pitching_handedness": "string",
-  "player_position": "string",
+  "player_pitching_handedness": "string", // Enum: "Left", "Right", "Switch", "Unknown", null
   "team_id": "UUID",
   "team_name": "string",
   "limit": "int", // range=[1, 1000], default=20 
-  "page": "int",
-  "order": "string" // <"ASC" | "DESC"> by player_name, default="ASC"
+  "page": "int", // min=1, default=1
+  "order": "string" // Enum: "ASC" or "DESC", default="ASC", sort by player_name
 }
 ```
 
@@ -142,13 +181,12 @@ GET /teams
 
 ```json
 {
-  "home_ballpark_name": "string",
-  "league": "string",
-  "team_name": "string",
-  "ballpark": "Ballpark", // refer to ballpark endpoint documentation
+  "home_ballpark_name": "string", // max_length=100
+  "league": "string", // Enum: "north" or "south"
+  "team_name": "string", // max_length=100
   "limit": "int", // range=[1, 1000], default=20 
-  "page": "int",
-  "order": "string" // <"ASC" | "DESC"> by team_name, default="DESC"
+  "page": "int", // min=1, default=1
+  "order": "string" // Enum: "ASC" or "DESC", default="DESC", sort by team_name
 }
 ```
 
