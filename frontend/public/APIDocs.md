@@ -160,6 +160,7 @@ GET /players
 {
   "player_batting_handedness": "string", // Enum: "Left", "Right", "Switch", "Unknown", null
   "player_name": "string",
+  "player_id": "UUID",
   "player_pitching_handedness": "string", // Enum: "Left", "Right", "Switch", "Unknown", null
   "team_id": "UUID",
   "team_name": "string",
