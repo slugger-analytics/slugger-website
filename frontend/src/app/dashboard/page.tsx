@@ -16,11 +16,13 @@ import { $user } from "@/lib/store";
 import { useAuth } from "../contexts/AuthContext";
 import SortDropdown from "../components/dashboard/sort-dropdown";
 import ViewToggle from "../components/dashboard/view-toggle";
+import DashboardLoading from "../components/dashboard/dashboard-loading";
+import DashboardContent from "../components/dashboard/dashboard-content";
 
 export default function Page() {
-  const { widgets } = useQueryWidgets();
-  const user = useStore($user);
   const { loading } = useAuth();
+  const { widgetsLoading } = useQueryWidgets();
+  
 
   return (
     <ProtectedRoute>
@@ -30,27 +32,7 @@ export default function Page() {
           {" "}
           {/* Ensures the route is protected and only accessible to authenticated users */}
           <SidebarTrigger />
-          {!loading && widgets.length > 0 && (
-            <>
-              <div className="flex flex-col items-center w-full mt-10">
-                <div className="flex justify-center w-full">
-                  <Search />
-                  <FilterDropdown />
-                  <SortDropdown />
-                </div>
-                <ViewToggle />
-              </div>
-            </>
-          )}
-          <div className="flex justify-center p-10">
-            {!loading && widgets.length > 0 && (
-              <div>
-                <Widgets />
-              </div>
-            )}
-            {!loading && widgets.length == 0 && <RegisterWidget />}{" "}
-            {/* Component to register a new widget if none exist */}
-          </div>
+          {loading || widgetsLoading ? <DashboardLoading /> : <DashboardContent />}
         </SidebarInset>
       </SidebarProvider>
     </ProtectedRoute>

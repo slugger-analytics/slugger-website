@@ -28,6 +28,7 @@ import { Separator } from "@/app/components/ui/separator";
 import Image from "next/image";
 import LogoButton from "../components/navbar/LogoButton";
 import dynamic from 'next/dynamic';
+import { useToast } from "@/hooks/use-toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -65,6 +66,7 @@ export function SignupForm() {
   const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
   const router = useRouter();
   const [invitedTeam, setInvitedTeam] = useState<{ team_name: string; team_id: string} | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchInvitedTeam = async () => {
@@ -110,18 +112,19 @@ export function SignupForm() {
     
     const { isValid, error } = validatePassword(password);
     if (!isValid) {
-      setSubmitStatus({
-        message: error,
-        textClass: "text-red-600",
+      toast({
+        title: "Error",
+        description: error,
+        variant: "destructive"
       });
       return;
     }
 
     if (password !== confirmPassword) {
-      setSubmitStatus({
-        message: "Passwords do not match",
-        textClass: "text-red-600",
-      });
+      toast({
+        title: "Passwords do not match",
+        variant: "destructive"
+      })
       return;
     }
     

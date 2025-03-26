@@ -153,22 +153,72 @@ body {
   }
 }
 
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #888 transparent;
+@layer utilities {
+  .rounded-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .rounded-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+  }
+
+  .rounded-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 10px;
+  }
+
+  .rounded-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #888 transparent;
+  }
 }
 
-*::-webkit-scrollbar {
-  width: 8px;
+@layer components {
+  .loader {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    position: relative;
+    animation: rotate 1s linear infinite;
+  }
+
+  .loader::before {
+    content: "";
+    box-sizing: border-box;
+    position: absolute;
+    inset: 0px;
+    border-radius: 50%;
+    border: 5px solid #FFF;
+    animation: prixClipFix 2s linear infinite;
+  }
+
+  @keyframes rotate {
+    100% {
+      transform: rotate(360deg)
+    }
+  }
+
+  @keyframes prixClipFix {
+    0% {
+      clip-path: polygon(50% 50%, 0 0, 0 0, 0 0, 0 0, 0 0)
+    }
+
+    25% {
+      clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 0, 100% 0, 100% 0)
+    }
+
+    50% {
+      clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 100% 100%, 100% 100%)
+    }
+
+    75% {
+      clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 100%)
+    }
+
+    100% {
+      clip-path: polygon(50% 50%, 0 0, 100% 0, 100% 100%, 0 100%, 0 0)
+    }
+  }
 }
 
-*::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 10px;
-  /* Adjust this value to match your container's border-radius */
-}
-
-*::-webkit-scrollbar-thumb {
-  background-color: #888;
-  border-radius: 10px;
-}

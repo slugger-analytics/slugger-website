@@ -11,8 +11,9 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
-import { $user, clearUser } from "@/lib/store";
+import { $user, clearStores, clearUser } from "@/lib/store";
 import { logoutUser } from "@/api/auth";
+import { delay } from "@/lib/utils";
 
 // The AuthContextType interface defines the shape of the context object
 interface AuthContextType {
@@ -59,15 +60,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await logoutUser();
       setLoading(true);
-      clearUser();
+      await logoutUser();
+      clearStores();
       router.push("/"); // Redirect to home page on logout
       setIsAuthenticated(false);
       setAccessToken("");
       setIdToken("");
     } catch (error) {
       console.error(error);
+    } finally {
+      setLoading(false);
     }
   };
 

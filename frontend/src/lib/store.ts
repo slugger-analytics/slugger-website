@@ -48,6 +48,25 @@ export const $widgetsVersion = atom<number>(0);
 export const $filtersVersion = atom<number>(0);
 export const $categories = atom<CategoryType[]>([]);
 
+export function clearStores() {
+  $widgets.set([]);
+  $targetWidget.set(emptyWidget);
+  $widgetQuery.set("");
+  $favWidgetIds.set(new Set());
+  $targetWidgetCollaborators.set([]);
+
+  $filters.set(new Set());
+  $activeCategoryIds.set(new Set());
+
+  $sortBy.set("launch_count");
+  $sortDirection.set("asc");
+  $timeFrame.set("weekly");
+
+  $widgetsVersion.set(0);
+  $filtersVersion.set(0);
+  $categories.set([]);
+}
+
 // Adds a new widget to the $widgets store and increments the widgets version
 export function addWidget(widget: WidgetType) {
   $widgets.set([...$widgets.get(), widget]);

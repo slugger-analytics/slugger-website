@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
 import ProtectedRoute from "../components/ProtectedRoutes"; // Importing the ProtectedRoute component
 import {
   SidebarInset,
@@ -9,9 +8,8 @@ import {
   SidebarTrigger,
 } from "../components/ui/sidebar";
 import { AppSidebar } from "../components/app-sidebar";
-import SyntaxHighlighter from "react-syntax-highlighter";
-import { atomOneDark as markdownStyle } from "react-syntax-highlighter/dist/cjs/styles/hljs";
 import MarkdownRenderer from "./markdown-renderer";
+import MarkdownContent from "./markdown-content";
 
 export default function APIDocs() {
   const [markdownContent, setMarkdownContent] = useState("");
@@ -20,6 +18,11 @@ export default function APIDocs() {
     fetch("/APIDocs.md")
       .then((response) => response.text())
       .then((text) => setMarkdownContent(text));
+    const hash = window.location.hash;
+    if (hash) {
+      const element = document.querySelector(hash);
+      element?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, []);
 
   return (
@@ -29,7 +32,8 @@ export default function APIDocs() {
         <SidebarInset>
           <SidebarTrigger />
           <div className="p-10">
-            <MarkdownRenderer content={markdownContent}></MarkdownRenderer>
+            {/* <MarkdownRenderer content={markdownContent}></MarkdownRenderer> */}
+            <MarkdownContent />
           </div>
         </SidebarInset>
       </SidebarProvider>
