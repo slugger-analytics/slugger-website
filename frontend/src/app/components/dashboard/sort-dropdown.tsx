@@ -30,6 +30,7 @@ import {
 } from "@/lib/store"; // Nanostores state and actions for filters
 import { useState, useEffect } from "react"; // React hooks for managing component state and lifecycle
 import { Separator } from "../ui/separator";
+import { Check } from "lucide-react";
 
 /**
  * FilterDropdown Component
@@ -60,80 +61,65 @@ export default function SortDropdown() {
 
         {/* Favorites filter option */}
         <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <DropdownMenuCheckboxItem
-              checked={sortBy === "launch_count"}
-              onCheckedChange={() => setSortBy("launch_count")}
-            >
-              Launch Count
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <DropdownMenuCheckboxItem
-              checked={sortBy === "unique_launches"}
-              onCheckedChange={() => setSortBy("unique_launches")}
-            >
-              Unique Launches
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuItem>
+          <Button variant="ghost" className="w-full flex justify-start" onClick={() => setSortBy("launch_count")}>
+            <div className="w-4">
+              {sortBy === "launch_count" ? <Check /> : <></>}
+            </div>
+            Total launches
+          </Button>
+          <Button variant="ghost" className="w-full flex justify-start" onClick={() => setSortBy("unique_launches")}>
+            <div className="w-4">
+              {sortBy === "unique_launches" ? <Check /> : <></>}
+            </div>
+            Unique launches
+          </Button>
         </DropdownMenuGroup>
         {["launch_count", "unique_launches"].includes(sortBy) && (
           <>
             <Separator />
             <DropdownMenuGroup>
               <DropdownMenuLabel>Order By</DropdownMenuLabel>
-              <DropdownMenuItem>
-                <DropdownMenuCheckboxItem
-                  checked={sortDirection === "asc"}
-                  onCheckedChange={() => setSortDirection("asc")}
-                >
-                  Ascending
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <DropdownMenuCheckboxItem
-                  checked={sortDirection === "desc"}
-                  onCheckedChange={() => setSortDirection("desc")}
-                >
-                  Descending
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuItem>
+              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setSortDirection("asc")}>
+                <div className="w-4">
+                  {sortDirection === "asc" ? <Check /> : <></>}
+                </div>
+                Ascending
+              </Button>
+              
+              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setSortDirection("desc")}>
+                <div className="w-4">
+                  {sortDirection === "desc" ? <Check /> : <></>}
+                </div>
+                Descending
+              </Button>
             </DropdownMenuGroup>
             <Separator />
             <DropdownMenuGroup>
               <DropdownMenuLabel>Time Frame</DropdownMenuLabel>
-              <DropdownMenuItem>
-                <DropdownMenuCheckboxItem
-                  checked={timeFrame === "weekly"}
-                  onCheckedChange={() => setTimeFrame("weekly")}
-                >
-                  Weekly
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <DropdownMenuCheckboxItem
-                  checked={timeFrame === "monthly"}
-                  onCheckedChange={() => setTimeFrame("monthly")}
-                >
-                  Monthly
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <DropdownMenuCheckboxItem
-                  checked={timeFrame === "yearly"}
-                  onCheckedChange={() => setTimeFrame("yearly")}
-                >
-                  Yearly
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <DropdownMenuCheckboxItem
-                  checked={timeFrame === "all_time"}
-                  onCheckedChange={() => setTimeFrame("all_time")}
-                >
-                  All Time
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuItem>
+              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setTimeFrame("weekly")}>
+                <div className="w-4">
+                  {timeFrame === "weekly" ? <Check /> : <></>}
+                </div>
+                Weekly
+              </Button>
+              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setTimeFrame("monthly")}>
+                <div className="w-4">
+                  {timeFrame === "monthly" ? <Check /> : <></>}
+                </div>
+                Monthly
+              </Button>
+              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setTimeFrame("yearly")}>
+                <div className="w-4">
+                  {timeFrame === "yearly" ? <Check /> : <></>}
+                </div>
+                Yearly
+              </Button>
+              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setTimeFrame("all_time")}>
+                <div className="w-4">
+                  {timeFrame === "all_time" ? <Check /> : <></>}
+                </div>
+                All time
+              </Button>
             </DropdownMenuGroup>
           </>
         )}
