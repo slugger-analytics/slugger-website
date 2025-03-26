@@ -16,7 +16,7 @@ export default function Home() {
         <AppSidebar />
         <SidebarInset>
           <SidebarTrigger />
-          <div className="w-full flex justify-center">
+          <div className="w-full flex justify-center items-center min-h-dvh">
             <WidgetForm />
           </div>
         </SidebarInset>
