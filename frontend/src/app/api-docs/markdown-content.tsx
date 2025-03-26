@@ -6,6 +6,27 @@ export default function MarkdownContent() {
     return (
         <ReactMarkdown
             components={{
+                p: ({ children }) => <p className="mb-3 text-sm">{children}</p>,
+
+                h1: ({ children }) => (
+                    <h1 className="text-xl font-bold mt-6 mb-3">{children}</h1>
+                ),
+                h2: ({ children }) => (
+                    <h2 className="text-lg font-bold mt-5 mb-3">{children}</h2>
+                ),
+                h3: ({ children }) => (
+                    <h3 className="text-base font-bold mt-4 mb-2">{children}</h3>
+                ),
+                h4: ({ children }) => (
+                    <h4 className="text-base font-bold mt-4 mb-2">{children}</h4>
+                ),
+
+                ul: ({ children }) => (
+                    <ul className="list-disc pl-6 mb-3 text-sm">{children}</ul>
+                ),
+                ol: ({ children }) => (
+                    <ol className="list-decimal pl-6 mb-3 text-sm">{children}</ol>
+                ),
                 code(props) {
                     const { children, className, node, ...rest } = props;
                     const match = /language-(\w+)/.exec(className || '');
@@ -28,7 +49,6 @@ export default function MarkdownContent() {
             }}
         >
             {`
-# Atlantic League Analytics Platform API Documentation
 
 ## Overview
 
@@ -178,11 +198,11 @@ GET /pitches
 - "Undefined"
 - null
 \`\`\`
-### 6. Auth Integration - Restricted Access Mode
+## __6. Auth Integration - Restricted Access Mode__
 
 ALPB Analytics provides a simple framework for integrating with our authorization system using \`Restricted Access\` mode.
 
-#### __What Does Enabling \`Restricted Access Mode\` For a Widget Do?__
+#### What Does Enabling \`Restricted Access Mode\` For a Widget Do?
 
 Enabling \`Restricted Mode\` enforces the following access rules:
 
@@ -194,15 +214,13 @@ Enabling \`Restricted Mode\` enforces the following access rules:
 1. From \`Home\`, click \`Edit\` on the widget you want to enable restricted access for.
 2. Under \`Authorization\`, enable \`Generate validation tokens\`.
    - Once enabled, the \`alpb_token\` query parameter will be automatically appended to your widget URL each time a user launches your widget via our platform:
-   \`\`\`
+   \`\`\`text
    ?alpb_token=<string>
    \`\`\`
 
    Your widget can validate the token to ensure it is being accessed only by an authorized user through ALPB Analytics by making the following request:
 
-#### Validate Token
-
-\`\`\`
+\`\`\`text
 POST /validate-token
 \`\`\`
 

@@ -31,6 +31,7 @@ import { Separator } from "@/app/components/ui/separator";
 import LogoButton from "../components/navbar/LogoButton";
 import { Textarea } from "../components/ui/textarea";
 import { $user } from "@/lib/store";
+import { useToast } from "@/hooks/use-toast";
 
 const initialSubmitStatus = {
   message: "",
@@ -38,15 +39,14 @@ const initialSubmitStatus = {
 };
 
 export function WidgetForm() {
-  const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
   const [visibility, setVisibility] = useState("");
   const router = useRouter();
   const { idToken } = useAuth();
   const user = useStore($user);
+  const { toast } = useToast();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitStatus(initialSubmitStatus);
 
     const formData = new FormData(event.currentTarget);
     const data: Record<string, string> = {};
@@ -56,9 +56,10 @@ export function WidgetForm() {
     });
 
     try {
-      if (!idToken) {
-        throw new Error("ID Token not found. Please log in again.");
-      }
+      // if (!idToken) {
+      //   throw new Error("ID Token not found. Please log in again.");
+      // }
+      console.log(user);
 
       const widgetData = {
         widget_name: data["widget-name"],
@@ -68,22 +69,19 @@ export function WidgetForm() {
       };
 
       await createWidget(widgetData);
-      setSubmitStatus({
-        message: "Widget created successfully! Check your email for the API key.",
-        textClass: "text-green-600",
-      });
       router.push("/dashboard"); // or wherever you want to redirect after success
     } catch (error) {
       console.error(error);
-      setSubmitStatus({
-        message: error instanceof Error ? error.message : "Error creating widget",
-        textClass: "text-red-600",
-      });
+      toast({
+        title: "Error registering widget",
+        description: error instanceof Error ? error.message : "",
+        variant: "destructive"
+      })
     }
   };
 
   return (
-    <Card className="w-[450px] pb-5 px-5">
+    <Card className="w-[450px] pb-5 px-5 h-[520px]">
       <CardHeader className="flex flex-col items-center justify-center">
         <div className="mb-2">
           <LogoButton width={70} height={70} />
@@ -137,15 +135,6 @@ export function WidgetForm() {
           </div>
           <SubmitButton btnText="Sign up" className="mt-8" />
         </form>
-        <div className="flex justify-center text-sm">
-          <p
-            className={`my-2 ${submitStatus.textClass}`}
-            role="status"
-            aria-live="polite"
-          >
-            {submitStatus.message}
-          </p>
-        </div>
       </CardContent>
     </Card>
   );
