@@ -9,17 +9,20 @@ import {
   setTargetWidgetCollaborators,
 } from "@/lib/store";
 import { useStore } from "@nanostores/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getFavorites } from "@/api/user";
 import { getCategories } from "@/api/categories";
 import { setTestStorageKey } from "@nanostores/persistent";
+import { delay } from "@/lib/utils";
 
 function useQueryWidgets() {
   const widgets = useStore($widgets);
   const user = useStore($user);
+  const [widgetsLoading, setWidgetsLoading] = useState(false);
 
   const loadWidgets = async () => {
     try {
+      setWidgetsLoading(true);
       const [fetchedWidgets, categories] = await Promise.all([
         fetchWidgets(),
         getCategories(),
@@ -41,6 +44,8 @@ function useQueryWidgets() {
       setCategories(categories);
     } catch (error) {
       console.error("Error fetching widgets:", error);
+    } finally {
+      setWidgetsLoading(false);
     }
   };
 
@@ -50,7 +55,7 @@ function useQueryWidgets() {
     }
   }, [user.id]); // eslint-disable-line
 
-  return { widgets };
+  return { widgets, widgetsLoading };
 }
 
 export const callGetWidgetCollaborators = async (widgetId: number) => {

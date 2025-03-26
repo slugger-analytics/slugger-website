@@ -15,14 +15,12 @@ import { Input } from "@/app/components/ui/input";
 import LogoButton from "../components/navbar/LogoButton";
 import { setUser } from "@/lib/store";
 import { LoginType, UserAPIResType } from "@/data/types";
+import { useToast } from "@/hooks/use-toast";
 
 const LoginForm = () => {
-  const [submitStatus, setSubmitStatus] = useState({
-    message: "",
-    textClass: "text-gray-600",
-  });
   const router = useRouter();
   const { setIdToken, setAccessToken, setLoading } = useAuth();
+  const { toast } = useToast();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -31,10 +29,6 @@ const LoginForm = () => {
     const password = formData.get("password") as string;
 
     try {
-      setSubmitStatus({
-        message: "Loading...",
-        textClass: "text-gray-600",
-      });
       setLoading(true);
       const result = (await loginUser(email, password)) as LoginType;
       // TODO set user info here!!!
@@ -49,10 +43,12 @@ const LoginForm = () => {
         router.push("/dashboard"); // Redirect to dashboard for other roles
       }
     } catch (error) {
-      setSubmitStatus({
-        message: "Login failed. Please try again", // Display error message on login failure
-        textClass: "text-red-600", // Apply red text class for error message
-      });
+      toast({
+        title: "Login failed. Please try again",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -87,9 +83,6 @@ const LoginForm = () => {
           <SubmitButton btnText="Continue" className="mt-8" />
         </form>
       </CardContent>
-      <div className="flex justify-center text-sm">
-        <p className={submitStatus.textClass}>{submitStatus.message}</p>
-      </div>
     </Card>
   );
 };

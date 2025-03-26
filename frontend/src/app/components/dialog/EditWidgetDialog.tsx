@@ -179,7 +179,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
-      <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
+      <AlertDialogContent className="max-h-[90vh] overflow-y-auto rounded-scrollbar">
         <AlertDialogHeader>
           <AlertDialogTitle>Edit Widget</AlertDialogTitle>
           <AlertDialogDescription>
@@ -264,11 +264,14 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           </div>
 
           <div>
-            <Label>Restricted Access</Label>
+            <div>
+              <Label className="pr-3">Restricted Access</Label>
+              <a className="text-xs text-blue-600 hover:text-blue-500 text-decoration-line: underline" href="/api-docs">Learn more</a>
+            </div>
             <div className="flex items-center space-x-4 mt-2">
               <Checkbox
                 id="restricted-access"
-                checked={restrictedAccess}
+                checked={restrictedAccess || visibility === "Private"}
                 disabled={visibility === "Private"}
                 onCheckedChange={() => setRestrictedAccess((prev) => !prev)}
               />

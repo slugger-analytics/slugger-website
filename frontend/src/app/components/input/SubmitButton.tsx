@@ -7,6 +7,7 @@
 
 import { useFormStatus } from "react-dom"; // Hook to track form submission status
 import { Button } from "../ui/button";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 /**
  * Props for the SubmitButton Component
@@ -26,11 +27,12 @@ type InputProps = {
  */
 export default function SubmitButton({ btnText, className }: InputProps) {
   const { pending } = useFormStatus(); // Tracks whether the form is pending submission
+  const { loading } = useAuth();
 
   return (
     <Button
       type="submit" // Sets the button type to submit for form submission
-      aria-disabled={pending} // Adds accessibility support for the disabled state
+      aria-disabled={loading} // Adds accessibility support for the disabled state
       className={`
         ${className} 
         w-full
@@ -40,7 +42,7 @@ export default function SubmitButton({ btnText, className }: InputProps) {
         hover:bg-[#25366b]
         ${pending ? "opacity-50 cursor-not-allowed" : ""}
       `}
-      disabled={pending} // Disables the button when the form is pending
+      disabled={loading} // Disables the button when the form is pending
     >
       {btnText}
     </Button>
