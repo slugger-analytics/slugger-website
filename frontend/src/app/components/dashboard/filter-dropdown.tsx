@@ -30,6 +30,8 @@ import {
   $filtersVersion,
 } from "@/lib/store"; // Nanostores state and actions for filters
 import { useState, useEffect } from "react"; // React hooks for managing component state and lifecycle
+import { Check } from "lucide-react";
+
 
 /**
  * FilterDropdown Component
@@ -44,6 +46,7 @@ function FilterDropdown() {
   const categories = useStore($categories);
   const activeCategoryIds = useStore($activeCategoryIds);
   const filtersVersion = useStore($filtersVersion);
+  const [isOpen, setIsOpen] = useState(false);
 
   /**
    * Sync local state with the global filters state.
@@ -54,20 +57,6 @@ function FilterDropdown() {
       setFavsFilterActive(true);
     }
   }, [filters]); // Runs whenever the `filters` state changes
-
-  /**
-   * Toggles the "Favorites" filter.
-   * Adds or removes "favorites" from the global filters and updates the local state.
-   */
-  const toggleFavsFilter = () => {
-    if (filters.has("favorites")) {
-      removeFilter("favorites"); // Remove the "favorites" filter globally
-      setFavsFilterActive(false); // Update local state to inactive
-    } else {
-      addFilter("favorites"); // Add the "favorites" filter globally
-      setFavsFilterActive(true); // Update local state to active
-    }
-  };
 
   /**
    * Toggles a category filter.
@@ -82,7 +71,7 @@ function FilterDropdown() {
   };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       {/* Dropdown trigger button with an icon */}
       <DropdownMenuTrigger asChild>
         <button className="mx-3">
@@ -92,38 +81,20 @@ function FilterDropdown() {
 
       {/* Dropdown menu content */}
       <DropdownMenuContent className="w-56">
-        {/* Dropdown label */}
-        <DropdownMenuLabel>Filters</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-
-        {/* Favorites filter option */}
-        <DropdownMenuGroup>
-          <DropdownMenuItem>
-            <DropdownMenuCheckboxItem
-              checked={favsFilterActive} // Checked state based on local state
-              onCheckedChange={toggleFavsFilter} // Toggles the "Favorites" filter
-            >
-              Favorites
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-
-        <DropdownMenuSeparator />
 
         {/* Categories filter section */}
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 text-sm font-semibold">
             Categories
           </DropdownMenuLabel>
+          <DropdownMenuSeparator />
           {categories.map((category) => (
-            <DropdownMenuItem key={category.id}>
-              <DropdownMenuCheckboxItem
-                checked={activeCategoryIds.has(category.id)}
-                onCheckedChange={() => toggleCategoryFilter(category.id)}
-              >
-                {category.name}
-              </DropdownMenuCheckboxItem>
-            </DropdownMenuItem>
+            <Button variant="ghost" key={category.id} className="w-full flex justify-start" onClick={() => toggleCategoryFilter(category.id)}>
+              <div className="w-4">
+                {activeCategoryIds.has(category.id) ? <Check /> : <></>}
+              </div>
+              {category.name}
+            </Button>
           ))}
         </DropdownMenuGroup>
       </DropdownMenuContent>
