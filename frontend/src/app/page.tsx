@@ -46,19 +46,15 @@ export default function Home() {
             priority={true}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/70 to-gray-900/90" />
-          
-          <motion.div 
+
+          <motion.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
             className="absolute inset-0 flex flex-col items-center justify-center text-center px-6"
           >
             {/* Logo */}
-            <motion.div 
-              variants={variants}
-              custom={0}
-              className="mb-8"
-            >
+            <motion.div variants={variants} custom={0} className="mb-8">
               <Image
                 src="/alpb-logo.png"
                 alt="ALPB Logo"
@@ -70,15 +66,18 @@ export default function Home() {
             </motion.div>
 
             {/* Header */}
-            <motion.h1 
+            <motion.h1
               variants={variants}
               custom={0.2}
               className="text-7xl font-extrabold text-white drop-shadow-lg tracking-tight"
             >
-              Welcome to <span className="bg-white text-transparent bg-clip-text">ALPB Analytics</span>
+              Welcome to{" "}
+              <span className="bg-white text-transparent bg-clip-text">
+                ALPB Analytics
+              </span>
             </motion.h1>
 
-            <motion.p 
+            <motion.p
               variants={variants}
               custom={0.4}
               className="text-xl font-medium text-gray-300 mt-8 max-w-3xl leading-relaxed"
@@ -89,13 +88,13 @@ export default function Home() {
             </motion.p>
 
             {/* Buttons */}
-            <motion.div 
+            <motion.div
               variants={variants}
               custom={0.6}
               className="flex mt-16 space-x-8"
             >
               <Link href="/sign-in">
-                <motion.button 
+                <motion.button
                   whileHover="hover"
                   whileTap="tap"
                   variants={variants}
@@ -105,7 +104,7 @@ export default function Home() {
                 </motion.button>
               </Link>
               <Link href="/register-account">
-                <motion.button 
+                <motion.button
                   whileHover="hover"
                   whileTap="tap"
                   variants={variants}
@@ -119,7 +118,7 @@ export default function Home() {
         </div>
 
         {/* Footer Section */}
-        <motion.footer 
+        <motion.footer
           variants={variants}
           custom={0.8}
           initial="hidden"

@@ -7,8 +7,10 @@ export default function PasswordRequirements() {
         <li>One uppercase letter</li>
         <li>One lowercase letter</li>
         <li>One number</li>
-        <li>One special character (!@#$%^&*(),.?&quot;:{}|{'<>'})</li>
+        <li>
+          One special character (!@#$%^&*(),.?&quot;:{}|{"<>"})
+        </li>
       </ul>
     </div>
   );
-} 
+}

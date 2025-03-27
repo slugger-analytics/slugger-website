@@ -106,10 +106,10 @@ function useMutationWidgets() {
     try {
       await deleteWidget(widgetId);
       removeStoreWidget(widgetId);
-    } catch(error) {
-      console.error('Error handling widget deletion:', error);
+    } catch (error) {
+      console.error("Error handling widget deletion:", error);
     }
-  }
+  };
 
   return {
     editWidget,

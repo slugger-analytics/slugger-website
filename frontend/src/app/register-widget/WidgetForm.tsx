@@ -65,7 +65,7 @@ export function WidgetForm() {
         widget_name: data["widget-name"],
         description: data["description"],
         visibility: visibility,
-        userId: user.id
+        userId: user.id,
       };
 
       await createWidget(widgetData);
@@ -75,8 +75,8 @@ export function WidgetForm() {
       toast({
         title: "Error registering widget",
         description: error instanceof Error ? error.message : "",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     }
   };
 

@@ -1,6 +1,11 @@
 import { atom, map } from "nanostores";
 import { persistentMap } from "@nanostores/persistent";
-import { UserType, WidgetType, CategoryType, WidgetCollaboratorsType } from "@/data/types";
+import {
+  UserType,
+  WidgetType,
+  CategoryType,
+  WidgetCollaboratorsType,
+} from "@/data/types";
 import { logger } from "@nanostores/logger";
 
 // Allow debug messages
@@ -48,6 +53,9 @@ export const $widgetsVersion = atom<number>(0);
 export const $filtersVersion = atom<number>(0);
 export const $categories = atom<CategoryType[]>([]);
 
+export const $otpCode = atom<string>("");
+export const $passwordResetEmail = atom<string>("");
+
 export function clearStores() {
   $widgets.set([]);
   $targetWidget.set(emptyWidget);
@@ -65,6 +73,17 @@ export function clearStores() {
   $widgetsVersion.set(0);
   $filtersVersion.set(0);
   $categories.set([]);
+
+  $otpCode.set("");
+  $passwordResetEmail.set("");
+}
+
+export function setOtpCode(otp: string) {
+  $otpCode.set(otp);
+}
+
+export function setPasswordResetEmail(email: string) {
+  $passwordResetEmail.set(email);
 }
 
 // Adds a new widget to the $widgets store and increments the widgets version
@@ -82,7 +101,7 @@ export function setWidgets(widgets: WidgetType[]) {
 }
 
 export function removeStoreWidget(widgetId: number) {
-  $widgets.set($widgets.get().filter((w) => w.id != widgetId))
+  $widgets.set($widgets.get().filter((w) => w.id != widgetId));
   incrementWidgetsVersion();
 }
 
@@ -119,7 +138,10 @@ export function updateStoreWidget({
     $widgets.get().map((widget) => {
       if (widget.id === id) {
         const updatedCategories = widget.categories.filter((cat) => {
-          return !categoriesToRemove || !Array.from(categoriesToRemove).some(c => c.id === cat.id);
+          return (
+            !categoriesToRemove ||
+            !Array.from(categoriesToRemove).some((c) => c.id === cat.id)
+          );
         });
 
         if (categoriesToAdd) {
@@ -252,7 +274,9 @@ export function setTimeFrame(timeFrame: string) {
   $timeFrame.set(timeFrame);
 }
 
-export function setTargetWidgetCollaborators(widgetCollaborators: WidgetCollaboratorsType[]) {
+export function setTargetWidgetCollaborators(
+  widgetCollaborators: WidgetCollaboratorsType[],
+) {
   $targetWidgetCollaborators.set(widgetCollaborators);
   console.log("SET TARGET WIDGET DEVS TO:", widgetCollaborators);
 }

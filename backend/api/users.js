@@ -23,6 +23,7 @@ dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
 const cognito = new CognitoIdentityServiceProvider({ region: "us-east-2" });
 const JWT_SECRET = process.env.JWT_SECRET;
+const USER_POOL_ID = process.env.USER_POOL_ID;
 const router = Router();
 
 /**
@@ -349,6 +350,81 @@ router.post('/send-password-reset-email', async (req, res) => {
     });
   }
 })
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email and password are required'
+      });
+    }
+
+    const query = `
+      SELECT cognito_user_id
+      FROM users
+      WHERE email = $1
+    `;
+
+    const result = await pool.query(query, [email.toLowerCase()]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const username = result.rows[0].cognito_user_id;
+
+    try {
+      const resetResponse = await cognito.adminSetUserPassword({
+        Password: password,
+        UserPoolId: USER_POOL_ID,
+        Username: username,
+        Permanent: true,
+      }).promise(); // Use .promise() to handle the AWS SDK method correctly
+
+      // If we reach here, the password reset was successful
+      return res.status(200).json({
+        success: true,
+        message: 'Password reset successful'
+      });
+
+    } catch (cognitoError) {
+      // Handle specific Cognito errors
+      console.error('Cognito Password Reset Error:', cognitoError);
+
+      if (cognitoError.code === 'NotAuthorizedException') {
+        return res.status(400).json({
+          success: false,
+          message: 'Password does not meet requirements'
+        });
+      } else if (cognitoError.code === 'UserNotFoundException') {
+        return res.status(404).json({
+          success: false,
+          message: 'Cognito user not found'
+        });
+      }
+
+      // Generic error for other Cognito-related issues
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to reset password'
+      });
+    }
+
+  } catch (error) {
+    console.error('Password Reset Error:', error);
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+});
 
 
 

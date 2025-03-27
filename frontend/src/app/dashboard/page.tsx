@@ -22,7 +22,6 @@ import DashboardContent from "../components/dashboard/dashboard-content";
 export default function Page() {
   const { loading } = useAuth();
   const { widgetsLoading } = useQueryWidgets();
-  
 
   return (
     <ProtectedRoute>
@@ -32,7 +31,11 @@ export default function Page() {
           {" "}
           {/* Ensures the route is protected and only accessible to authenticated users */}
           <SidebarTrigger />
-          {loading || widgetsLoading ? <DashboardLoading /> : <DashboardContent />}
+          {loading || widgetsLoading ? (
+            <DashboardLoading />
+          ) : (
+            <DashboardContent />
+          )}
         </SidebarInset>
       </SidebarProvider>
     </ProtectedRoute>

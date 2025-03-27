@@ -76,10 +76,9 @@ export const approveWidget = async (requestId: string): Promise<string> => {
         headers: { "Content-Type": "application/json" },
       },
     );
-    
+
     console.log("Here 2");
     const res = await response.json();
-
 
     if (!res.success) {
       throw new Error(res.message);
@@ -286,20 +285,18 @@ export const recordWidgetInteraction = async (
   }
 };
 
-export const createWidget = async (
-  widgetData: {
-    widget_name: string;
-    description: string;
-    visibility: string;
-    userId: string;
-  }
-): Promise<any> => {
+export const createWidget = async (widgetData: {
+  widget_name: string;
+  description: string;
+  visibility: string;
+  userId: string;
+}): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/api/widgets/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(widgetData),
-      credentials: "include"
+      credentials: "include",
     });
 
     const res = await response.json();
@@ -313,9 +310,13 @@ export const createWidget = async (
   }
 };
 
-export const getWidgetCollaborators = async (widgetId: number): Promise<any> => {
+export const getWidgetCollaborators = async (
+  widgetId: number,
+): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/developers`);
+    const response = await fetch(
+      `${API_URL}/api/widgets/${widgetId}/developers`,
+    );
 
     const res = await response.json();
     if (!res.success) {
@@ -326,16 +327,19 @@ export const getWidgetCollaborators = async (widgetId: number): Promise<any> => 
     console.error("Error creating widget:", error);
     throw error;
   }
-}
+};
 
 export async function addWidgetCollaborator(widgetId: number, email: string) {
-  const response = await fetch(`${API_URL}/api/widgets/${widgetId}/collaborators`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  const response = await fetch(
+    `${API_URL}/api/widgets/${widgetId}/collaborators`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
     },
-    body: JSON.stringify({ email })
-  });
+  );
 
   const data = await response.json();
   if (!data.success) {
@@ -348,7 +352,7 @@ export async function addWidgetCollaborator(widgetId: number, email: string) {
 export async function deleteWidget(widgetId: number) {
   try {
     const response = await fetch(`${API_URL}/api/widgets/${widgetId}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
 
     const res = await response.json();
@@ -359,5 +363,4 @@ export async function deleteWidget(widgetId: number) {
     console.error("Error deleting widget:", error);
     throw error;
   }
-
 }

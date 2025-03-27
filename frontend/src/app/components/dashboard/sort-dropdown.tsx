@@ -61,13 +61,21 @@ export default function SortDropdown() {
 
         {/* Favorites filter option */}
         <DropdownMenuGroup>
-          <Button variant="ghost" className="w-full flex justify-start" onClick={() => setSortBy("launch_count")}>
+          <Button
+            variant="ghost"
+            className="w-full flex justify-start"
+            onClick={() => setSortBy("launch_count")}
+          >
             <div className="w-4">
               {sortBy === "launch_count" ? <Check /> : <></>}
             </div>
             Total launches
           </Button>
-          <Button variant="ghost" className="w-full flex justify-start" onClick={() => setSortBy("unique_launches")}>
+          <Button
+            variant="ghost"
+            className="w-full flex justify-start"
+            onClick={() => setSortBy("unique_launches")}
+          >
             <div className="w-4">
               {sortBy === "unique_launches" ? <Check /> : <></>}
             </div>
@@ -79,14 +87,22 @@ export default function SortDropdown() {
             <Separator />
             <DropdownMenuGroup>
               <DropdownMenuLabel>Order By</DropdownMenuLabel>
-              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setSortDirection("asc")}>
+              <Button
+                variant="ghost"
+                className="w-full flex justify-start"
+                onClick={() => setSortDirection("asc")}
+              >
                 <div className="w-4">
                   {sortDirection === "asc" ? <Check /> : <></>}
                 </div>
                 Ascending
               </Button>
-              
-              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setSortDirection("desc")}>
+
+              <Button
+                variant="ghost"
+                className="w-full flex justify-start"
+                onClick={() => setSortDirection("desc")}
+              >
                 <div className="w-4">
                   {sortDirection === "desc" ? <Check /> : <></>}
                 </div>
@@ -96,25 +112,41 @@ export default function SortDropdown() {
             <Separator />
             <DropdownMenuGroup>
               <DropdownMenuLabel>Time Frame</DropdownMenuLabel>
-              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setTimeFrame("weekly")}>
+              <Button
+                variant="ghost"
+                className="w-full flex justify-start"
+                onClick={() => setTimeFrame("weekly")}
+              >
                 <div className="w-4">
                   {timeFrame === "weekly" ? <Check /> : <></>}
                 </div>
                 Weekly
               </Button>
-              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setTimeFrame("monthly")}>
+              <Button
+                variant="ghost"
+                className="w-full flex justify-start"
+                onClick={() => setTimeFrame("monthly")}
+              >
                 <div className="w-4">
                   {timeFrame === "monthly" ? <Check /> : <></>}
                 </div>
                 Monthly
               </Button>
-              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setTimeFrame("yearly")}>
+              <Button
+                variant="ghost"
+                className="w-full flex justify-start"
+                onClick={() => setTimeFrame("yearly")}
+              >
                 <div className="w-4">
                   {timeFrame === "yearly" ? <Check /> : <></>}
                 </div>
                 Yearly
               </Button>
-              <Button variant="ghost" className="w-full flex justify-start" onClick={() => setTimeFrame("all_time")}>
+              <Button
+                variant="ghost"
+                className="w-full flex justify-start"
+                onClick={() => setTimeFrame("all_time")}
+              >
                 <div className="w-4">
                   {timeFrame === "all_time" ? <Check /> : <></>}
                 </div>

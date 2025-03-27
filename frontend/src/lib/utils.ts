@@ -6,11 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function generateOTP(length: number) {
-  const digits = '0123456789';
+  const digits = "0123456789";
   let res = "";
   for (let i = 0; i < length; ++i) {
     res += digits[Math.floor(Math.random() * length)];
@@ -18,3 +18,39 @@ export function generateOTP(length: number) {
   return res;
 }
 
+// Add password validation function
+export const validatePassword = (
+  password: string,
+): { isValid: boolean; error: string } => {
+  if (password.length < 8) {
+    return {
+      isValid: false,
+      error: "Password must be at least 8 characters long",
+    };
+  }
+  if (!/[A-Z]/.test(password)) {
+    return {
+      isValid: false,
+      error: "Password must contain at least one uppercase letter",
+    };
+  }
+  if (!/[a-z]/.test(password)) {
+    return {
+      isValid: false,
+      error: "Password must contain at least one lowercase letter",
+    };
+  }
+  if (!/[0-9]/.test(password)) {
+    return {
+      isValid: false,
+      error: "Password must contain at least one number",
+    };
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    return {
+      isValid: false,
+      error: "Password must contain at least one symbol",
+    };
+  }
+  return { isValid: true, error: "" };
+};

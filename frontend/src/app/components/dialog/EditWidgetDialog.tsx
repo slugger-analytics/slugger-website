@@ -15,14 +15,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger
+  AlertDialogTrigger,
 } from "@/app/components/ui/alert-dialog"; // UI components for the alert dialog
 import { Input } from "../ui/input"; // Input component
 import { Label } from "../ui/label"; // Label component
 import { Checkbox } from "../ui/checkbox"; // Checkbox component
 import { useEffect, useState } from "react"; // React state management
 import { useStore } from "@nanostores/react"; // Hook to access nanostores
-import { $categories, $targetWidget, $targetWidgetCollaborators } from "@/lib/store"; // Store to manage the target widget being edited
+import {
+  $categories,
+  $targetWidget,
+  $targetWidgetCollaborators,
+} from "@/lib/store"; // Store to manage the target widget being edited
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
@@ -108,12 +112,12 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   const handleSave = async () => {
     try {
       const updatedCategories = [
-        ...targetWidget.categories.filter(
-          (cat) => {
-            const matchingCategory = Array.from(categoriesToRemove).find((c) => c.id === cat.id);
-            return !matchingCategory; // Keep categories that aren't in categoriesToRemove
-          }
-        ),
+        ...targetWidget.categories.filter((cat) => {
+          const matchingCategory = Array.from(categoriesToRemove).find(
+            (c) => c.id === cat.id,
+          );
+          return !matchingCategory; // Keep categories that aren't in categoriesToRemove
+        }),
         ...(categoriesToAdd ? Array.from(categoriesToAdd) : []),
       ];
 
@@ -133,7 +137,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
         {
           categoriesToAdd,
           categoriesToRemove,
-        }
+        },
       );
       onClose(); // Close the dialog after saving
     } catch (error) {
@@ -150,26 +154,32 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
 
   const handleAddCollaborator = async () => {
     if (!newCollaboratorEmail) return;
-    
+
     setIsAddingCollaborator(true);
-    try {      
+    try {
       // Add user as collaborator
-      await addWidgetCollaborator(Number(targetWidget.id), newCollaboratorEmail);
-      
+      await addWidgetCollaborator(
+        Number(targetWidget.id),
+        newCollaboratorEmail,
+      );
+
       // Refresh collaborators list
-      const updatedCollaborators = await getWidgetCollaborators(Number(targetWidget.id));
+      const updatedCollaborators = await getWidgetCollaborators(
+        Number(targetWidget.id),
+      );
       $targetWidgetCollaborators.set(updatedCollaborators);
-      
+
       // Clear input
       setNewCollaboratorEmail("");
-      
+
       toast({
         title: "Collaborator added successfully!",
       });
     } catch (error) {
       toast({
         title: "Error adding collaborator",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
+        description:
+          error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive",
       });
     } finally {
@@ -266,7 +276,12 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           <div>
             <div>
               <Label className="pr-3">Restricted Access</Label>
-              <a className="text-xs text-blue-600 hover:text-blue-500 text-decoration-line: underline" href="/api-docs">Learn more</a>
+              <a
+                className="text-xs text-blue-600 hover:text-blue-500 text-decoration-line: underline"
+                href="/api-docs"
+              >
+                Learn more
+              </a>
             </div>
             <div className="flex items-center space-x-4 mt-2">
               <Checkbox
@@ -322,8 +337,8 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                 value={newCollaboratorEmail}
                 onChange={(e) => setNewCollaboratorEmail(e.target.value)}
               />
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleAddCollaborator}
                 disabled={isAddingCollaborator}
               >
@@ -340,12 +355,14 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
             <Label>Widget Collaborators</Label>
             <div className="mt-2 space-y-2">
               {collaborators.map((collaborator) => (
-                <div 
-                  key={collaborator.user_id} 
+                <div
+                  key={collaborator.user_id}
                   className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">{collaborator.email}</span>
+                    <span className="text-sm font-medium">
+                      {collaborator.email}
+                    </span>
                     <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-full">
                       {collaborator.role}
                     </span>
@@ -358,7 +375,9 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           <div>
             <Accordion type="single" collapsible>
               <AccordionItem value="item-1">
-                <AccordionTrigger className="text-[#EF4444]">Danger Zone</AccordionTrigger>
+                <AccordionTrigger className="text-[#EF4444]">
+                  Danger Zone
+                </AccordionTrigger>
                 <AccordionContent>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
@@ -366,7 +385,9 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Are sure you want to delete this widget?</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          Are sure you want to delete this widget?
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
                           This action cannot be undone.
                         </AlertDialogDescription>
@@ -374,12 +395,16 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction asChild>
-                          <Button className="bg-[#EF4444] hover:bg-[#f05454]" onClick={() => handleDeleteWidget(targetWidget.id)}>Permanently delete</Button>
+                          <Button
+                            className="bg-[#EF4444] hover:bg-[#f05454]"
+                            onClick={() => handleDeleteWidget(targetWidget.id)}
+                          >
+                            Permanently delete
+                          </Button>
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-
                 </AccordionContent>
               </AccordionItem>
             </Accordion>

@@ -185,9 +185,7 @@ export default function Widget({
             ))}
           </div>
         </div>
-        <CardDescription className="text-sm">
-          
-        </CardDescription>
+        <CardDescription className="text-sm"></CardDescription>
       </CardContent>
 
       {/* Footer Section */}

@@ -11,7 +11,7 @@ export const registerPendingDeveloper = async (userData: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(userData),
   });
-  
+
   const data = await response.json();
   if (!data.success) {
     throw new Error(data.message);
@@ -35,14 +35,17 @@ export const fetchPendingDevelopers = async () => {
 };
 
 export const approveDeveloper = async (requestId: string) => {
-  const response = await fetch(`${API_URL}/api/developers/pending/${requestId}/approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-  });
-  
+  const response = await fetch(
+    `${API_URL}/api/developers/pending/${requestId}/approve`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
   const data = await response.json();
   if (!data.success) {
     throw new Error(data.message);
   }
   return data;
-}; 
+};

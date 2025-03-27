@@ -1,11 +1,11 @@
-'use client'
+"use client";
 import React, { useState, useEffect } from "react";
 import AroundLeague from "@/app/components/AroundLeague";
 import { AppSidebar } from "@/app/components/app-sidebar";
 import { SidebarProvider } from "@/app/components/ui/sidebar";
 
 const AroundLeaguePage = () => {
- return (
+  return (
     <SidebarProvider>
       <div className="flex">
         <AppSidebar />

@@ -45,8 +45,8 @@ const LoginForm = () => {
     } catch (error) {
       toast({
         title: "Login failed. Please try again",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
