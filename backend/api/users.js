@@ -17,6 +17,7 @@ import jwt from "jsonwebtoken";
 import { getTeam } from "../services/teamService";
 import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
+import { sendPasswordResetEmail } from "../services/emailService.js";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
@@ -328,6 +329,26 @@ router.get('/search', async (req, res) => {
     });
   }
 });
+
+router.post('/send-password-reset-email', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    console.log("Recieved.", email, otp)
+
+    await sendPasswordResetEmail(email, otp);
+
+    return res.json({
+      success: true,
+      message: "Email sent successfully!"
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+})
 
 
 

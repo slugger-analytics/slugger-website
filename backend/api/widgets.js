@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { validationMiddleware } from "../middleware/validation-middleware.ts";
-import sendApiKeyEmail from "../services/emailService.js";
 import pool from "../db.js";
 import {
   addCategoryToWidgetSchema,

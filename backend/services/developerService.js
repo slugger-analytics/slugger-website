@@ -2,7 +2,7 @@ import pool from "../db.js";
 import bcrypt from 'bcrypt';
 import { signUpUserWithCognito } from "./userService.js";
 import { generateApiKeyForUser } from "./widgetService.js";
-import sendApiKeyEmail from "./emailService.js";
+import { sendApiKeyEmail } from "./emailService.js";
 import cognito from "../cognito.js";
 
 export async function createPendingDeveloper(userData) {
