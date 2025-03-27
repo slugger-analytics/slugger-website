@@ -23,7 +23,7 @@ dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
 const cognito = new CognitoIdentityServiceProvider({ region: "us-east-2" });
 const JWT_SECRET = process.env.JWT_SECRET;
-const USER_POOL_ID = process.env.USER_POOL_ID;
+const COGNITO_USER_POOL_ID = process.env.USER_POOL_ID;
 const router = Router();
 
 /**
@@ -73,7 +73,8 @@ router.post("/sign-up", async (req, res) => {
  * Authenticate a user.
  */
 router.post("/sign-in", async (req, res) => {
-  const { email, password } = req.body;
+  let { email, password } = req.body;
+  email = email.toLowerCase();
   const params = {
     AuthFlow: "USER_PASSWORD_AUTH",
     ClientId: process.env.COGNITO_APP_CLIENT_ID,
@@ -354,7 +355,7 @@ router.post('/send-password-reset-email', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   try {
     const { email, password } = req.body;
-
+  
     // Validate input
     if (!email || !password) {
       return res.status(400).json({
@@ -383,7 +384,7 @@ router.post('/reset-password', async (req, res) => {
     try {
       const resetResponse = await cognito.adminSetUserPassword({
         Password: password,
-        UserPoolId: USER_POOL_ID,
+        UserPoolId: COGNITO_USER_POOL_ID,
         Username: username,
         Permanent: true,
       }).promise(); // Use .promise() to handle the AWS SDK method correctly

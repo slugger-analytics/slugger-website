@@ -161,7 +161,8 @@ export async function createUser(userData) {
 }
 
 export async function signUpUserWithCognito(userData) {
-  const { email, password, firstName, lastName, role, teamId, teamRole } = userData;
+  let { email, password, firstName, lastName, role, teamId, teamRole } = userData;
+  email = email.toLowerCase();
   
   const params = {
     ClientId: process.env.COGNITO_APP_CLIENT_ID,
