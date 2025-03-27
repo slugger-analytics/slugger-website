@@ -130,3 +130,20 @@ export const validateSession = async () => {
     return false;
   }
 };
+
+export const sendPasswordResetEmail = async (email: string, otp: string) => {
+  try {
+    const response = await fetch(`${API_URL}/api/users/send-password-reset-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, otp }),
+    })
+    const res = await response.json();
+    console.log(res);
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    throw error;
+  }
+}

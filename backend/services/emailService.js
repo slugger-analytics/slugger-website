@@ -17,7 +17,7 @@ const ses = new SES({ region: "us-east-2" });
  * @returns {Promise<string>} - A success message if the email is sent successfully.
  * @throws {Error} - Logs and throws an error if the email fails to send.
  */
-async function sendApiKeyEmail(email, apiKey) {
+export async function sendApiKeyEmail(email, apiKey) {
   // Define the email parameters
   const params = {
     Destination: {
@@ -49,4 +49,35 @@ async function sendApiKeyEmail(email, apiKey) {
   }
 }
 
-export default sendApiKeyEmail; // Export the function for use in other modules
+export async function sendPasswordResetEmail(email, otp) {
+  const params = {
+    Destination: {
+      ToAddresses: [email], // Recipient's email address
+    },
+    Message: {
+      Body: {
+        Text: {
+          Data: `
+          Use this code to reset your password: ${otp}
+          `
+        },
+      },
+      Subject: {
+        Data: "Reset Your Password", // Subject line of the email
+      },
+    },
+    Source: "ALPB Analytics <noreply@alpb-analytics.com>", // Sender's email address
+  };
+  try {
+    // Send the email using AWS SES
+    console.log("Trying to send email...")
+    await ses.sendEmail(params).promise();
+    console.log("Email sent successfully!")
+    return "Email sent successfully"; // Return a success message
+  } catch (err) {
+    // Log the error and rethrow it
+    console.error("Error sending email:", err);
+    throw new Error("Failed to send email");
+  }
+}
+

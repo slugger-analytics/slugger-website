@@ -1,7 +1,4 @@
 import { Router } from "express";
-import { createUser } from "../services/userService.js";
-import { generateApiKeyForUser } from "../services/widgetService.js";
-import sendApiKeyEmail from "../services/emailService.js";
 import pool from "../db.js";
 import { createPendingDeveloper, approveDeveloper } from "../services/developerService.js";
 import { signUpUserWithCognito } from "../services/userService.js";
