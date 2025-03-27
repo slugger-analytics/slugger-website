@@ -1,6 +1,14 @@
 import ReactMarkdown from 'react-markdown';
-import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { atomDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { ComponentProps } from 'react';
+
+type CodeProps = ComponentProps<typeof SyntaxHighlighter> & { 
+    node?: any;
+    inline?: boolean;
+    className?: string;
+    children: string | string[];
+};
 
 export default function MarkdownContent() {
     return (
@@ -27,16 +35,15 @@ export default function MarkdownContent() {
                 ol: ({ children }) => (
                     <ol className="list-decimal pl-6 mb-3 text-sm">{children}</ol>
                 ),
-                code(props) {
-                    const { children, className, node, ...rest } = props;
+                code(props: any) {
+                    const { children, className, ...rest } = props;
                     const match = /language-(\w+)/.exec(className || '');
-
                     return match ? (
                         <SyntaxHighlighter
-                            style={atomDark}
+                            {...rest}
+                            style={oneDark}
                             language={match[1]}
                             PreTag="div"
-                            {...rest}
                         >
                             {String(children).replace(/\n$/, '')}
                         </SyntaxHighlighter>
