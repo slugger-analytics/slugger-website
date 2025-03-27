@@ -16,6 +16,7 @@ import LogoButton from "../components/navbar/LogoButton";
 import { setUser } from "@/lib/store";
 import { LoginType, UserAPIResType } from "@/data/types";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -81,6 +82,12 @@ const LoginForm = () => {
             </div>
           </div>
           <SubmitButton btnText="Continue" className="mt-8" />
+          <div className="flex items-center justify-center mt-5">
+            <Link href="/reset-password" className="text-[#2272B4] text-xs">
+              Forgot your password?
+            </Link>
+          </div>
+
         </form>
       </CardContent>
     </Card>
