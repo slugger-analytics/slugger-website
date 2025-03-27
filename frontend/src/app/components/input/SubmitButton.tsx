@@ -17,6 +17,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 type InputProps = {
   btnText: string;
   className?: string;
+  onClick?: () => undefined;
 };
 
 /**
@@ -25,7 +26,7 @@ type InputProps = {
  * @param {InputProps} props - Props for the SubmitButton component.
  * @returns {JSX.Element} - The JSX representation of the submit button.
  */
-export default function SubmitButton({ btnText, className }: InputProps) {
+export default function SubmitButton({ btnText, className, onClick }: InputProps) {
   const { pending } = useFormStatus(); // Tracks whether the form is pending submission
   const { loading } = useAuth();
 
