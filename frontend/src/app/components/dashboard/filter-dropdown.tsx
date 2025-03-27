@@ -32,7 +32,6 @@ import {
 import { useState, useEffect } from "react"; // React hooks for managing component state and lifecycle
 import { Check } from "lucide-react";
 
-
 /**
  * FilterDropdown Component
  *
@@ -81,7 +80,6 @@ function FilterDropdown() {
 
       {/* Dropdown menu content */}
       <DropdownMenuContent className="w-56">
-
         {/* Categories filter section */}
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-2 py-1.5 text-sm font-semibold">
@@ -89,7 +87,12 @@ function FilterDropdown() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           {categories.map((category) => (
-            <Button variant="ghost" key={category.id} className="w-full flex justify-start" onClick={() => toggleCategoryFilter(category.id)}>
+            <Button
+              variant="ghost"
+              key={category.id}
+              className="w-full flex justify-start"
+              onClick={() => toggleCategoryFilter(category.id)}
+            >
               <div className="w-4">
                 {activeCategoryIds.has(category.id) ? <Check /> : <></>}
               </div>

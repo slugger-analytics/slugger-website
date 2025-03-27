@@ -1,61 +1,61 @@
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
-import { ComponentProps } from 'react';
+import { ComponentProps } from "react";
 
-type CodeProps = ComponentProps<typeof SyntaxHighlighter> & { 
-    node?: any;
-    inline?: boolean;
-    className?: string;
-    children: string | string[];
+type CodeProps = ComponentProps<typeof SyntaxHighlighter> & {
+  node?: any;
+  inline?: boolean;
+  className?: string;
+  children: string | string[];
 };
 
 export default function MarkdownContent() {
-    return (
-        <ReactMarkdown
-            components={{
-                p: ({ children }) => <p className="mb-3 text-sm">{children}</p>,
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => <p className="mb-3 text-sm">{children}</p>,
 
-                h1: ({ children }) => (
-                    <h1 className="text-xl font-bold mt-6 mb-3">{children}</h1>
-                ),
-                h2: ({ children }) => (
-                    <h2 className="text-lg font-bold mt-5 mb-3">{children}</h2>
-                ),
-                h3: ({ children }) => (
-                    <h3 className="text-base font-bold mt-4 mb-2">{children}</h3>
-                ),
-                h4: ({ children }) => (
-                    <h4 className="text-base font-bold mt-4 mb-2">{children}</h4>
-                ),
+        h1: ({ children }) => (
+          <h1 className="text-xl font-bold mt-6 mb-3">{children}</h1>
+        ),
+        h2: ({ children }) => (
+          <h2 className="text-lg font-bold mt-5 mb-3">{children}</h2>
+        ),
+        h3: ({ children }) => (
+          <h3 className="text-base font-bold mt-4 mb-2">{children}</h3>
+        ),
+        h4: ({ children }) => (
+          <h4 className="text-base font-bold mt-4 mb-2">{children}</h4>
+        ),
 
-                ul: ({ children }) => (
-                    <ul className="list-disc pl-6 mb-3 text-sm">{children}</ul>
-                ),
-                ol: ({ children }) => (
-                    <ol className="list-decimal pl-6 mb-3 text-sm">{children}</ol>
-                ),
-                code(props: any) {
-                    const { children, className, ...rest } = props;
-                    const match = /language-(\w+)/.exec(className || '');
-                    return match ? (
-                        <SyntaxHighlighter
-                            {...rest}
-                            style={oneDark}
-                            language={match[1]}
-                            PreTag="div"
-                        >
-                            {String(children).replace(/\n$/, '')}
-                        </SyntaxHighlighter>
-                    ) : (
-                        <code className={className} {...rest}>
-                            {children}
-                        </code>
-                    );
-                }
-            }}
-        >
-            {`
+        ul: ({ children }) => (
+          <ul className="list-disc pl-6 mb-3 text-sm">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="list-decimal pl-6 mb-3 text-sm">{children}</ol>
+        ),
+        code(props: any) {
+          const { children, className, ...rest } = props;
+          const match = /language-(\w+)/.exec(className || "");
+          return match ? (
+            <SyntaxHighlighter
+              {...rest}
+              style={oneDark}
+              language={match[1]}
+              PreTag="div"
+            >
+              {String(children).replace(/\n$/, "")}
+            </SyntaxHighlighter>
+          ) : (
+            <code className={className} {...rest}>
+              {children}
+            </code>
+          );
+        },
+      }}
+    >
+      {`
 
 ## Overview
 
@@ -253,6 +253,6 @@ Common error responses include:
 To ensure fair use of the API, the following rate limits apply:
 **100 requests per minute per user.**
 `}
-        </ReactMarkdown>
-    );
+    </ReactMarkdown>
+  );
 }

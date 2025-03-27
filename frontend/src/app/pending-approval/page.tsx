@@ -6,10 +6,10 @@ export default function PendingApprovalPage() {
           Registration Pending
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Your widget developer account registration is pending approval. 
-          You will receive an email with your API key once approved.
+          Your widget developer account registration is pending approval. You
+          will receive an email with your API key once approved.
         </p>
       </div>
     </div>
   );
-} 
+}

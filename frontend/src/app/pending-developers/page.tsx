@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchPendingDevelopers, approveDeveloper} from "@/api/developer";
+import { fetchPendingDevelopers, approveDeveloper } from "@/api/developer";
 import { PendingDeveloper } from "@/data/types";
 import ProtectedRoute from "../components/ProtectedRoutes";
 
@@ -26,7 +26,7 @@ export default function PendingDevelopersPage() {
     try {
       await approveDeveloper(requestId);
       setStatus("Developer account approved and API key sent");
-      setRequests(prev => prev.filter(req => req.request_id !== requestId));
+      setRequests((prev) => prev.filter((req) => req.request_id !== requestId));
     } catch (error: any) {
       setStatus(error.message || "Error approving developer");
     }
@@ -35,7 +35,9 @@ export default function PendingDevelopersPage() {
   return (
     <ProtectedRoute role="master">
       <div className="container mx-auto p-8">
-        <h1 className="text-2xl font-bold mb-8 text-center">Pending Developers</h1>
+        <h1 className="text-2xl font-bold mb-8 text-center">
+          Pending Developers
+        </h1>
 
         {status && (
           <p className="text-center text-green-600 mb-4 font-semibold">
@@ -74,4 +76,4 @@ export default function PendingDevelopersPage() {
       </div>
     </ProtectedRoute>
   );
-} 
+}

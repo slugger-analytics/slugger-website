@@ -27,8 +27,9 @@ import {
 import { Separator } from "@/app/components/ui/separator";
 import Image from "next/image";
 import LogoButton from "../components/navbar/LogoButton";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 import { useToast } from "@/hooks/use-toast";
+import { validatePassword } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -37,35 +38,17 @@ const initialSubmitStatus = {
   textClass: "text-black",
 };
 
-const PasswordRequirements = dynamic(
-  () => import('./PasswordRequirements'),
-  { ssr: false }
-);
-
-// Add password validation function
-const validatePassword = (password: string): { isValid: boolean; error: string } => {
-  if (password.length < 8) {
-    return { isValid: false, error: "Password must be at least 8 characters long" };
-  }
-  if (!/[A-Z]/.test(password)) {
-    return { isValid: false, error: "Password must contain at least one uppercase letter" };
-  }
-  if (!/[a-z]/.test(password)) {
-    return { isValid: false, error: "Password must contain at least one lowercase letter" };
-  }
-  if (!/[0-9]/.test(password)) {
-    return { isValid: false, error: "Password must contain at least one number" };
-  }
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    return { isValid: false, error: "Password must contain at least one symbol" };
-  }
-  return { isValid: true, error: "" };
-};
+const PasswordRequirements = dynamic(() => import("./PasswordRequirements"), {
+  ssr: false,
+});
 
 export function SignupForm() {
   const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
   const router = useRouter();
-  const [invitedTeam, setInvitedTeam] = useState<{ team_name: string; team_id: string} | null>(null);
+  const [invitedTeam, setInvitedTeam] = useState<{
+    team_name: string;
+    team_id: string;
+  } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -105,17 +88,17 @@ export function SignupForm() {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const data = Object.fromEntries(formData.entries());
-    
+
     // Add password validation
     const password = data["password"] as string;
     const confirmPassword = data["confirm-password"] as string;
-    
+
     const { isValid, error } = validatePassword(password);
     if (!isValid) {
       toast({
         title: "Error",
         description: error,
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -123,11 +106,11 @@ export function SignupForm() {
     if (password !== confirmPassword) {
       toast({
         title: "Passwords do not match",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
       return;
     }
-    
+
     const searchParams = new URLSearchParams(window.location.search);
     const inviteToken = searchParams.get("invite");
 
@@ -148,7 +131,8 @@ export function SignupForm() {
         const { inviteToken, teamRole, ...developerData } = userData;
         await registerPendingDeveloper(developerData);
         setSubmitStatus({
-          message: "Registration pending approval. You will receive an email when approved.",
+          message:
+            "Registration pending approval. You will receive an email when approved.",
           textClass: "text-green-600",
         });
         setTimeout(() => router.push("/pending-approval"), 2000);
@@ -163,7 +147,10 @@ export function SignupForm() {
       }
     } catch (error) {
       setSubmitStatus({
-        message: error instanceof Error ? error.message : "Sign up failed. Please try again.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Sign up failed. Please try again.",
         textClass: "text-red-600",
       });
       console.error("Sign up error:", error);

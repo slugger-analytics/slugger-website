@@ -32,7 +32,6 @@ export default function PendingWidgetsPage() {
     try {
       console.log("Here 1");
       const result = await approveWidget(requestId);
-   ;  
       setStatus(result);
 
       // Remove the approved widget from the list

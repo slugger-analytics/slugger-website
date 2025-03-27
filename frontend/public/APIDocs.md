@@ -23,6 +23,7 @@ This API requires a key for authorization. Once you have your API key, include i
 ## API Endpoints
 
 ### Expected Response
+
 ```json
 {
   "success": "boolean",
@@ -69,12 +70,13 @@ GET /games
   "date": "string", // max_length=50, date format validation applied
   "home_team_name": "string", // Enum of valid team names (see below)
   "visiting_team_name": "string", // Enum of valid team names (see below)
-  "limit": "int", // range=[1, 1000], default=20 
+  "limit": "int", // range=[1, 1000], default=20
   "page": "int", // min=1, default=1
   "order": "string" // Enum: "ASC" or "DESC", default="DESC", sort by date
 }
 ```
-#### __Valid Team Names Enum:__
+
+#### **Valid Team Names Enum:**
 
 - "York Revolution"
 - "Staten Island FerryHawks"
@@ -114,12 +116,13 @@ GET /pitches
   "play_result": "string", // Enum (see below for valid values)
   "strikes": "int", // range=[0, 3]
   "top_or_bottom": "string", // Enum: "Top" or "Bottom"
-  "limit": "int", // range=[1, 1000], default=20 
+  "limit": "int", // range=[1, 1000], default=20
   "page": "int", // min=1, default=1
   "order": "string" // Enum: "ASC" or "DESC", default="DESC", sort by (date, time)
 }
 ```
-#### __Valid Pitch Call Enum Values:__
+
+#### **Valid Pitch Call Enum Values:**
 
 - "BallIntentional"
 - "InPlay"
@@ -133,7 +136,7 @@ GET /pitches
 - "BallCalled"
 - "FoulBallFieldable"
 
-#### __Valid Play Result Enum Values:__
+#### **Valid Play Result Enum Values:**
 
 - "Single"
 - "Double"
@@ -164,7 +167,7 @@ GET /players
   "player_pitching_handedness": "string", // Enum: "Left", "Right", "Switch", "Unknown", null
   "team_id": "UUID",
   "team_name": "string",
-  "limit": "int", // range=[1, 1000], default=20 
+  "limit": "int", // range=[1, 1000], default=20
   "page": "int", // min=1, default=1
   "order": "string" // Enum: "ASC" or "DESC", default="ASC", sort by player_name
 }
@@ -185,7 +188,7 @@ GET /teams
   "home_ballpark_name": "string", // max_length=100
   "league": "string", // Enum: "north" or "south"
   "team_name": "string", // max_length=100
-  "limit": "int", // range=[1, 1000], default=20 
+  "limit": "int", // range=[1, 1000], default=20
   "page": "int", // min=1, default=1
   "order": "string" // Enum: "ASC" or "DESC", default="DESC", sort by team_name
 }

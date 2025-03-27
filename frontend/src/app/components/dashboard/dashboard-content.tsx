@@ -10,32 +10,31 @@ import Widgets from "./widgets";
 import RegisterWidget from "./register-widget";
 
 export default function DashboardContent() {
-    const { widgets } = useQueryWidgets();
-    const user = useStore($user);
-    const { loading } = useAuth();
-    return (
+  const { widgets } = useQueryWidgets();
+  const user = useStore($user);
+  const { loading } = useAuth();
+  return (
+    <>
+      {widgets.length > 0 && (
         <>
+          <div className="flex flex-col items-center w-full mt-10">
+            <div className="flex justify-center w-full">
+              <Search />
+              <FilterDropdown />
+              <SortDropdown />
+            </div>
+            <ViewToggle />
+          </div>
+        </>
+      )}
+      <div className="flex justify-center p-10">
         {widgets.length > 0 && (
-                    <>
-                        <div className="flex flex-col items-center w-full mt-10">
-                            <div className="flex justify-center w-full">
-                                <Search />
-                                <FilterDropdown />
-                                <SortDropdown />
-                            </div>
-                            <ViewToggle />
-                        </div>
-                    </>
-                )
-        }
-        <div className="flex justify-center p-10">
-            {widgets.length > 0 && (
-                <div>
-                    <Widgets />
-                </div>
-            )}
-            {widgets.length == 0 && <RegisterWidget />}{" "}
-        </div>
+          <div>
+            <Widgets />
+          </div>
+        )}
+        {widgets.length == 0 && <RegisterWidget />}{" "}
+      </div>
     </>
-    )
+  );
 }

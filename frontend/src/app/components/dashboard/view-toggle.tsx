@@ -26,9 +26,9 @@ export default function ViewToggle() {
         onClick={() => toggleView("all")}
         className={cn(
           "text-sm transition-all px-2 py-1 rounded-md hover:bg-accent",
-          activeView === "all" 
-            ? "font-bold text-primary" 
-            : "font-normal text-muted-foreground"
+          activeView === "all"
+            ? "font-bold text-primary"
+            : "font-normal text-muted-foreground",
         )}
       >
         All Widgets
@@ -37,13 +37,13 @@ export default function ViewToggle() {
         onClick={() => toggleView("favorites")}
         className={cn(
           "text-sm transition-all px-2 py-1 rounded-md hover:bg-accent",
-          activeView === "favorites" 
-            ? "font-bold text-primary" 
-            : "font-normal text-muted-foreground"
+          activeView === "favorites"
+            ? "font-bold text-primary"
+            : "font-normal text-muted-foreground",
         )}
       >
         Favorites
       </button>
     </div>
   );
-} 
+}

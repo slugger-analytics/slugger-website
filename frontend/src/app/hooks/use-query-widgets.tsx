@@ -60,11 +60,12 @@ function useQueryWidgets() {
 
 export const callGetWidgetCollaborators = async (widgetId: number) => {
   try {
-    const widgetCollaborators: WidgetCollaboratorsType[] = await getWidgetCollaborators(widgetId);
+    const widgetCollaborators: WidgetCollaboratorsType[] =
+      await getWidgetCollaborators(widgetId);
     setTargetWidgetCollaborators(widgetCollaborators);
   } catch (error) {
     console.error("Error fetching widget collaborators:", error);
   }
-}
+};
 
 export default useQueryWidgets;

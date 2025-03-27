@@ -133,17 +133,40 @@ export const validateSession = async () => {
 
 export const sendPasswordResetEmail = async (email: string, otp: string) => {
   try {
-    const response = await fetch(`${API_URL}/api/users/send-password-reset-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${API_URL}/api/users/send-password-reset-email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, otp }),
       },
-      body: JSON.stringify({ email, otp }),
-    })
+    );
     const res = await response.json();
     console.log(res);
   } catch (error) {
     console.error("Error sending password reset email:", error);
     throw error;
   }
-}
+};
+
+export const resetPassword = async (email: string, password: string) => {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/users/reset-password`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      },
+    );
+    const res = await response.json();
+    console.log(res);
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    throw error;
+  }
+};

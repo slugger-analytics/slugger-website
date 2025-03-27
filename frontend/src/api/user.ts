@@ -134,7 +134,7 @@ export const searchUserByEmail = async (email: string): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/api/users/search?email=${email}`);
     const res = await response.json();
-    
+
     if (!res.success) {
       throw new Error(res.message);
     }
