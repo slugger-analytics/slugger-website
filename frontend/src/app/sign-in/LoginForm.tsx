@@ -55,7 +55,7 @@ const LoginForm = () => {
   };
 
   return (
-    <Card className="w-[450px] pb-5 px-5">
+    <Card className="w-[450px] max-w-[calc(100%-2rem)] min-w-[360px] pb-5 px-5">
       <CardHeader className="flex flex-col items-center justify-center">
         <div className="mb-2">
           <LogoButton width={70} height={70} />
