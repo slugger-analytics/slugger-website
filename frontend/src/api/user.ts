@@ -144,3 +144,28 @@ export const searchUserByEmail = async (email: string): Promise<any> => {
     throw error;
   }
 };
+
+type updateUserType = {
+  first?: string;
+  last?: string;
+}
+export const editUser = async(id: number, data: updateUserType) => {
+  try {
+    console.log(data)
+    const response = await fetch(`${API_URL}/api/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(data),
+    });
+    const res = await response.json();
+
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+    return true;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+}

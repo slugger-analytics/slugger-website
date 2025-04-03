@@ -258,6 +258,22 @@ export function clearUser() {
   $user.set(emptyUser);
 }
 
+type UpdateUserType = {
+  first?: string;
+  last?: string;
+}
+export function updateStoreUser({ first, last }: UpdateUserType) {
+  const user = $user.get();
+
+  if (!user) return;
+
+  $user.set({
+    ...user,
+    ...(first !== undefined && { first }),
+    ...(last !== undefined && { last })
+  });
+}
+
 export function setCategories(categories: CategoryType[]) {
   $categories.set(categories);
 }

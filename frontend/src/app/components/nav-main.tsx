@@ -1,6 +1,6 @@
 "use client";
 
-import { type LucideIcon } from "lucide-react";
+import { type LucideIcon, ChevronRight } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -10,7 +10,8 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
 import { useAuth } from "../contexts/AuthContext";
-import { Button } from "./ui/button";
+import { CollapsibleTrigger, Collapsible } from "./ui/collapsible";
+import Settings from "../settings/settings";
 
 export function NavMain({
   items,
@@ -49,7 +50,7 @@ export function NavMain({
   return (
     <SidebarMenu>
       {items.map((item) =>
-        shouldShowItem(item.title) ? (
+        shouldShowItem(item.title) && item.title !== "Settings" ? (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton asChild onClick={() => handleRedirect(item.url)}>
               <button className="flex items-start p-5">

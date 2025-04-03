@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Home, BookOpenCheck, BookText } from "lucide-react";
+import { Home, BookOpenCheck, BookText, Settings } from "lucide-react";
 
 import { NavUser } from "@/app/components/nav-user";
 import { NavMain } from "@/app/components/nav-main";

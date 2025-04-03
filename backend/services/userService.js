@@ -199,3 +199,48 @@ export async function signUpUserWithCognito(userData) {
     throw new Error(`Cognito signup failed: ${error.message}`);
   }
 }
+
+export async function updateUser({
+  id,
+  first,
+  last
+}) {
+  const updates = [];
+  const values = [];
+  let index = 1;
+
+  // Dynamically construct query based on which parameters are defined
+  if (first !== undefined) {
+    if (first.length <= 0 || first.length > 50) {
+      throw new Error('First name must be between 0 and 50 characters');
+    }
+    updates.push(`first_name = $${index++}`);
+    values.push(first);
+  }
+  if (last !== undefined) {
+    if (last.length <= 0 || last.length > 50) {
+      throw new Error('Last name must be between 0 and 50 characters');
+    }
+    updates.push(`last_name = $${index++}`);
+    values.push(last);
+  }
+
+  values.push(id);
+
+  const editQuery = `
+        UPDATE users
+        SET ${updates.join(", ")}
+        WHERE user_id = $${index}
+        RETURNING *
+    `;
+
+  try {
+    if (updates.length > 0) {
+      await pool.query(editQuery, values);
+      return;
+    }
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw new Error("Failed to update user");
+  }
+}
