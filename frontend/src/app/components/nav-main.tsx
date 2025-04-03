@@ -37,6 +37,12 @@ export function NavMain({
     if (title === "My Team") {
       return user.role.toLowerCase() === "league";
     }
+    if (title === "Pending Developers") {
+      return user.role.toLowerCase() === "master";
+    }
+    if (title === "Home") {
+      return user.role.toLowerCase() !== "master";
+    }
     return true;
   };
 

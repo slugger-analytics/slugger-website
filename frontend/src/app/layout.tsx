@@ -5,8 +5,13 @@ import { Toaster } from "./components/ui/toaster";
 export const metadata = {
   title: "ALPB Analytics Platform widget registration example",
   description:
-    "Sample form to register a widget for the ALPB Analytics Platform.",
+    "Discover advanced insights and data that redefine your understanding of the game.Developed by the Johns Hopkins Sports Analytics Research Group.",
 };
+
+export const viewport= {
+  initialScale: 1,
+  width: 'device-width'
+}
 
 export default function RootLayout({
   children,

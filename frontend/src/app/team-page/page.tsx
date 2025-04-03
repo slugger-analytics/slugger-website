@@ -24,6 +24,21 @@ import {
   removeTeamMember,
   getTeam,
 } from "@/api/teams";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger
+} from "../components/ui/dropdown-menu"
+import { MoreVertical } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/app/components/ui/alert-dialog"; // UI components for the alert dialog
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -126,6 +141,10 @@ export default function TeamPage() {
     }
   };
 
+  useEffect(() => {
+    console.log(members)
+  }, [members])
+
   return (
     <ProtectedRoute role="league">
       <SidebarProvider>
@@ -147,7 +166,7 @@ export default function TeamPage() {
                 </div>
               )}
 
-              <div className="bg-white rounded-lg shadow-sm border mb-8">
+              <div className="bg-white rounded-lg shadow-sm border mb-8 max-w-[calc(100%-2rem)] min-w-[360px]">
                 <div className="p-6 border-b">
                   <h2 className="text-xl font-semibold">Team Members</h2>
                 </div>
@@ -192,24 +211,88 @@ export default function TeamPage() {
                           </div>
                           {user.is_admin && member.user_id !== user.id && (
                             <div className="flex items-center gap-2">
-                              {!member.is_admin && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => promoteMember(member.user_id)}
-                                >
-                                  Promote to Admin
-                                </Button>
-                              )}
-                              {member.user_id !== user.id && (
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => removeMember(member.user_id)}
-                                >
-                                  Remove
-                                </Button>
-                              )}
+                              {/* Buttons for larger screens */}
+                              <div className="hidden md:flex gap-2">
+                                {!member.is_admin && (
+                                  <Button size="sm" variant="outline" onClick={() => promoteMember(member.user_id)}>
+                                    Promote to Admin
+                                  </Button>
+                                )}
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                      <Button size="sm" variant="destructive">
+                                        Remove
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>
+                                          {`Are you sure you want to remove ${member.first} from your team?`}
+                                        </AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          They’ll need a new invite to rejoin.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction asChild>
+                                          <Button
+                                            className="bg-[#EF4444] hover:bg-[#f05454]"
+                                            onClick={() => removeMember(member.user_id)}
+                                          >
+                                            Remove
+                                          </Button>
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                              </div>
+
+                              {/* Dropdown menu for smaller screens */}
+                              <div className="md:hidden">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button size="icon" variant="ghost">
+                                      <MoreVertical className="h-5 w-5" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {!member.is_admin && (
+                                      <DropdownMenuItem onClick={() => promoteMember(member.user_id)}>
+                                        Promote to Admin
+                                      </DropdownMenuItem>
+                                    )}
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem className="bg-[#EF4444] hover:bg-[#f05454] text-white" onSelect={(e) => e.preventDefault()}>
+                                          Remove
+                                        </DropdownMenuItem>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>
+                                            {`Are you sure you want to remove ${member.first} from your team?`}
+                                          </AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            They’ll need a new invite to rejoin.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction asChild>
+                                            <Button
+                                              className="bg-[#EF4444] hover:bg-[#f05454]"
+                                              onClick={() => removeMember(member.user_id)}
+                                            >
+                                              Remove
+                                            </Button>
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </div>
                           )}
                         </div>
