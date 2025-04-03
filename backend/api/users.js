@@ -10,6 +10,7 @@ import {
   unfavoriteWidget,
   createUser,
   signUpUserWithCognito,
+  updateUser,
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
 import authGuard from "../middleware/auth-guard.js";
@@ -427,6 +428,44 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+router.patch('/:id', authGuard, async (req, res) => {
+  const { first, last } = req.body;
+
+  try {
+    const id = parseInt(req.params.id);
+
+    // Ensure target user exists
+    const selectUserById = `
+      SELECT *
+      FROM USERS
+      WHERE user_id = $1
+    `
+    const targetUserRes = await pool.query(selectUserById, [id]);
+    if (targetUserRes.rowCount === 0) {
+      res.status(404).json({
+        success: false,
+        message: "Widget not found",
+      });
+      return;
+    }
+
+    await updateUser({
+      id,
+      first,
+      last
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "User updated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`,
+    });
+  }
+})
 
 
 export default router;

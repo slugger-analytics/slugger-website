@@ -30,23 +30,27 @@ export async function getTeam(id) {
 
 export async function getTeamMembers(teamId) {
   console.log("In the getTeamMembers function");
-  console.log("TeamID");
-  console.log(teamId);
+  console.log("TeamID:", teamId);
   console.log("Actually getting team members");
+
   try {
     const result = await pool.query(
       `
-            SELECT *
-            FROM users
-            WHERE team_id = $1
-        `,
-      [teamId],
+      SELECT * FROM users WHERE team_id = $1
+      `,
+      [teamId]
     );
-    const members = result.rows;
+
+    const members = result.rows.map(({ first_name, last_name, ...rest }) => ({
+      first: first_name,
+      last: last_name,
+      ...rest,
+    }));
+
     return members;
   } catch (error) {
-    throw new error(
-      error.message ?? `Error getting members for team with id ${teamId}`,
+    throw new Error(
+      error.message ?? `Error getting members for team with id ${teamId}`
     );
   }
 }

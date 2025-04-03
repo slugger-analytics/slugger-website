@@ -1,6 +1,6 @@
 "use client";
 
-import { BadgeCheck, Bell, LogOut, Sparkles } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 
 import {
   Avatar,
@@ -27,6 +27,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/store";
 import { useAuth } from "../contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 export function NavUser() {
   const { isMobile } = useSidebar();
@@ -34,6 +35,7 @@ export function NavUser() {
   const [initials, setInitials] = useState("");
   const [fullName, setFullName] = useState("");
   const { logout } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     setInitials(`${user.first?.[0] ?? ""}${user.last?.[0] ?? ""}`);
@@ -81,6 +83,10 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push('/settings')}>
+              <Settings />
+              Settings
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={logout}>
               <LogOut />
               Log out
