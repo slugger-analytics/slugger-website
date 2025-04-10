@@ -3,7 +3,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/toaster";
 
 export const metadata = {
-  title: "ALPB Analytics Platform widget registration example",
+  title: "SLUGGER",
   description:
     "Discover advanced insights and data that redefine your understanding of the game.Developed by the Johns Hopkins Sports Analytics Research Group.",
 };

@@ -89,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
-                  <span className="font-semibold">ALPB Analytics</span>
+                  <span className="font-semibold">SLUGGER</span>
                   <span className="font-normal">{roleDisplay}</span>
                 </div>
               </a>

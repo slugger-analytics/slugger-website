@@ -17,7 +17,6 @@ function useMutationUser() {
     {first, last}
   ) => {
     try {
-        setLoading(true);
       await editUser(user.id, {first, last});
       updateStoreUser({
         first,
@@ -25,8 +24,6 @@ function useMutationUser() {
       });
     } catch (error) {
       console.error("Error updating user:", error);
-    } finally {
-        setLoading(false);
     }
   };
 

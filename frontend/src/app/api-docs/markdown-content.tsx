@@ -59,7 +59,7 @@ export default function MarkdownContent() {
 
 ## Overview
 
-The Atlantic League Analytics Platform provides a robust API to access Trackman data and manage widgets. This API enables authorized users to interact with data and resources securely, facilitating the development and integration of widgets for analytical purposes.
+SLUGGER provides a robust API to access Trackman data and manage widgets. This API enables authorized users to interact with data and resources securely, facilitating the development and integration of widgets for analytical purposes.
 
 ## Base URL
 
@@ -207,14 +207,14 @@ GET /pitches
 \`\`\`
 ## __6. Auth Integration - Restricted Access Mode__
 
-ALPB Analytics provides a simple framework for integrating with our authorization system using \`Restricted Access\` mode.
+SLUGGER provides a simple framework for integrating with our authorization system using \`Restricted Access\` mode.
 
 #### What Does Enabling \`Restricted Access Mode\` For a Widget Do?
 
 Enabling \`Restricted Mode\` enforces the following access rules:
 
-- **Public Widgets** → Can only be accessed through ALPB Analytics.
-- **Private Widgets** → Can only be accessed through ALPB Analytics by an **authorized user**.
+- **Public Widgets** → Can only be accessed through SLUGGER.
+- **Private Widgets** → Can only be accessed through SLUGGER by an **authorized user**.
 
 #### Getting Started With Restricted Access Mode
 
@@ -225,7 +225,7 @@ Enabling \`Restricted Mode\` enforces the following access rules:
    ?alpb_token=<string>
    \`\`\`
 
-   Your widget can validate the token to ensure it is being accessed only by an authorized user through ALPB Analytics by making the following request:
+   Your widget can validate the token to ensure it is being accessed only by an authorized user through SLUGGER by making the following request:
 
 \`\`\`text
 POST /validate-token
@@ -234,7 +234,7 @@ POST /validate-token
 \`\`\`json
 {
     "alpb_token": "string", // From your widget's url query parameters
-    "widget_id": "string" // From 'Home' -> 'Edit' -> 'widget_id' on ALPB Analytics
+    "widget_id": "string" // From 'Home' -> 'Edit' -> 'widget_id' on SLUGGER
 }
 \`\`\`
 
