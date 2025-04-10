@@ -83,7 +83,7 @@ export function NavUser() {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/settings')}>
+            <DropdownMenuItem onClick={() => router.push("/settings")}>
               <Settings />
               Settings
             </DropdownMenuItem>

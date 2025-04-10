@@ -153,16 +153,13 @@ export const sendPasswordResetEmail = async (email: string, otp: string) => {
 
 export const resetPassword = async (email: string, password: string) => {
   try {
-    const response = await fetch(
-      `${API_URL}/api/users/reset-password`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
+    const response = await fetch(`${API_URL}/api/users/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ email, password }),
+    });
     const res = await response.json();
     console.log(res);
   } catch (error) {

@@ -244,3 +244,4 @@ export async function updateUser({
     throw new Error("Failed to update user");
   }
 }
+

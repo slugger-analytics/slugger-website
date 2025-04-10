@@ -8,7 +8,7 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
-} from "@/app/components/ui/sidebar"
+} from "@/app/components/ui/sidebar";
 import { useAuth } from "../contexts/AuthContext";
 import DashboardLoading from "../components/dashboard/dashboard-loading";
 import { AppSidebar } from "@/app/components/app-sidebar";
@@ -41,8 +41,8 @@ export default function PendingDevelopersPage() {
       toast({
         title: "Success",
         description: "Developer account approved and API key sent",
-        variant: "success"
-      })
+        variant: "success",
+      });
       setRequests((prev) => prev.filter((req) => req.request_id !== requestId));
     } catch (error: any) {
       toast({
@@ -54,7 +54,7 @@ export default function PendingDevelopersPage() {
   };
 
   return (
-      <ProtectedRoute role="master">
+    <ProtectedRoute role="master">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
@@ -64,43 +64,48 @@ export default function PendingDevelopersPage() {
           {loading ? (
             <DashboardLoading />
           ) : (
-              <div className="container mx-auto p-8">
-                <h1 className="text-3xl mb-8 text-center">
-                  Pending Developers
-                </h1>
+            <div className="container mx-auto p-8">
+              <h1 className="text-3xl mb-8 text-center">Pending Developers</h1>
 
-                {status && (
-                  <p className="text-center text-green-600 mb-4 font-semibold">
-                    {status}
-                  </p>
-                )}
+              {status && (
+                <p className="text-center text-green-600 mb-4 font-semibold">
+                  {status}
+                </p>
+              )}
 
-                {requests.length === 0 ? (
-                  <p className="text-center text-gray-600">No pending developers.</p>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                    {requests.map((request) => (
-                      <Card
-                        key={request.request_id}
-                        className="p-6 bg-white rounded-lg shadow-md border border-gray-200"
-                      >
-                        <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                          {request.first_name} {request.last_name}
-                        </h3>
-                        <p className="text-gray-600 mb-2">{request.email}</p>
-                        <p className="text-sm text-yellow-600 mb-4">
-                          Status: {request.status}
-                        </p>
-                        <div className="flex justify-between">
-                          <Button className="bg-green-500 hover:bg-green-400" onClick={() => handleApproveDeveloper(request.request_id)}>
-                            Approve
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {requests.length === 0 ? (
+                <p className="text-center text-gray-600">
+                  No pending developers.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {requests.map((request) => (
+                    <Card
+                      key={request.request_id}
+                      className="p-6 bg-white rounded-lg shadow-md border border-gray-200"
+                    >
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                        {request.first_name} {request.last_name}
+                      </h3>
+                      <p className="text-gray-600 mb-2">{request.email}</p>
+                      <p className="text-sm text-yellow-600 mb-4">
+                        Status: {request.status}
+                      </p>
+                      <div className="flex justify-between">
+                        <Button
+                          className="bg-green-500 hover:bg-green-400"
+                          onClick={() =>
+                            handleApproveDeveloper(request.request_id)
+                          }
+                        >
+                          Approve
+                        </Button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </SidebarInset>
       </SidebarProvider>

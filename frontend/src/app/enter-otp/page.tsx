@@ -37,18 +37,17 @@ export default function EnterOtpPage() {
   const { logout, setLoading } = useAuth();
 
   const handleSubmitOtp = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      setLoading(true);
-      if (enteredOtp !== otp) {
-        toast({
-          title: "Error: invalid code",
-          variant: "destructive",
-        });
-      } else {
-        setOtpValidated(true);
-      }
-      setLoading(false);
-
+    e.preventDefault();
+    setLoading(true);
+    if (enteredOtp !== otp) {
+      toast({
+        title: "Error: invalid code",
+        variant: "destructive",
+      });
+    } else {
+      setOtpValidated(true);
+    }
+    setLoading(false);
   };
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -69,7 +68,7 @@ export default function EnterOtpPage() {
           title: "Error",
           description: error,
           variant: "destructive",
-        })
+        });
         return;
       }
       await resetPassword(email, password);
@@ -77,19 +76,19 @@ export default function EnterOtpPage() {
       toast({
         title: "Success!",
         description: "Your password was reset successfully.",
-        variant: "success"
-      })
-      router.push('/sign-in');
+        variant: "success",
+      });
+      router.push("/sign-in");
     } catch (error) {
-      toast ({
+      toast({
         title: "Internal error",
         description: "Please try again later",
-        variant: "destructive"
-      })
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex justify-center items-center min-h-dvh">
@@ -103,73 +102,69 @@ export default function EnterOtpPage() {
         <CardContent>
           {otpValidated ? (
             <form onSubmit={(e) => handleResetPassword(e)}>
-            <div className="space-y-4 flex flex-col">
-              <div>
-                <Label
-                  htmlFor="password"
-                  className="block mb-2"
-                >
-                  Enter New Password
-                </Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required={true}
-                  className="w-full"
-                />
-              </div>
-              <div>
-                <Label
-                  htmlFor="confirm-password"
-                  className="block mb-2"
-                >
-                  Confirm Password
-                </Label>
-                <Input
-                  id="confirm-password"
-                  name="confirm-password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required={true}
-                  className="w-full"
-                />
-              </div>
-              <div className="w-full flex justify-center">
-                <div className="min-w-32 w-[70%]">
-                  <SubmitButton btnText="Reset Password" />
+              <div className="space-y-4 flex flex-col">
+                <div>
+                  <Label htmlFor="password" className="block mb-2">
+                    Enter New Password
+                  </Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required={true}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="confirm-password" className="block mb-2">
+                    Confirm Password
+                  </Label>
+                  <Input
+                    id="confirm-password"
+                    name="confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required={true}
+                    className="w-full"
+                  />
+                </div>
+                <div className="w-full flex justify-center">
+                  <div className="min-w-32 w-[70%]">
+                    <SubmitButton btnText="Reset Password" />
+                  </div>
                 </div>
               </div>
-            </div>
             </form>
           ) : (
             <form onSubmit={(e) => handleSubmitOtp(e)}>
-            <Label className="width-full flex justify-center">Check your email for a one time code.</Label>
-            <div className="space-y-4 flex flex-col items-center">
-              <InputOTP
-                maxLength={6}
-                value={enteredOtp}
-                onChange={(value) => setEnteredOtp(value)}
-              >
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                </InputOTPGroup>
-                <InputOTPSeparator />
-                <InputOTPGroup>
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-              <div className="min-w-32 w-[70%]">
-                    <SubmitButton btnText="Enter" />
+              <Label className="width-full flex justify-center">
+                Check your email for a one time code.
+              </Label>
+              <div className="space-y-4 flex flex-col items-center">
+                <InputOTP
+                  maxLength={6}
+                  value={enteredOtp}
+                  onChange={(value) => setEnteredOtp(value)}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
+                <div className="min-w-32 w-[70%]">
+                  <SubmitButton btnText="Enter" />
+                </div>
               </div>
-            </div>
             </form>
           )}
         </CardContent>

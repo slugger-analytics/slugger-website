@@ -261,8 +261,9 @@ export function clearUser() {
 type UpdateUserType = {
   first?: string;
   last?: string;
-}
-export function updateStoreUser({ first, last }: UpdateUserType) {
+  teamId?: string;
+};
+export function updateStoreUser({ first, last, teamId }: UpdateUserType) {
   const user = $user.get();
 
   if (!user) return;
@@ -270,7 +271,8 @@ export function updateStoreUser({ first, last }: UpdateUserType) {
   $user.set({
     ...user,
     ...(first !== undefined && { first }),
-    ...(last !== undefined && { last })
+    ...(last !== undefined && { last }),
+    ...(teamId !== undefined && { teamId }),
   });
 }
 

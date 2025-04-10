@@ -11,6 +11,8 @@ import {
 } from "../services/teamService";
 import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas";
 import jwt from 'jsonwebtoken';
+import { getUserData } from "../services/widgetService";
+import pool from "../db";
 
 const router = Router();
 
@@ -247,5 +249,29 @@ router.post("/validate-invite", async (req, res) => {
     });
   }
 });
+
+// remove a member from a team
+router.delete("/:teamId/members/:memberId", async (req, res) => {
+  const { teamId, memberId } = req.params;
+  try {
+    await getTeam(teamId); // Assert team exists
+    await getUserData(memberId); // Assert user exists
+    const deleteQuery = `
+      UPDATE users
+      SET team_id = NULL
+      WHERE user_id = $1
+    `
+    await pool.query(deleteQuery, [memberId]);
+    res.status(200).json({
+      success: true,
+      message: "User removed from team successfully"
+    })
+  } catch (error) {
+    console.error("Error removing team member", error);
+    res.status(500).json({
+      success: false,
+    });
+  }
+})
 
 export default router;
