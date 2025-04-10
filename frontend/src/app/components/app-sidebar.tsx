@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Home, BookOpenCheck, BookText, Settings } from "lucide-react";
+import { Home, BookOpenCheck, BookText, Bug } from "lucide-react";
 
 import { NavUser } from "@/app/components/nav-user";
 import { NavMain } from "@/app/components/nav-main";
@@ -61,6 +61,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: BookText,
       isActive: false,
     },
+    {
+      title: "Report a Bug",
+      url: "https://docs.google.com/forms/d/e/1FAIpQLSf2YnXL5XnTFYlzd40fad55tkFnE3ua2Oq-hTIRMQeGmIPHBA/viewform?usp=header",
+      icon: Bug,
+      isActive: false,
+    }
   ]);
   React.useEffect(() => {
     if (user.role === "widget developer") {

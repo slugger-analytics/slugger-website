@@ -128,10 +128,10 @@ export default function Home() {
           <p className="text-sm font-medium text-gray-400">
             Questions?{" "}
             <Link
-              href="/help"
+              href="https://docs.google.com/forms/d/e/1FAIpQLSf2YnXL5XnTFYlzd40fad55tkFnE3ua2Oq-hTIRMQeGmIPHBA/viewform?usp=header"
               className="text-blue-400 hover:text-blue-300 transition-colors duration-300 font-semibold"
             >
-              Contact bsantan3@jh.edu or dbenjam9@jh.edu
+              Contact us here
             </Link>
           </p>
         </motion.footer>
