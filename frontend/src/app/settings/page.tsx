@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { AppSidebar } from "@/app/components/app-sidebar";
 import {
@@ -12,23 +12,19 @@ import { useAuth } from "../contexts/AuthContext";
 import Settings from "./settings";
 
 export default function SettingsPage() {
-    const { loading } = useAuth();
+  const { loading } = useAuth();
 
-    return (
-        <ProtectedRoute>
-            <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset>
-                    {" "}
-                    {/* Ensures the route is protected and only accessible to authenticated users */}
-                    <SidebarTrigger />
-                    {loading ? (
-                        <DashboardLoading />
-                    ) : (
-                        <Settings />
-                    )}
-                </SidebarInset>
-            </SidebarProvider>
-        </ProtectedRoute>
-    )
+  return (
+    <ProtectedRoute>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          {" "}
+          {/* Ensures the route is protected and only accessible to authenticated users */}
+          <SidebarTrigger />
+          {loading ? <DashboardLoading /> : <Settings />}
+        </SidebarInset>
+      </SidebarProvider>
+    </ProtectedRoute>
+  );
 }

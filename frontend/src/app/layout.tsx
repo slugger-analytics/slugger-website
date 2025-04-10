@@ -8,10 +8,10 @@ export const metadata = {
     "Discover advanced insights and data that redefine your understanding of the game.Developed by the Johns Hopkins Sports Analytics Research Group.",
 };
 
-export const viewport= {
+export const viewport = {
   initialScale: 1,
-  width: 'device-width'
-}
+  width: "device-width",
+};
 
 export default function RootLayout({
   children,

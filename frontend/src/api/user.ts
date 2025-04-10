@@ -148,10 +148,10 @@ export const searchUserByEmail = async (email: string): Promise<any> => {
 type updateUserType = {
   first?: string;
   last?: string;
-}
-export const editUser = async(id: number, data: updateUserType) => {
+};
+export const editUser = async (id: number, data: updateUserType) => {
   try {
-    console.log(data)
+    console.log(data);
     const response = await fetch(`${API_URL}/api/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -168,4 +168,4 @@ export const editUser = async(id: number, data: updateUserType) => {
     console.error("Error updating user:", error);
     throw error;
   }
-}
+};

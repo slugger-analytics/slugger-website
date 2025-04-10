@@ -26,7 +26,11 @@ type InputProps = {
  * @param {InputProps} props - Props for the SubmitButton component.
  * @returns {JSX.Element} - The JSX representation of the submit button.
  */
-export default function SubmitButton({ btnText, className, onClick }: InputProps) {
+export default function SubmitButton({
+  btnText,
+  className,
+  onClick,
+}: InputProps) {
   const { pending } = useFormStatus(); // Tracks whether the form is pending submission
   const { loading } = useAuth();
 

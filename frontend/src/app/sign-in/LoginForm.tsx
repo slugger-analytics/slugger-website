@@ -88,7 +88,6 @@ const LoginForm = () => {
               Forgot your password?
             </Link>
           </div>
-
         </form>
       </CardContent>
     </Card>

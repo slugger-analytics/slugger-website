@@ -35,7 +35,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Pending Developers",
       url: "/pending-developers",
       icon: Home,
-      isActive: false
+      isActive: false,
     },
     {
       title: "Register Widget",
@@ -66,7 +66,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       url: "https://docs.google.com/forms/d/e/1FAIpQLSf2YnXL5XnTFYlzd40fad55tkFnE3ua2Oq-hTIRMQeGmIPHBA/viewform?usp=header",
       icon: Bug,
       isActive: false,
-    }
+    },
   ]);
   React.useEffect(() => {
     if (user.role === "widget developer") {

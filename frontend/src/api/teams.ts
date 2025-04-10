@@ -1,18 +1,9 @@
+import { TeamMember } from "@/data/types";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface Team {
   team_id: string;
-  team_name: string;
-}
-
-interface TeamMember {
-  user_id: string;
-  first: string;
-  last: string;
-  email: string;
-  is_admin: boolean;
-  team_role: string;
-  teamId: string;
   team_name: string;
 }
 
@@ -83,11 +74,36 @@ export async function promoteTeamMember(
   }
 }
 
+export async function demoteTeamMember(
+  teamId: string,
+  memberId: number,
+): Promise<TeamMember> {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/teams/${teamId}/members/${memberId}/demote`,
+      {
+        method: "POST",
+      },
+    );
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message);
+    }
+
+    return data.data;
+  } catch (error) {
+    console.error("Error demoting team member:", error);
+    throw error;
+  }
+}
+
 export async function removeTeamMember(
   teamId: string,
   memberId: number,
 ): Promise<void> {
   try {
+    console.log({ teamId, memberId });
     const response = await fetch(
       `${API_URL}/api/teams/${teamId}/members/${memberId}`,
       {

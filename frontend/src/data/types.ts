@@ -108,3 +108,14 @@ export interface WidgetCollaboratorsType {
   email: string;
   role: string; // "member" | "owner"
 }
+
+export interface TeamMember {
+  user_id: string;
+  first: string;
+  last: string;
+  email: string;
+  is_admin: boolean;
+  team_role: string;
+  team_id: string;
+  team_name: string;
+}
