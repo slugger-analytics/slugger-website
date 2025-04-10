@@ -32,7 +32,7 @@ export default function APIDocs() {
         <SidebarInset>
           <SidebarTrigger />
           <div className="p-10">
-            <h1 className="m-0">ALPB Analytics API Documentation</h1>
+            <h1 className="m-0">SLUGGER API Documentation</h1>
             <MarkdownContent />
           </div>
         </SidebarInset>

@@ -60,7 +60,7 @@ const LoginForm = () => {
         <div className="mb-2">
           <LogoButton width={70} height={70} />
         </div>
-        <CardDescription>Sign in to continue to ALPB Analytics</CardDescription>
+        <CardDescription>Sign in to continue to SLUGGER</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit}>

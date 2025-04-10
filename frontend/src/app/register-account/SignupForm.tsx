@@ -164,7 +164,7 @@ export function SignupForm() {
           <LogoButton width={70} height={70} />
         </div>
         <CardTitle className="text-alpbBlue">
-          Get started with ALPB Analytics
+          Get started with SLUGGER
         </CardTitle>
       </CardHeader>
       <CardContent>

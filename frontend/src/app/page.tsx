@@ -73,7 +73,7 @@ export default function Home() {
             >
               Welcome to{" "}
               <span className="bg-white text-transparent bg-clip-text">
-                ALPB Analytics
+                SLUGGER
               </span>
             </motion.h1>
 
