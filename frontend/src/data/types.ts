@@ -119,3 +119,47 @@ export interface TeamMember {
   team_id: string;
   team_name: string;
 }
+
+export interface LeagueStandingsData {
+  updatedAt: string;
+  year: string;
+  standings: Standings;
+}
+
+export interface Standings {
+  leagueid: string;
+  leaguename: string;
+  leagueshortname: string;
+  season: Season;
+  conference: Conference[];
+}
+
+export interface Season {
+  seasonid: string;
+  seasonname: string;
+  seasonshortname: string;
+}
+
+export interface Conference {
+  name: string;
+  division: Division[];
+}
+
+export interface Division {
+  divisionid: string;
+  name: string;
+  team: Team[];
+}
+
+export interface Team {
+  teamlinkid: string;
+  teamid: string;
+  teamname: string;
+  shortname: string;
+  wins: string;
+  losses: string;
+  pct: string;
+  gb: Record<string, unknown>; // Placeholder for empty object; update if structure is known
+  streak: string;
+  last10: string;
+}
