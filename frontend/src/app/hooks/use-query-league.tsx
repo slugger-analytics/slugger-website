@@ -9,6 +9,7 @@ export default function useQueryLeague() {
         try {
             setStandingsLoading(true);
             const standings = await fetchStandings();
+            console.log(standings);
             setStandings(standings);
         } catch (error) {
           console.error("Error fetching widgets:", error);
