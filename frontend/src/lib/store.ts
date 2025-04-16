@@ -5,6 +5,7 @@ import {
   WidgetType,
   CategoryType,
   WidgetCollaboratorsType,
+  LeagueStandingsData,
 } from "@/data/types";
 import { logger } from "@nanostores/logger";
 
@@ -36,6 +37,22 @@ const emptyWidget: WidgetType = {
   },
 };
 
+const emptyStandingsData: LeagueStandingsData = {
+    updatedAt: '',
+    year: '',
+    standings: {
+      leagueid: '',
+      leaguename: '',
+      leagueshortname: '',
+      season: {
+        seasonid: '',
+        seasonname: '',
+        seasonshortname: ''
+      },
+      conference: []
+    }
+}
+
 export const $widgets = atom<WidgetType[]>([]);
 export const $targetWidget = atom<WidgetType>(emptyWidget);
 export const $widgetQuery = atom<string>("");
@@ -55,6 +72,8 @@ export const $categories = atom<CategoryType[]>([]);
 
 export const $otpCode = atom<string>("");
 export const $passwordResetEmail = atom<string>("");
+
+export const $standings = atom<LeagueStandingsData>(emptyStandingsData);
 
 export function clearStores() {
   $widgets.set([]);
@@ -76,6 +95,10 @@ export function clearStores() {
 
   $otpCode.set("");
   $passwordResetEmail.set("");
+}
+
+export function setStandings(standings: LeagueStandingsData) {
+  $standings.set(standings);
 }
 
 export function setOtpCode(otp: string) {
