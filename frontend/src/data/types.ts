@@ -163,3 +163,83 @@ export interface Team {
   streak: string;
   last10: string;
 }
+
+export interface LeagueLeadersData {
+  updatedAt: string;
+  year: string;
+  stats: {
+    link: string;
+    season: string;
+    pitching: {
+      player: PitchingPlayer[];
+    };
+    batting: {
+      player: BattingPlayer[];
+    };
+  };
+}
+
+export interface PitchingPlayer {
+  playerlinkid: string;
+  playerid: string;
+  jersey: string;
+  playername: string;
+  firstname: string;
+  lastname: string;
+  teamname: TeamName;
+  wins: string;
+  losses: string;
+  ip: string;
+  runs: string;
+  er: string;
+  hits: string;
+  bb: string;
+  so: string;
+  bf: string;
+  games: string;
+  gs: string;
+  cg: string;
+  cgl: string;
+  sho: string;
+  sv: string;
+  bsv: string;
+  oobp: string;
+  oslg: string;
+  oavg: string;
+  era: string;
+}
+
+export interface BattingPlayer {
+  playerlinkid: string;
+  playerid: string;
+  jersey: string;
+  playername: string;
+  firstname: string;
+  lastname: string;
+  teamname: TeamName;
+  position: string;
+  ab: string;
+  runs: string;
+  hits: string;
+  bib: string;
+  trib: string;
+  hr: string;
+  rbi: string;
+  bb: string;
+  hp: string;
+  so: string;
+  sf: string;
+  sb: string;
+  dp: string;
+  obp: string;
+  slg: string;
+  avg: string;
+}
+
+export interface TeamName {
+  id: string;
+  teamlinkid: string;
+  teamid: string;
+  fullname: string;
+  $t: string;
+}
