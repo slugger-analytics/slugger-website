@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchPendingDevelopers, approveDeveloper } from "@/api/developer";
+import { fetchPendingDevelopers, approveDeveloper, declineDeveloper } from "@/api/developer";
 import { PendingDeveloper } from "@/data/types";
 import ProtectedRoute from "../components/ProtectedRoutes";
 import {
@@ -53,6 +53,24 @@ export default function PendingDevelopersPage() {
     }
   };
 
+  const handleDeclineDeveloper = async (requestId: string) => {
+    try {
+      await declineDeveloper(requestId);
+      toast({
+        title: "Success",
+        description: "Developer declined",
+        variant: "success",
+      });
+      setRequests((prev) => prev.filter((req) => req.request_id !== requestId));
+    } catch (error: any) {
+      toast({
+        title: "Error declining developer",
+        description: error?.message || undefined,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <ProtectedRoute role="master">
       <SidebarProvider>
@@ -92,6 +110,14 @@ export default function PendingDevelopersPage() {
                         Status: {request.status}
                       </p>
                       <div className="flex justify-between">
+                        <Button
+                          className="bg-red-500 hover:bg-red-400"
+                          onClick={() =>
+                            handleDeclineDeveloper(request.request_id)
+                          }
+                        >
+                          Decline
+                        </Button>
                         <Button
                           className="bg-green-500 hover:bg-green-400"
                           onClick={() =>

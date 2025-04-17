@@ -1,22 +1,36 @@
-import { fetchStandings } from "@/api/league";
-import { setStandings } from "@/lib/store";
+import { fetchLeaders, fetchStandings } from "@/api/league";
+import { setLeagueLeaders, setStandings } from "@/lib/store";
 import { useState } from "react";
 
 export default function useQueryLeague() {
     const [standingsLoading, setStandingsLoading] = useState(false);
+    const [leadersLoading, setLeadersLoading] = useState(false);
 
-      const loadStandings = async () => {
-        try {
-            setStandingsLoading(true);
-            const standings = await fetchStandings();
-            console.log(standings);
-            setStandings(standings);
-        } catch (error) {
-          console.error("Error fetching widgets:", error);
-        } finally {
-          setStandingsLoading(false);
-        }
-      };
+    const loadStandings = async () => {
+      try {
+          setStandingsLoading(true);
+          const standings = await fetchStandings();
+          console.log(standings);
+          setStandings(standings);
+      } catch (error) {
+        console.error("Error fetching standings:", error);
+      } finally {
+        setStandingsLoading(false);
+      }
+    };
 
-    return { standingsLoading, loadStandings };
+    const loadLeagueLeaders = async () => {
+      try {
+        setLeadersLoading(true);
+        const leaders = await fetchLeaders();
+        console.log(leaders);
+        setLeagueLeaders(leaders);
+      } catch (error) {
+        console.error("Error fetching league leaders:", error);
+      } finally {
+        setLeadersLoading(false);
+      }
+    }
+
+    return { standingsLoading, loadStandings, leadersLoading, loadLeagueLeaders };
 }

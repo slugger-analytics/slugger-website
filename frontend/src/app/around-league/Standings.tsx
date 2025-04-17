@@ -3,7 +3,7 @@ import { useStore } from "@nanostores/react";
 import React, { useState, useEffect } from "react";
 import { Team, Division } from "@/data/types";
 import useQueryLeague from "../hooks/use-query-league";
-import { Card } from "./ui/card";
+import { Card } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs";
 import {
   Table,
@@ -20,7 +20,7 @@ type AroundLeagueProps = {
   setYear: React.Dispatch<React.SetStateAction<string>>;
 };
 
-const AroundLeague = ({ setYear }: AroundLeagueProps) => {
+const Standings = ({ setYear }: AroundLeagueProps) => {
   const { loadStandings } = useQueryLeague();
 
   const [standingsData, setStandingsData] = useState<Division[]>([]);
@@ -63,7 +63,7 @@ const AroundLeague = ({ setYear }: AroundLeagueProps) => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-sm border mb-8 max-w-[calc(100%-2rem)] min-w-[360px]">
+    <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-sm border mb-8 w-[50%] max-w-[calc(100%-2rem)] min-w-[360px]">
       <Tabs defaultValue="OVERALL" className="w-[400px] flex justify-center mb-5">
         <TabsList>
           <TabsTrigger value="OVERALL" onClick={() => setView("OVERALL")}>Overall</TabsTrigger>
@@ -106,4 +106,4 @@ const AroundLeague = ({ setYear }: AroundLeagueProps) => {
   );
 };
 
-export default AroundLeague;
+export default Standings;

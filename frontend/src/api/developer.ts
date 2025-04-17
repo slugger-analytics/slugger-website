@@ -49,3 +49,19 @@ export const approveDeveloper = async (requestId: string) => {
   }
   return data;
 };
+
+export const declineDeveloper = async (requestId: string) => {
+  const response = await fetch(
+    `${API_URL}/api/developers/pending/${requestId}/decline`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message);
+  }
+  return data;
+};
