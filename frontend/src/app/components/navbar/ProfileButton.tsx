@@ -24,17 +24,8 @@ type InputProps = {
  */
 export default function ProfileButton({ initials }: InputProps) {
   return (
-    <button
-      className="rounded-full size-10 bg-white mx-5 justify-self-end"
-      // Utility classes:
-      // - `rounded-full`: Makes the button circular
-      // - `size-10`: Sets the width and height of the button
-      // - `bg-white`: Sets the background color to white
-      // - `mx-5`: Adds horizontal margin for spacing
-      // - `justify-self-end`: Aligns the button to the end of its container if applicable
-    >
+    <button className="rounded-full size-10 bg-white mx-5 justify-self-end">
       <p className="text-sm">{initials}</p>
-      {/* The text inside the button, styled with `text-sm` for smaller font size */}
     </button>
   );
 }

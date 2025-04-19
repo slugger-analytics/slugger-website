@@ -1,6 +1,6 @@
 import { Router } from "express";
 import pool from "../db.js";
-import { createPendingDeveloper, approveDeveloper } from "../services/developerService.js";
+import { createPendingDeveloper, approveDeveloper, declineDeveloper } from "../services/developerService.js";
 import { signUpUserWithCognito } from "../services/userService.js";
 
 const router = Router();
@@ -14,6 +14,23 @@ router.post("/pending/:id/approve", async (req, res) => {
       success: true,
       message: "Developer approved and API key sent",
       data: result
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+});
+
+router.post("/pending/:id/decline", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await declineDeveloper(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Developer declined",
     });
   } catch (error) {
     res.status(500).json({

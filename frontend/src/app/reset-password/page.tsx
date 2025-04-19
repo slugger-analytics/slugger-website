@@ -16,7 +16,7 @@ import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import LogoButton from "../components/navbar/LogoButton";
 import { useStore } from "@nanostores/react";
-import { $otpCode, setOtpCode, setPasswordResetEmail } from "@/lib/store";
+import { $otpCode, setOtpCode, setPasswordResetEmail } from "@/lib/userStore";
 import SubmitButton from "../components/input/SubmitButton";
 import { useAuth } from "../contexts/AuthContext";
 

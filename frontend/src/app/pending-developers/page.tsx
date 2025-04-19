@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchPendingDevelopers, approveDeveloper, declineDeveloper } from "@/api/developer";
+import {
+  fetchPendingDevelopers,
+  approveDeveloper,
+  declineDeveloper,
+} from "@/api/developer";
 import { PendingDeveloper } from "@/data/types";
 import ProtectedRoute from "../components/ProtectedRoutes";
 import {

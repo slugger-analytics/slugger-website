@@ -11,9 +11,9 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
-import { $user, clearStores, clearUser } from "@/lib/store";
+import { clearStores } from "@/lib/utils";
+import { $user } from "@/lib/userStore";
 import { logoutUser } from "@/api/auth";
-import { delay } from "@/lib/utils";
 
 // The AuthContextType interface defines the shape of the context object
 interface AuthContextType {

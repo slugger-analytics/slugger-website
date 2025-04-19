@@ -1,6 +1,6 @@
 import useQueryWidgets from "@/app/hooks/use-query-widgets";
 import { useStore } from "@nanostores/react";
-import { $user } from "@/lib/store";
+import { $user } from "@/lib/userStore";
 import { useAuth } from "@/app/contexts/AuthContext";
 import Search from "./search";
 import FilterDropdown from "./filter-dropdown";

@@ -1,11 +1,3 @@
-/**
- * FilterDropdown Component
- *
- * This component renders a dropdown menu for managing filters. It includes functionality to toggle
- * a "Favorites" filter and category filters.
- * The state is managed using React's `useState` and `useEffect` hooks, along with `@nanostores/react` for shared state.
- */
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,10 +7,10 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
-} from "@/app/components/ui/dropdown-menu"; // UI components for dropdown functionality
+} from "@/app/components/ui/dropdown-menu";
 import { ArrowDownNarrowWideIcon } from "lucide-react";
-import { Button } from "../ui/button"; // Button component (not currently used but imported for possible extension)
-import { useStore } from "@nanostores/react"; // React hook for accessing nanostores
+import { Button } from "../ui/button";
+import { useStore } from "@nanostores/react";
 import {
   $filters,
   $sortBy,
@@ -27,16 +19,10 @@ import {
   setSortBy,
   setSortDirection,
   setTimeFrame,
-} from "@/lib/store"; // Nanostores state and actions for filters
-import { useState, useEffect } from "react"; // React hooks for managing component state and lifecycle
+} from "@/lib/widgetStore";
 import { Separator } from "../ui/separator";
 import { Check } from "lucide-react";
 
-/**
- * FilterDropdown Component
- *
- * @returns {JSX.Element} - A dropdown menu with filter options.
- */
 export default function SortDropdown() {
   // Accessing the shared state using nanostores
   const filters = useStore($filters);
@@ -46,20 +32,16 @@ export default function SortDropdown() {
 
   return (
     <DropdownMenu>
-      {/* Dropdown trigger button with an icon */}
       <DropdownMenuTrigger asChild>
         <button className="mx-3">
           <ArrowDownNarrowWideIcon className="size-6" />
         </button>
       </DropdownMenuTrigger>
 
-      {/* Dropdown menu content */}
       <DropdownMenuContent className="w-56">
-        {/* Dropdown label */}
         <DropdownMenuLabel>Sort By</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* Favorites filter option */}
         <DropdownMenuGroup>
           <Button
             variant="ghost"

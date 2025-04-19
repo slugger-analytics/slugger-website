@@ -144,7 +144,8 @@ GET /games
 - "Hagerstown Flying Boxcars"
 - "Gastonia Baseball Club"
 - "Charleston Dirty Birds"
-\`\`\`text
+\`\`\`
+
 ### 3. Pitch Management
 
 #### Get Pitch Data
@@ -192,6 +193,7 @@ GET /pitches
 - "BallCalled"
 - "FoulBallFieldable"
 \`\`\`
+
 #### __Valid Play Result Enum Values:__
 \`\`\`text
 - "Single"
@@ -205,6 +207,53 @@ GET /pitches
 - "Undefined"
 - null
 \`\`\`
+
+### 4. Player Management
+
+#### Get Player Details
+
+\`\`\`text
+GET /players
+\`\`\`
+
+**Query Parameters:**
+
+      
+\`\`\`text
+{
+  "player_batting_handedness": "string", // Enum: "Left", "Right", "Switch", "Unknown", null
+  "player_name": "string",
+  "player_id": "UUID",
+  "player_pitching_handedness": "string", // Enum: "Left", "Right", "Switch", "Unknown", null
+  "team_id": "UUID",
+  "team_name": "string",
+  "limit": "int", // range=[1, 1000], default=20
+  "page": "int", // min=1, default=1
+  "order": "string" // Enum: "ASC" or "DESC", default="ASC", sort by player_name
+}
+\`\`\`
+
+### 5. Team Management
+
+#### Retrieve All Teams
+
+\`\`\`text
+  GET /teams
+  \`\`\`
+
+**Query Parameters:**
+
+\`\`\`text
+{
+  "home_ballpark_name": "string", // max_length=100
+  "league": "string", // Enum: "north" or "south"
+  "team_name": "string", // max_length=100
+  "limit": "int", // range=[1, 1000], default=20
+  "page": "int", // min=1, default=1
+  "order": "string" // Enum: "ASC" or "DESC", default="DESC", sort by team_name
+}
+\`\`\`
+
 ## __6. Auth Integration - Restricted Access Mode__
 
 SLUGGER provides a simple framework for integrating with our authorization system using \`Restricted Access\` mode.

@@ -2,12 +2,12 @@ import { CategoryType, WidgetType } from "@/data/types";
 import {
   $favWidgetIds,
   $targetWidget,
-  $user,
   addFavWidgetId,
   removeFavWidgetId,
   removeStoreWidget,
   updateStoreWidget,
-} from "@/lib/store";
+} from "@/lib/widgetStore";
+import { $user } from "@/lib/userStore";
 import {
   updateWidget,
   addCategoryToWidget,

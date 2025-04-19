@@ -30,13 +30,8 @@ import {
 import { Separator } from "@/app/components/ui/separator";
 import LogoButton from "../components/navbar/LogoButton";
 import { Textarea } from "../components/ui/textarea";
-import { $user } from "@/lib/store";
+import { $user } from "@/lib/userStore";
 import { useToast } from "@/hooks/use-toast";
-
-const initialSubmitStatus = {
-  message: "",
-  textClass: "text-black",
-};
 
 export function WidgetForm() {
   const [visibility, setVisibility] = useState("");

@@ -13,7 +13,7 @@ import {
   InputOTPSlot,
 } from "../components/ui/input-otp";
 import { useStore } from "@nanostores/react";
-import { $otpCode, $passwordResetEmail } from "@/lib/store";
+import { $otpCode, $passwordResetEmail } from "@/lib/userStore";
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { useToast } from "@/hooks/use-toast";

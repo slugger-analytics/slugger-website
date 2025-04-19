@@ -1,5 +1,5 @@
 import { CategoryType, WidgetType } from "@/data/types";
-import { $user, updateStoreUser } from "@/lib/store";
+import { $user, updateStoreUser } from "@/lib/userStore";
 
 import { useAuth } from "../contexts/AuthContext";
 import { addFavorite, removeFavorite } from "@/api/user";

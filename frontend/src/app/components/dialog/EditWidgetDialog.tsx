@@ -1,11 +1,3 @@
-/**
- * EditWidgetDialog Component
- *
- * A dialog for editing widget details. It allows users to update a widget's title, description,
- * deployment link, and visibility. Changes are saved via the `editWidget` mutation, and the dialog
- * can be closed using the `onClose` callback.
- */
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,21 +8,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/app/components/ui/alert-dialog"; // UI components for the alert dialog
-import { Input } from "../ui/input"; // Input component
-import { Label } from "../ui/label"; // Label component
-import { Checkbox } from "../ui/checkbox"; // Checkbox component
-import { useEffect, useState } from "react"; // React state management
-import { useStore } from "@nanostores/react"; // Hook to access nanostores
+} from "@/app/components/ui/alert-dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Checkbox } from "../ui/checkbox";
+import { useEffect, useState } from "react";
+import { useStore } from "@nanostores/react";
 import {
   $categories,
   $targetWidget,
   $targetWidgetCollaborators,
-} from "@/lib/store"; // Store to manage the target widget being edited
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+} from "@/lib/widgetStore";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
-import useMutationWidgets from "@/app/hooks/use-mutation-widgets"; // Hook for widget mutations
+import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
 import IconSelector from "./IconSelector";
 import { Eye, EyeOff } from "lucide-react";
 import { Separator } from "../ui/separator";
@@ -38,7 +29,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ClipboardIcon } from "lucide-react";
 import CategorySelector from "../dashboard/category-selector";
 import { CategoryType } from "@/data/types";
-import { searchUserByEmail } from "@/api/user";
 import { addWidgetCollaborator, getWidgetCollaborators } from "@/api/widget";
 import {
   Accordion,
@@ -47,22 +37,11 @@ import {
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
 
-/**
- * Props for the EditWidgetDialog component.
- * @property {boolean} isOpen - Whether the dialog is open.
- * @property {() => void} onClose - Callback to close the dialog.
- */
 interface EditWidgetDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-/**
- * EditWidgetDialog Component
- *
- * @param {EditWidgetDialogProps} props - Props for the component.
- * @returns {JSX.Element} - The JSX representation of the dialog.
- */
 const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   isOpen,
   onClose,

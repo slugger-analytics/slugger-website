@@ -1,8 +1,10 @@
-# ALPB Analytics
-A centralized platform for analysts, players, coaches, and other members of the Atlantic League of Professional Baseball to share and discover baseball analytics tools. Our API uses official Trackman data from the Atlantic League.
+# SLUGGER (Formerly ALPB Analytics)
+The first centralized data analytics platform for the Atlantic League of Professional Baseball, built to make cutting-edge baseball insights accessible across the league. Powered by Trackman radar data and developed in collaboration with the [Johns Hopkins University's Sports Analytics Research Group](https://sports-analytics.cs.jhu.edu/), SLUGGER enables analysts, players, coaches, and more to tap into a growing library of interactive “widgets” — analytical tools that use our API to drive game-changing insights.
 
 ## Accessing the Platform
-The platform can be accessed at `https://alpb-analytics.com`!
+Visit [https://alpb-analytics.com](https://alpb-analytics.com/) to get started.
+
+**Players, coaches, and front office members** should look out for an invite from a team administrator after signing up.
 
 ## Deploying Locally
 1. Clone this repository and navigate to the project directory.

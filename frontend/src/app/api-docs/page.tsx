@@ -8,7 +8,6 @@ import {
   SidebarTrigger,
 } from "../components/ui/sidebar";
 import { AppSidebar } from "../components/app-sidebar";
-import MarkdownRenderer from "./markdown-renderer";
 import MarkdownContent from "./markdown-content";
 
 export default function APIDocs() {

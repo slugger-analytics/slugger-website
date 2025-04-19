@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation"; // Next.js router for client-side n
 import { useAuth } from "../contexts/AuthContext"; // Custom authentication context
 import Loading from "./layout/loading";
 import { useStore } from "@nanostores/react";
-import { $user } from "@/lib/store";
+import { $user } from "@/lib/userStore";
 import { validateSession } from "@/api/auth";
 
 /**

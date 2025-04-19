@@ -6,16 +6,13 @@ import {
   editWidgetSchema,
   queryParamsSchema,
   registerWidgetSchema,
-  removeCategoryFromWidgetSchema,
 } from "../validators/schemas.ts";
 import {
   createApprovedWidget,
   getUserData,
-  generateApiKeyForUser,
   createUserWidgetRelation,
   getAllWidgets,
   registerWidget,
-  removeRequest,
   updateWidget,
   deleteWidget,
 } from "../services/widgetService.js";
@@ -25,12 +22,6 @@ const selectWidgetById = `
     SELECT *
     FROM widgets
     WHERE widget_id = $1
-`;
-
-const selectRequestById = `
-    SELECT *
-    FROM requests
-    WHERE request_id = $1
 `;
 
 const router = Router();
@@ -355,20 +346,6 @@ router.post("/metrics", async (req, res) => {
         data: result.rows[0]
       })
     }
-
-    // if (metricType === "favorite") {
-    //   const result = await pool.query(`
-    //     INSERT INTO widget_favorites (widget_id, user_id)
-    //     VALUES ($1, $2)
-    //     RETURNING *
-    //   `, [widgetId, userId]);
-
-    //   return res.status(201).json({
-    //     success: true,
-    //     message: "Widget favorite metric recorded successfully",
-    //     data: result.rows[0]
-    //   })
-    // }
 
     else {throw new Error("Invalid metric type")}
   } catch (error) {

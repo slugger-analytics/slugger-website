@@ -1,60 +1,39 @@
-/**
- * Widget Component
- *
- * This component represents a single widget, displaying its information and providing actions
- * such as editing, launching, and favoriting. It uses `Card` as the container for a structured layout.
- * Developers (`isDev` users) can edit the widget details, and all users can toggle the favorite state.
- */
-
 import React, { useEffect, useState } from "react";
-import { Button } from "../ui/button"; // Styled button component
-import Image from "next/image"; // Next.js image optimization component
+import { Button } from "../ui/button";
+import Image from "next/image";
 import {
   HeartIcon,
   HeartFilledIcon,
   AngleIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  OpenInNewWindowIcon,
-} from "@radix-ui/react-icons"; // Radix UI icons
+} from "@radix-ui/react-icons";
 import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
   CardDescription,
   CardFooter,
-  CardHeader,
   CardTitle,
-} from "@/app/components/ui/card"; // Card UI components
-import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog"; // Widget edit dialog
-import { WidgetType } from "@/data/types"; // Type definitions for widgets
-import { useStore } from "@nanostores/react"; // Nanostores for state management
-import { $favWidgetIds, $user, setTargetWidget } from "@/lib/store"; // Global state and actions
-import useMutationWidgets from "@/app/hooks/use-mutation-widgets"; // Custom hook for widget mutations
-import { Separator } from "../ui/separator";
+} from "@/app/components/ui/card";
+import EditWidgetDialog from "@/app/components/dialog/EditWidgetDialog";
+import { WidgetType } from "@/data/types";
+import { useStore } from "@nanostores/react";
+import { $favWidgetIds, setTargetWidget } from "@/lib/widgetStore";
+import { $user } from "@/lib/userStore";
+import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
 import { generateToken } from "@/api/user";
 import CategoryTag from "./category-tag";
 import { recordWidgetInteraction } from "@/api/widget";
 import { prettyNumber } from "@based/pretty-number";
 import { callGetWidgetCollaborators } from "@/app/hooks/use-query-widgets";
-/**
- * WidgetProps Interface
- *
- * @property {boolean} isDev - Indicates whether the user is a developer with edit permissions.
- * @property {boolean} isFavorite - Indicates if the widget is in the user's favorites.
- */
+
 interface WidgetProps extends WidgetType {
   isDev: boolean;
   visibility: string;
   isFavorite: boolean;
 }
 
-/**
- * Widget Component
- *
- * @param {WidgetProps} props - Props containing widget data and user state.
- * @returns {JSX.Element} - The JSX representation of a widget.
- */
 export default function Widget({
   id,
   name,
@@ -68,10 +47,10 @@ export default function Widget({
   categories,
   metrics,
 }: WidgetProps) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false); // Local state for dialog visibility
-  const [isExpanded, setIsExpanded] = useState(false); // Local state for description expansion
-  const { toggleFavWidget } = useMutationWidgets(); // Custom hook for toggling favorites
-  const favWidgets = useStore($favWidgetIds); // Global state for favorite widgets
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const { toggleFavWidget } = useMutationWidgets();
+  const favWidgets = useStore($favWidgetIds);
   const { id: userId } = useStore($user);
 
   const router = useRouter();
@@ -85,10 +64,7 @@ export default function Widget({
     isLongDescription && description
       ? `${description.slice(0, CHAR_LIMIT)}...`
       : description;
-  /**
-   * Handles widget redirection.
-   * @TODO Implement redirect logic.
-   */
+
   const redirect = async () => {
     if (redirectLink) {
       const url = new URL(redirectLink, window.location.origin);
@@ -104,17 +80,10 @@ export default function Widget({
     }
   };
 
-  /**
-   * Toggles the widget's favorite status.
-   */
   const handleToggleFav = () => {
     toggleFavWidget(id);
   };
 
-  /**
-   * Opens the edit dialog for the widget.
-   * Sets the target widget in global state and shows the dialog.
-   */
   const handleOpenDialog = () => {
     setTargetWidget({
       id,
@@ -201,7 +170,6 @@ export default function Widget({
           )}
         </div>
         <div className="flex">
-          {/* <div className="flex flex-col gap-2"> */}
           {/* Launch Button */}
           <Button size="sm" className="ml-3" onClick={redirect}>
             Launch
@@ -209,7 +177,6 @@ export default function Widget({
               {prettyNumber(metrics.allTimeLaunches, "number-short")}
             </div>
           </Button>
-          {/* </div> */}
 
           {/* Favorite Button */}
 

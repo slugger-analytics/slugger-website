@@ -38,10 +38,38 @@ router.get("/standings", async (req, res) => {
             data
         })
     } catch (error) {
-        console.error("Error fetching league data from S3:", error);
+        console.error("Error fetching league standings data from S3:", error);
         res.status(500).json({
             success: false,
-            message: `Error fetching league data: ${error.message}`,
+            message: `Error fetching league standings data: ${error.message}`,
+        });
+    }
+});
+
+router.get("/leaders", async (req, res) => {
+    const key = `league-leaders/${YEAR}-league-leaders.json`;
+
+    try {
+        const command = new GetObjectCommand({
+            Bucket: BUCKET_NAME,
+            Key: key
+        });
+
+        const s3Response = await s3.send(command);
+        const jsonText = await streamToString(s3Response.Body);
+        const data = JSON.parse(jsonText);
+
+        console.log(data);
+        res.status(200).json({
+            success: true,
+            message: "Fetched league leaders successfully",
+            data
+        })
+    } catch (error) {
+        console.error("Error fetching league leaders data from S3:", error);
+        res.status(500).json({
+            success: false,
+            message: `Error fetching league leaders data: ${error.message}`,
         });
     }
 });
