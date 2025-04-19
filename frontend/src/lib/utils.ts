@@ -1,5 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { clearUserStore } from "./userStore";
+import { clearWidgetStore } from "./widgetStore";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -53,4 +55,9 @@ export const validatePassword = (
     };
   }
   return { isValid: true, error: "" };
+};
+
+export const clearStores = () => {
+  clearUserStore();
+  clearWidgetStore();
 };

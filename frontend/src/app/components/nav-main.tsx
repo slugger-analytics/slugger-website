@@ -1,6 +1,6 @@
 "use client";
 
-import { type LucideIcon, ChevronRight } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -8,10 +8,8 @@ import {
 } from "@/app/components/ui/sidebar";
 import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
-import { $user } from "@/lib/store";
+import { $user } from "@/lib/userStore";
 import { useAuth } from "../contexts/AuthContext";
-import { CollapsibleTrigger, Collapsible } from "./ui/collapsible";
-import Settings from "../settings/settings";
 
 export function NavMain({
   items,

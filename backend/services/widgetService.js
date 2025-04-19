@@ -1,7 +1,7 @@
 import pkg from "aws-sdk";
 const { APIGateway } = pkg;
 const apiGateway = new APIGateway({ region: "us-east-2" });
-import pool from "../db.js"; // PostgreSQL connection setup
+import pool from "../db.js";
 import { logWithFunctionName } from "../utils/logging.js";
 
 const selectWidgetById = `
@@ -304,13 +304,6 @@ const widgetsQuery = `
         w.widget_id;
 `;
 
-  // const result = await pool
-  //     .select({
-  //         widget: widgets,
-  //         developer_ids: 'developer_ids',
-  //     })
-  //     .from(widgets)
-  //     .leftJoin()
   const result = await pool.query(widgetsQuery);
   return result.rows;
 }

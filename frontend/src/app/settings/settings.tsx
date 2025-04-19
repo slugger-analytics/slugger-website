@@ -15,7 +15,7 @@ import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@nanostores/react";
-import { $user } from "@/lib/store";
+import { $user } from "@/lib/userStore";
 import useMutationUser from "../hooks/use-mutation-user";
 import { useAuth } from "../contexts/AuthContext";
 

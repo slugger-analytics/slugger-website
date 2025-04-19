@@ -25,7 +25,7 @@ import {
 import { CaretSortIcon, ComponentPlaceholderIcon } from "@radix-ui/react-icons";
 import { useEffect, useState } from "react";
 import { useStore } from "@nanostores/react";
-import { $user } from "@/lib/store";
+import { $user } from "@/lib/userStore";
 import { useAuth } from "../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 

@@ -1,4 +1,4 @@
-import { $leagueLeaders } from "@/lib/store";
+import { $leagueLeaders } from "@/lib/widgetStore";
 import { useStore } from "@nanostores/react";
 import React, { useState, useEffect } from "react";
 import useQueryLeague from "../hooks/use-query-league";
@@ -29,14 +29,17 @@ const StatLeaders = ({ setYear }: StatLeadersProps) => {
 
   useEffect(() => {
     setYear(allLeadersData.year);
-    const readableDate = new Date(allLeadersData.updatedAt).toLocaleString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
+    const readableDate = new Date(allLeadersData.updatedAt).toLocaleString(
+      "en-US",
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      },
+    );
     setLastUpdated(readableDate);
   }, [allLeadersData]);
 
@@ -52,8 +55,12 @@ const StatLeaders = ({ setYear }: StatLeadersProps) => {
     <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-sm border mb-8 w-[50%] max-w-[calc(100%-2rem)] min-w-[360px]">
       <Tabs defaultValue="batting" className="w-full max-w-3xl">
         <TabsList className="mb-4 w-full flex justify-center">
-          <TabsTrigger value="batting" onClick={() => setStatView("Batting")}>Batting Leaders</TabsTrigger>
-          <TabsTrigger value="pitching" onClick={() => setStatView("Pitching")}>Pitching Leaders</TabsTrigger>
+          <TabsTrigger value="batting" onClick={() => setStatView("Batting")}>
+            Batting Leaders
+          </TabsTrigger>
+          <TabsTrigger value="pitching" onClick={() => setStatView("Pitching")}>
+            Pitching Leaders
+          </TabsTrigger>
         </TabsList>
         <p className="text-xs text-gray-500 w-full text-center">{`Ranked by ${statView === "Batting" ? "Batting Average" : "ERA"}`}</p>
 

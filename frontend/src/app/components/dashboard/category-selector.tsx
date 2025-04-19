@@ -2,7 +2,6 @@
 
 import { Dispatch, SetStateAction, useState } from "react";
 import { CategoryType } from "@/data/types";
-import { Button } from "../ui/button";
 import CategoryTag from "./category-tag";
 
 interface CategorySelectorProps {

@@ -1,4 +1,4 @@
-import { $filters, addFilter, removeFilter } from "@/lib/store";
+import { $filters, addFilter, removeFilter } from "@/lib/widgetStore";
 import { useStore } from "@nanostores/react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";

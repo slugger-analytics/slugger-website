@@ -12,9 +12,9 @@ const AroundLeaguePage = () => {
       <AppSidebar />
       <div className="flex flex-col justify-center items-center w-full">
         <h1 className="text-3xl font-bold mb-5">{`${year} Standings`}</h1>
-        <Standings setYear={setYear}/>
+        <Standings setYear={setYear} />
         <h1 className="text-3xl font-bold mb-5">{`${year} Stat Leaders`}</h1>
-        <StatLeaders setYear={setYear}/>
+        <StatLeaders setYear={setYear} />
       </div>
     </SidebarProvider>
   );

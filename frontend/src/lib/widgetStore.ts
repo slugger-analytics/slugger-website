@@ -1,17 +1,12 @@
-import { atom, map } from "nanostores";
-import { persistentMap } from "@nanostores/persistent";
+import { atom } from "nanostores";
+
 import {
-  UserType,
   WidgetType,
   CategoryType,
   WidgetCollaboratorsType,
   LeagueStandingsData,
   LeagueLeadersData,
 } from "@/data/types";
-import { logger } from "@nanostores/logger";
-
-// Allow debug messages
-const DEBUG = false;
 
 const emptyWidget: WidgetType = {
   id: -1,
@@ -39,36 +34,35 @@ const emptyWidget: WidgetType = {
 };
 
 const emptyStandingsData: LeagueStandingsData = {
-    updatedAt: '',
-    year: '',
-    standings: {
-      leagueid: '',
-      leaguename: '',
-      leagueshortname: '',
-      season: {
-        seasonid: '',
-        seasonname: '',
-        seasonshortname: ''
-      },
-      conference: []
-    }
-}
-
-const emptyStatsData: LeagueLeadersData = {
-  updatedAt: '',
-  year: '',
-  stats: {
-    link: '',
-    season: '',
-    pitching: {
-      player: []
+  updatedAt: "",
+  year: "",
+  standings: {
+    leagueid: "",
+    leaguename: "",
+    leagueshortname: "",
+    season: {
+      seasonid: "",
+      seasonname: "",
+      seasonshortname: "",
     },
-    batting: {
-      player: []
-    }
-  }
+    conference: [],
+  },
 };
 
+const emptyStatsData: LeagueLeadersData = {
+  updatedAt: "",
+  year: "",
+  stats: {
+    link: "",
+    season: "",
+    pitching: {
+      player: [],
+    },
+    batting: {
+      player: [],
+    },
+  },
+};
 
 export const $widgets = atom<WidgetType[]>([]);
 export const $targetWidget = atom<WidgetType>(emptyWidget);
@@ -87,13 +81,10 @@ export const $widgetsVersion = atom<number>(0);
 export const $filtersVersion = atom<number>(0);
 export const $categories = atom<CategoryType[]>([]);
 
-export const $otpCode = atom<string>("");
-export const $passwordResetEmail = atom<string>("");
-
 export const $standings = atom<LeagueStandingsData>(emptyStandingsData);
 export const $leagueLeaders = atom<LeagueLeadersData>(emptyStatsData);
 
-export function clearStores() {
+export function clearWidgetStore() {
   $widgets.set([]);
   $targetWidget.set(emptyWidget);
   $widgetQuery.set("");
@@ -110,9 +101,6 @@ export function clearStores() {
   $widgetsVersion.set(0);
   $filtersVersion.set(0);
   $categories.set([]);
-
-  $otpCode.set("");
-  $passwordResetEmail.set("");
 }
 
 export function setStandings(standings: LeagueStandingsData) {
@@ -121,14 +109,6 @@ export function setStandings(standings: LeagueStandingsData) {
 
 export function setLeagueLeaders(leaders: LeagueLeadersData) {
   $leagueLeaders.set(leaders);
-}
-
-export function setOtpCode(otp: string) {
-  $otpCode.set(otp);
-}
-
-export function setPasswordResetEmail(email: string) {
-  $passwordResetEmail.set(email);
 }
 
 // Adds a new widget to the $widgets store and increments the widgets version
@@ -280,47 +260,6 @@ export function incrementWidgetsVersion() {
   $widgetsVersion.set($widgetsVersion.get() + 1);
 }
 
-////////////////////
-/////// User ///////
-////////////////////
-const emptyUser: UserType = {
-  id: "",
-  first: "",
-  last: "",
-  email: "",
-  role: "",
-  teamId: "",
-  is_admin: "false",
-};
-
-export const $user = persistentMap<UserType>("user:", emptyUser);
-
-export function setUser(user: UserType) {
-  $user.set(user);
-}
-
-export function clearUser() {
-  $user.set(emptyUser);
-}
-
-type UpdateUserType = {
-  first?: string;
-  last?: string;
-  teamId?: string;
-};
-export function updateStoreUser({ first, last, teamId }: UpdateUserType) {
-  const user = $user.get();
-
-  if (!user) return;
-
-  $user.set({
-    ...user,
-    ...(first !== undefined && { first }),
-    ...(last !== undefined && { last }),
-    ...(teamId !== undefined && { teamId }),
-  });
-}
-
 export function setCategories(categories: CategoryType[]) {
   $categories.set(categories);
 }
@@ -343,10 +282,3 @@ export function setTargetWidgetCollaborators(
   $targetWidgetCollaborators.set(widgetCollaborators);
   console.log("SET TARGET WIDGET DEVS TO:", widgetCollaborators);
 }
-
-// Logger for nanostores
-let destroy =
-  DEBUG &&
-  logger({
-    User: $user,
-  });

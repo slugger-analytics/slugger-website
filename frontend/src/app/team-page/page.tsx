@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useStore } from "@nanostores/react";
-import { $user, updateStoreUser } from "@/lib/store";
+import { $user, updateStoreUser } from "@/lib/userStore";
 import { toast } from "sonner";
 import {
   getTeamMembers,

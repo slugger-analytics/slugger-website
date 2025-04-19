@@ -13,7 +13,7 @@ import {
 } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
 import LogoButton from "../components/navbar/LogoButton";
-import { setUser } from "@/lib/store";
+import { setUser } from "@/lib/userStore";
 import { LoginType, UserAPIResType } from "@/data/types";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";

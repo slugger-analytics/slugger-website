@@ -86,6 +86,20 @@ export async function approveDeveloper(requestId) {
   }
 }
 
+export async function declineDeveloper(requestId) {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `DELETE FROM pending_developers WHERE request_id = $1`,
+      [requestId]);
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 export async function getPendingDevelopers() {
   const result = await pool.query(`
     SELECT pd.*, u.email 

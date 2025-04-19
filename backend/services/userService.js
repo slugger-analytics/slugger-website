@@ -4,10 +4,10 @@
  */
 
 import pkg from "aws-sdk"; // Import AWS SDK
-const { APIGateway, CognitoIdentityServiceProvider } = pkg; // Extract the API Gateway and CognitoIdentityServiceProvider classes
-const apiGateway = new APIGateway({ region: "us-east-2" }); // Initialize API Gateway (not directly used in this code)
+const { APIGateway, CognitoIdentityServiceProvider } = pkg;
+const apiGateway = new APIGateway({ region: "us-east-2" });
 import crypto from "crypto";
-import pool from "../db.js"; // PostgreSQL database connection
+import pool from "../db.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -16,14 +16,6 @@ const TOKEN_SECRET = process.env.TOKEN_SECRET;
 
 const cognito = new CognitoIdentityServiceProvider({ region: "us-east-2" });
 
-/**
- * Adds a widget to a user's list of favorite widgets.
- *
- * @param {number} userId - The ID of the user.
- * @param {number} widgetId - The ID of the widget to add to favorites.
- * @returns {Object} - An object containing the query result and a success or duplicate message.
- * @throws {Error} - If the database operation fails.
- */
 export async function favoriteWidget(userId, widgetId) {
   const checkQuery = `
         SELECT fav_widgets_ids
@@ -57,14 +49,6 @@ export async function favoriteWidget(userId, widgetId) {
   }
 }
 
-/**
- * Removes a widget from a user's list of favorite widgets.
- *
- * @param {number} userId - The ID of the user.
- * @param {number} widgetId - The ID of the widget to remove from favorites.
- * @returns {Object} - An object containing the query result and a success message.
- * @throws {Error} - If the database operation fails.
- */
 export async function unfavoriteWidget(userId, widgetId) {
   const removeQuery = `
         UPDATE users
@@ -82,13 +66,6 @@ export async function unfavoriteWidget(userId, widgetId) {
   }
 }
 
-/**
- * Retrieves a user's list of favorite widget IDs.
- *
- * @param {number} userId - The ID of the user.
- * @returns {Object} - An object containing the user's favorite widget IDs and a success message.
- * @throws {Error} - If the database operation fails.
- */
 export async function getFavorites(userId) {
   const selectQuery = `
         SELECT fav_widgets_ids

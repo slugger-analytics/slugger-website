@@ -17,7 +17,7 @@ import {
 } from "@/app/components/ui/sidebar";
 import Image from "next/image";
 import { useStore } from "@nanostores/react";
-import { $user } from "@/lib/store";
+import { $user } from "@/lib/userStore";
 import { Users } from "lucide-react";
 // This is sample data.
 

@@ -4,16 +4,14 @@ import {
   setWidgets,
   $widgets,
   setFavWidgetIds,
-  $user,
   setCategories,
   setTargetWidgetCollaborators,
-} from "@/lib/store";
+} from "@/lib/widgetStore";
+import { $user } from "@/lib/userStore";
 import { useStore } from "@nanostores/react";
 import { useEffect, useState } from "react";
 import { getFavorites } from "@/api/user";
 import { getCategories } from "@/api/categories";
-import { setTestStorageKey } from "@nanostores/persistent";
-import { delay } from "@/lib/utils";
 
 function useQueryWidgets() {
   const widgets = useStore($widgets);
