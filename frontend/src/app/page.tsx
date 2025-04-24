@@ -60,8 +60,9 @@ export default function Home() {
                 alt="ALPB Logo"
                 width={180}
                 height={180}
+                style={{ height: 'auto' }}
                 className="mx-auto hover:scale-105 transition-transform duration-300"
-                priority={true}
+                priority
               />
             </motion.div>
 
