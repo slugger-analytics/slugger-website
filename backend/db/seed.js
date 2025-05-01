@@ -74,7 +74,6 @@ async function seedWidgets() {
       }
     }
 
-    console.log('Successfully seeded widgets and categories');
   } catch (error) {
     console.error('Error seeding widgets:', error);
   }

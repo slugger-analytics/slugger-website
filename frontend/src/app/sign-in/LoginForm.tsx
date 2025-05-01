@@ -27,7 +27,6 @@ const LoginForm = () => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
-    console.log(email);
     const password = formData.get("password") as string;
 
     try {

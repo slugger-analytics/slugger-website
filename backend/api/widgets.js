@@ -32,9 +32,9 @@ router.get(
   validationMiddleware({ querySchema: queryParamsSchema }),
   async (req, res) => {
     try {
-      const { widgetName, categories, page, limit } = req.query;
+      const { widgetName, categories, page, limit, userId } = req.query;
 
-      const widgets = await getAllWidgets(widgetName, categories, page, limit);
+      const widgets = await getAllWidgets(widgetName, categories, page, limit, userId);
 
       res.status(200).json({
         success: true,
@@ -56,8 +56,6 @@ router.patch(
   validationMiddleware({ bodySchema: editWidgetSchema }),
   async (req, res) => {
     const { name, description, redirectLink, visibility, imageUrl, publicId, restrictedAccess } = req.body;
-
-    console.log({restrictedAccess})
 
     try {
       const id = parseInt(req.params.id);
@@ -530,6 +528,126 @@ router.get("/:widgetId/collaborators", async (req, res) => {
     res.status(500).json({
       success: false,
       message: `Error fetching collaborators: ${error.message}`
+    });
+  }
+});
+
+// Get teams with access to a widget
+router.get("/:id/teams", async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.id);
+
+    // Check if widget exists
+    const widgetExists = await pool.query(selectWidgetById, [widgetId]);
+    if (widgetExists.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Widget not found"
+      });
+    }
+
+    // Get all teams with access to this widget - using "team" instead of "teams"
+    const teamsResult = await pool.query(
+      `SELECT t.* 
+       FROM team t
+       JOIN widget_team_access wta ON t.team_id = wta.team_id
+       WHERE wta.widget_id = $1`,
+      [widgetId]
+    );
+
+  
+  
+    // Return the raw team_id values without modification to preserve UUID format
+    res.status(200).json({
+      success: true,
+      message: "Teams retrieved successfully",
+      data: teamsResult.rows
+    });
+  } catch (error) {
+    console.error(`Error getting teams for widget ${req.params.id}:`, error);
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+});
+
+// Update teams with access to a widget
+router.put("/:id/teams", async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.id);
+    const { teamIds } = req.body;
+
+    if (!Array.isArray(teamIds)) {
+      return res.status(400).json({
+        success: false,
+        message: "teamIds must be an array"
+      });
+    }
+
+    // Check if widget exists
+    const widgetExists = await pool.query(selectWidgetById, [widgetId]);
+    if (widgetExists.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Widget not found"
+      });
+    }
+
+    // Check if widget is private
+    const widgetVisibility = widgetExists.rows[0].visibility;
+    if (widgetVisibility.toLowerCase() !== 'private') {
+      return res.status(400).json({
+        success: false,
+        message: "Only private widgets can have team access"
+      });
+    }
+
+    // Start a transaction
+    await pool.query('BEGIN');
+
+    // Remove all existing team access for this widget
+    await pool.query(
+      `DELETE FROM widget_team_access WHERE widget_id = $1`,
+      [widgetId]
+    );
+
+    // Add new team access - using individual inserts to handle errors better
+    if (teamIds.length > 0) {
+      for (const teamId of teamIds) {
+        try {
+          await pool.query(
+            `INSERT INTO widget_team_access (widget_id, team_id) 
+             VALUES ($1, $2) 
+             ON CONFLICT (widget_id, team_id) DO NOTHING`,
+            [widgetId, teamId]
+          );
+        } catch (insertError) {
+          console.error(`Error adding team ${teamId}:`, insertError.message);
+          // Continue with next team instead of failing completely
+        }
+      }
+    }
+
+    // Commit transaction
+    await pool.query('COMMIT');
+
+    res.status(200).json({
+      success: true,
+      message: "Widget team access updated successfully"
+    });
+  } catch (error) {
+    // Rollback if error occurs
+    try {
+      await pool.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error("Error during rollback:", rollbackError);
+    }
+    
+    console.error(`Error updating team access for widget ${req.params.id}:`, error);
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
     });
   }
 });

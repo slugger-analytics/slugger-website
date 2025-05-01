@@ -70,9 +70,7 @@ export async function sendPasswordResetEmail(email, otp) {
   };
   try {
     // Send the email using AWS SES
-    console.log("Trying to send email...")
     await ses.sendEmail(params).promise();
-    console.log("Email sent successfully!")
     return "Email sent successfully"; // Return a success message
   } catch (err) {
     // Log the error and rethrow it
