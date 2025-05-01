@@ -68,7 +68,6 @@ export const fetchPendingWidgets = async (): Promise<PendingWidget[]> => {
 
 export const approveWidget = async (requestId: string): Promise<string> => {
   try {
-    console.log("Here 1");
     const response = await fetch(
       `${API_URL}/api/widgets/pending/${requestId}/approve`,
       {
@@ -77,7 +76,6 @@ export const approveWidget = async (requestId: string): Promise<string> => {
       },
     );
 
-    console.log("Here 2");
     const res = await response.json();
 
     if (!res.success) {
@@ -172,7 +170,6 @@ export const updateWidget = async ({
   categories,
 }: WidgetType): Promise<Response> => {
   try {
-    console.log({ restrictedAccess });
     const response = await fetch(`${API_URL}/api/widgets/${id}`, {
       method: "PATCH",
       headers: {
@@ -236,7 +233,7 @@ export const removeCategoryFromWidget = async (
   categoryId: number,
 ): Promise<Response> => {
   try {
-    console.log({ widgetId, categoryId });
+
     const response = await fetch(
       `${API_URL}/api/widgets/${widgetId}/categories/${categoryId}`,
       {
@@ -372,7 +369,6 @@ export async function deleteWidget(widgetId: number) {
 
 export async function getWidgetTeamAccess(widgetId: number): Promise<string[]> {
   try {
-    console.log(`Fetching team access for widget ${widgetId}`);
     const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`);
     const data = await response.json();
 
@@ -380,8 +376,7 @@ export async function getWidgetTeamAccess(widgetId: number): Promise<string[]> {
       throw new Error(data.message);
     }
 
-    console.log(`Team access data received:`, JSON.stringify(data.data, null, 2));
-    
+  
     // Return the raw team_id values without modification
     return data.data.map((team: { team_id: any }) => team.team_id);
   } catch (error) {

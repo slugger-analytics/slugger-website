@@ -89,7 +89,6 @@ export function WidgetForm() {
       // if (!idToken) {
       //   throw new Error("ID Token not found. Please log in again.");
       // }
-      console.log(user);
 
       const widgetData = {
         widget_name: data["widget-name"],

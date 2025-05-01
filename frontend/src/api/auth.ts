@@ -144,7 +144,6 @@ export const sendPasswordResetEmail = async (email: string, otp: string) => {
       },
     );
     const res = await response.json();
-    console.log(res);
   } catch (error) {
     console.error("Error sending password reset email:", error);
     throw error;
@@ -161,7 +160,6 @@ export const resetPassword = async (email: string, password: string) => {
       body: JSON.stringify({ email, password }),
     });
     const res = await response.json();
-    console.log(res);
   } catch (error) {
     console.error("Error resetting password:", error);
     throw error;
