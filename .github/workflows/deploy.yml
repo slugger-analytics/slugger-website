@@ -20,13 +20,13 @@ jobs:
 
       # 3️⃣ Deploy
       - name: Deploy over SSH
-        uses: appleboy/ssh-action@v1.0.0
+        uses: appleboy/ssh-action@master
         with:
           host:     ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key:      ${{ secrets.SSH_KEY }}          # ← NEW (raw private key from Secrets)
           passphrase: ${{ secrets.SSH_PASSPHRASE }}  # add only if your key is pass-phrase-protected
-          
+
           script: |
             set -e
             cd alpb-website
