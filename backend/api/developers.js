@@ -42,9 +42,7 @@ router.post("/pending/:id/decline", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   try {
-    console.log("Received registration request:", req.body);
     const { email, password, firstName, lastName } = req.body;
-    console.log("Extracted data:", { email, password, firstName, lastName });
     // Create pending developer using the service
     const result = await createPendingDeveloper({
       email,
@@ -52,7 +50,6 @@ router.post("/register", async (req, res) => {
       firstName,
       lastName,
     });
-    console.log("Developer created:", result);
     res.status(201).json({
       success: true,
       message: "Developer registration pending approval",

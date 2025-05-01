@@ -103,7 +103,6 @@ export async function removeTeamMember(
   memberId: number,
 ): Promise<void> {
   try {
-    console.log({ teamId, memberId });
     const response = await fetch(
       `${API_URL}/api/teams/${teamId}/members/${memberId}`,
       {

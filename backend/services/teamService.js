@@ -12,7 +12,6 @@ export async function getTeams() {
 
 export async function getTeam(id) {
   try {
-    console.log('Getting team with ID:', id);
     const result = await pool.query(
       `SELECT * FROM team WHERE team_id = $1`,
       [id]
@@ -29,10 +28,6 @@ export async function getTeam(id) {
 }
 
 export async function getTeamMembers(teamId) {
-  console.log("In the getTeamMembers function");
-  console.log("TeamID:", teamId);
-  console.log("Actually getting team members");
-
   try {
     const result = await pool.query(
       `
@@ -75,7 +70,6 @@ export async function getTeamMember(teamId, memberId) {
 
 export async function promoteTeamMember(teamId, memberId) {
   try {
-    console.log({ teamId, memberId });
     const result = await pool.query(
       `
             UPDATE users

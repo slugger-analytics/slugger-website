@@ -205,10 +205,6 @@ export default function TeamPage() {
   };
 
   useEffect(() => {
-    console.log({ numAdmins });
-  }, [numAdmins]);
-
-  useEffect(() => {
     const count = members.filter((m) => m.is_admin).length;
     setNumAdmins(count);
   }, [members]);

@@ -62,7 +62,6 @@ export default function LeagueRegistrationPage() {
       console.error("No team selected");
       return;
     }
-    console.log("Selected team:", selectedTeam);
 
     const userData = {
       ...basicInfo,
@@ -70,9 +69,6 @@ export default function LeagueRegistrationPage() {
       teamId: selectedTeam,
       teamRole: formData.get("team-role"),
     };
-
-    console.log("Submitting user data:", userData);
-
     try {
       await signUpUser(userData);
       sessionStorage.removeItem("leagueRegistration");
@@ -101,7 +97,6 @@ export default function LeagueRegistrationPage() {
               <Label htmlFor="team-select">Select Team</Label>
               <Select
                 onValueChange={(value) => {
-                  console.log("Selected value:", value); // Debug
                   setSelectedTeam(value);
                 }}
                 required
