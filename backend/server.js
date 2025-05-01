@@ -27,17 +27,7 @@ const app = express();
 // Middleware Setup
 // ---------------------------------------------------
 
-/**
- * Enable CORS (Cross-Origin Resource Sharing).
- * Required if the frontend and backend are hosted on different domains or ports.
- */
-// app.use(cors({
-//     origin: (origin) => origin, // Allow any origin
-//     credentials: true, // Allow credentials
-//     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-//     allowHeaders: ["Content-Type", "Authorization"],
-//     exposeHeaders: ["Set-Cookie"],
-//   }));
+
 app.use(cors({
   credentials: true,
   origin: ["https://alpb-analytics.com/", "http://localhost:3000"]

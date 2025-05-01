@@ -74,18 +74,18 @@ export const loginUser = async (email: string, password: string) => {
   try {
     const startTime = performance.now();
     const response = await fetch(`${API_URL}/api/users/sign-in`, {
-      method: "POST", // HTTP POST request
+      method: "POST",
       headers: {
-        "Content-Type": "application/json", // Content type for JSON payload
+        "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify({ email, password }), // Convert credentials to JSON format
+      body: JSON.stringify({ email, password }),
     });
     const endTime = performance.now();
     const authTime = endTime - startTime;
     DEBUG && console.log(`Time to sign in: ${authTime}`);
 
-    const res: LoginAPIRes = await response.json(); // Parse the JSON response
+    const res: LoginAPIRes = await response.json();
 
     if (!res.success) {
       throw new Error(res.message || "Login failed");

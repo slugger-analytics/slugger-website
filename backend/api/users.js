@@ -14,8 +14,6 @@ import {
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
 import authGuard from "../middleware/auth-guard.js";
-import jwt from "jsonwebtoken";
-import { getTeam } from "../services/teamService";
 import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
