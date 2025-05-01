@@ -9,51 +9,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Check out the repo (needed only to read workflow files)
+      # 1️⃣ Check out the repo
       - uses: actions/checkout@v4
 
-      # 2️⃣ Start an ssh-agent with our private key
-      - uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      # 3️⃣ Trust the host key to avoid “man-in-the-middle” prompts
+      # 2️⃣ Trust the host key (first-connect prompt killer)
       - name: Add host to known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      # 4️⃣ Run *exactly* the commands you typed by hand
+      # 3️⃣ Deploy
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
+          host:     ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
-          # optionally: port: 22
+          key:      ${{ secrets.SSH_KEY }}          # ← NEW (raw private key from Secrets)
+          # passphrase: ${{ secrets.SSH_PASSPHRASE }}  # add only if your key is pass-phrase-protected
           script: |
             set -e
             cd alpb-website
 
-            # zero-downtime tip: stop only the specific apps, not pm2 itself
             pm2 delete alpb-frontend || true
             pm2 delete alpb-backend  || true
 
             git pull origin main
 
-            # ── Frontend ─────────────────────────────────────────
+            # ── Frontend ────────────────────────────────
             cd frontend
-            nvm use 22 || . $NVM_DIR/nvm.sh && nvm use 22   # ensure correct Node
-            npm ci                                         # faster & reproducible
+            nvm use 22 || . $NVM_DIR/nvm.sh && nvm use 22
+            npm ci
             export NODE_OPTIONS="--max-old-space-size=2048"
             npm run build
-            pm2 start npm        --name "alpb-frontend" -- start
+            pm2 start npm --name "alpb-frontend" -- start
             cd ..
 
-            # ── Backend ─────────────────────────────────────────
+            # ── Backend ────────────────────────────────
             cd backend
             npm ci
-            pm2 start server.js   --name "alpb-backend"  --interpreter tsx
+            pm2 start server.js --name "alpb-backend" --interpreter tsx
             cd ..
 
-            # Persist the process list
             pm2 save
+
