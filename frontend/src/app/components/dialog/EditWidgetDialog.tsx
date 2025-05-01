@@ -37,7 +37,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
-import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
 interface EditWidgetDialogProps {
   isOpen: boolean;
@@ -97,12 +96,10 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   // Fetch teams when dialog opens
   useEffect(() => {
     if (isOpen) {
-      console.log("Dialog opened, fetching teams...");
       const fetchTeams = async () => {
         setIsLoadingTeams(true);
         try {
           const teamsData = await getTeams();
-          console.log("Teams fetched:", teamsData);
           setTeams(teamsData);
         } catch (error) {
           console.error("Error fetching teams:", error);
@@ -123,24 +120,16 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   // Fetch widget team access when dialog opens or when teams are loaded
   useEffect(() => {
     if (isOpen && targetWidget.id && teams.length > 0) {
-      console.log("Teams loaded, fetching team access for widget:", targetWidget.id);
       const fetchTeamAccess = async () => {
         try {
-          console.log("Fetching team access for widget:", targetWidget.id);
+
           const teamIds = await getWidgetTeamAccess(targetWidget.id);
-          console.log("Team access retrieved:", teamIds);
+
           
           if (Array.isArray(teamIds) && teamIds.length > 0) {
-            console.log("Setting selected team IDs:", teamIds);
             setSelectedTeamIds(teamIds);
             
-            // Log which teams should be checked
-            teams.forEach(team => {
-              const isSelected = teamIds.includes(team.team_id);
-              console.log(`Team ${team.team_id} (${team.team_name}) should be ${isSelected ? 'checked' : 'unchecked'}, type of team_id: ${typeof team.team_id}`);
-            });
           } else {
-            console.log("No team access found for this widget or error in response");
             setSelectedTeamIds([]);
           }
         } catch (error) {
@@ -179,7 +168,6 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   // Reset state when dialog closes
   useEffect(() => {
     if (!isOpen) {
-      console.log("Dialog closed, resetting state");
       setSelectedTeamIds([]);
     }
   }, [isOpen]);
@@ -189,10 +177,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
    * Calls the `editWidget` mutation and closes the dialog on success.
    */
   const handleSave = async () => {
-    try {
-      console.log("Saving widget changes...");
-      console.log(`Current visibility: ${visibility}`);
-      
+    try {      
       const updatedCategories = [
         ...targetWidget.categories.filter((cat) => {
           const matchingCategory = Array.from(categoriesToRemove).find(
@@ -224,13 +209,10 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
 
       // Update team access if the widget is private
       if (visibility === "Private" && targetWidget.id) {
-        console.log(`Updating team access for widget ${targetWidget.id}`);
-        console.log(`Selected teams: ${selectedTeamIds.join(', ') || 'None'}`);
         
         try {
           // Pass the raw team IDs without any conversion
           await updateWidgetTeamAccess(targetWidget.id, selectedTeamIds);
-          console.log("Team access updated successfully");
         } catch (teamError) {
           console.error("Error updating team access:", teamError);
           toast({
@@ -265,23 +247,18 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   };
 
   const handleTeamSelection = (teamId: any) => {
-    console.log(`Team selection toggled: ${teamId}, type: ${typeof teamId}`);
-    console.log(`Current selected teams: ${selectedTeamIds.join(', ') || 'None'}`);
     
     setSelectedTeamIds(prev => {
       // Direct comparison without type conversion to handle UUIDs properly
       const isSelected = prev.includes(teamId);
-      console.log(`Team ${teamId} is currently ${isSelected ? 'selected' : 'not selected'}`);
       
       if (isSelected) {
         // Remove team from selection
         const newSelection = prev.filter(id => id !== teamId);
-        console.log(`Removing team, new selection: ${newSelection.join(', ') || 'None'}`);
         return newSelection;
       } else {
         // Add team to selection
         const newSelection = [...prev, teamId];
-        console.log(`Adding team, new selection: ${newSelection.join(', ') || 'None'}`);
         return newSelection;
       }
     });
@@ -432,8 +409,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                       // Use the raw team_id value without conversion
                       const teamId = team.team_id;
                       const isChecked = selectedTeamIds.includes(teamId);
-                      console.log(`Rendering team ${teamId} (${team.team_name}), checked: ${isChecked}, type: ${typeof teamId}`);
-                      
+                     
                       return (
                         <div key={teamId} className="flex items-center space-x-2">
                           <input
@@ -441,7 +417,6 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                             id={`team-${teamId}`}
                             checked={isChecked}
                             onChange={() => {
-                              console.log(`Checkbox clicked for team ${teamId}`);
                               handleTeamSelection(teamId);
                             }}
                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"

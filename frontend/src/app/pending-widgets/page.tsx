@@ -30,7 +30,6 @@ export default function PendingWidgetsPage() {
   // Handle approving a widget
   const handleApproveWidget = async (requestId: string) => {
     try {
-      console.log("Here 1");
       const result = await approveWidget(requestId);
       setStatus(result);
 

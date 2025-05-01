@@ -49,7 +49,6 @@ const StatLeaders = ({ setYear }: StatLeadersProps) => {
 
   const batters = allLeadersData?.stats?.batting?.player ?? [];
   const pitchers = allLeadersData?.stats?.pitching?.player ?? [];
-  console.log(batters);
 
   return (
     <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-sm border mb-8 w-[50%] max-w-[calc(100%-2rem)] min-w-[360px]">

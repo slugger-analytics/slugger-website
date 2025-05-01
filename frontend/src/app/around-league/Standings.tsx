@@ -38,9 +38,6 @@ const Standings = ({ setYear }: AroundLeagueProps) => {
       const data = allStandingsData.standings.conference.find(
         (conf) => conf.name === view,
       );
-
-      console.log(data);
-
       const sortedDivisions =
         data?.division.map((division) => ({
           ...division,

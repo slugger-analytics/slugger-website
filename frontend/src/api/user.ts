@@ -118,7 +118,6 @@ export const generateToken = async (userId: number, publicWidgetId: string) => {
 
     const res = await response.json();
 
-    console.log(res);
 
     if (!res.success) {
       throw new Error(res.message);
@@ -151,7 +150,6 @@ type updateUserType = {
 };
 export const editUser = async (id: number, data: updateUserType) => {
   try {
-    console.log(data);
     const response = await fetch(`${API_URL}/api/users/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
