@@ -25,7 +25,6 @@ jobs:
           host:     ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key:      ${{ secrets.SSH_KEY }}          # ← NEW (raw private key from Secrets)
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}  # add only if your key is pass-phrase-protected
 
           script: |
             set -e
