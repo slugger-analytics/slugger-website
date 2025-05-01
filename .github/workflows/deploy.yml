@@ -24,8 +24,7 @@ jobs:
         with:
           host:     ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
-          key:      ${{ secrets.SSH_KEY }}          # ← NEW (raw private key from Secrets)
-
+          key:      ${{ secrets.SSH_KEY }}
           script: |
             set -e
             cd alpb-website
