@@ -12,7 +12,7 @@ jobs:
       # 1️⃣ Check out the repo
       - uses: actions/checkout@v4
 
-      # 2️⃣ Trust the host key (first-connect prompt killer)
+      # 2️⃣ Trust the host key
       - name: Add host to known_hosts
         run: |
           mkdir -p ~/.ssh
