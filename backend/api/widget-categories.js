@@ -82,7 +82,6 @@ router.patch('/:id', validationMiddleware({ bodySchema: updateCategorySchema }),
     }
 
     values.push(id);
-    console.log(id)
     const result = await pool.query(
       `UPDATE categories SET ${updateFields.join(', ')} WHERE id = $${valueCount} RETURNING *`,
       values

@@ -29,17 +29,24 @@ import { useToast } from "@/hooks/use-toast";
 import { ClipboardIcon } from "lucide-react";
 import CategorySelector from "../dashboard/category-selector";
 import { CategoryType } from "@/data/types";
-import { addWidgetCollaborator, getWidgetCollaborators } from "@/api/widget";
+import { addWidgetCollaborator, getWidgetCollaborators, getWidgetTeamAccess, updateWidgetTeamAccess } from "@/api/widget";
+import { getTeams } from "@/api/teams";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/app/components/ui/accordion";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 
 interface EditWidgetDialogProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface Team {
+  team_id: string;
+  team_name: string;
 }
 
 const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
@@ -67,6 +74,9 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   const [targetWidgetCategories, setTargetWidgetCategories] = useState(
     targetWidget.categories,
   );
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
+  const [isLoadingTeams, setIsLoadingTeams] = useState(false);
 
   const { editWidget, handleDeleteWidget } = useMutationWidgets(); // Hook for editing widgets
   const [visible, setVisible] = useState(false);
@@ -84,12 +94,105 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   const [newCollaboratorEmail, setNewCollaboratorEmail] = useState("");
   const [isAddingCollaborator, setIsAddingCollaborator] = useState(false);
 
+  // Fetch teams when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log("Dialog opened, fetching teams...");
+      const fetchTeams = async () => {
+        setIsLoadingTeams(true);
+        try {
+          const teamsData = await getTeams();
+          console.log("Teams fetched:", teamsData);
+          setTeams(teamsData);
+        } catch (error) {
+          console.error("Error fetching teams:", error);
+          toast({
+            title: "Error loading teams",
+            description: "Could not load teams. Please try again later.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoadingTeams(false);
+        }
+      };
+
+      fetchTeams();
+    }
+  }, [isOpen, toast]);
+
+  // Fetch widget team access when dialog opens or when teams are loaded
+  useEffect(() => {
+    if (isOpen && targetWidget.id && teams.length > 0) {
+      console.log("Teams loaded, fetching team access for widget:", targetWidget.id);
+      const fetchTeamAccess = async () => {
+        try {
+          console.log("Fetching team access for widget:", targetWidget.id);
+          const teamIds = await getWidgetTeamAccess(targetWidget.id);
+          console.log("Team access retrieved:", teamIds);
+          
+          if (Array.isArray(teamIds) && teamIds.length > 0) {
+            console.log("Setting selected team IDs:", teamIds);
+            setSelectedTeamIds(teamIds);
+            
+            // Log which teams should be checked
+            teams.forEach(team => {
+              const isSelected = teamIds.includes(team.team_id);
+              console.log(`Team ${team.team_id} (${team.team_name}) should be ${isSelected ? 'checked' : 'unchecked'}, type of team_id: ${typeof team.team_id}`);
+            });
+          } else {
+            console.log("No team access found for this widget or error in response");
+            setSelectedTeamIds([]);
+          }
+        } catch (error) {
+          console.error("Error fetching widget team access:", error);
+          // Don't show error toast since this might be a new widget or widget without team access yet
+          setSelectedTeamIds([]);
+        }
+      };
+
+      fetchTeamAccess();
+    }
+  }, [isOpen, targetWidget.id, teams, toast]);
+
+  // Update local state when the target widget changes
+  useEffect(() => {
+    if (targetWidget.id) {
+      setName(targetWidget.name || "");
+      setDescription(targetWidget.description || "");
+      setDeploymentLink(targetWidget.redirectLink || "");
+      
+      // Ensure visibility is properly capitalized
+      const visibilityValue = targetWidget.visibility || "Private";
+      setVisibility(
+        visibilityValue.charAt(0).toUpperCase() + visibilityValue.slice(1).toLowerCase()
+      );
+      
+      setImageUrl(targetWidget.imageUrl || "default");
+      setRestrictedAccess(targetWidget.restrictedAccess);
+      setTargetWidgetCategories(targetWidget.categories);
+      
+      // Reset team selection when widget changes
+      setSelectedTeamIds([]);
+    }
+  }, [targetWidget]);
+
+  // Reset state when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      console.log("Dialog closed, resetting state");
+      setSelectedTeamIds([]);
+    }
+  }, [isOpen]);
+
   /**
    * Handles saving the updated widget details.
    * Calls the `editWidget` mutation and closes the dialog on success.
    */
   const handleSave = async () => {
     try {
+      console.log("Saving widget changes...");
+      console.log(`Current visibility: ${visibility}`);
+      
       const updatedCategories = [
         ...targetWidget.categories.filter((cat) => {
           const matchingCategory = Array.from(categoriesToRemove).find(
@@ -118,9 +221,39 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           categoriesToRemove,
         },
       );
+
+      // Update team access if the widget is private
+      if (visibility === "Private" && targetWidget.id) {
+        console.log(`Updating team access for widget ${targetWidget.id}`);
+        console.log(`Selected teams: ${selectedTeamIds.join(', ') || 'None'}`);
+        
+        try {
+          // Pass the raw team IDs without any conversion
+          await updateWidgetTeamAccess(targetWidget.id, selectedTeamIds);
+          console.log("Team access updated successfully");
+        } catch (teamError) {
+          console.error("Error updating team access:", teamError);
+          toast({
+            title: "Error updating team access",
+            description: "Widget information was saved, but team access could not be updated.",
+            variant: "destructive",
+          });
+        }
+      }
+
+      toast({
+        title: "Widget updated",
+        description: "Widget information has been updated successfully.",
+      });
+      
       onClose(); // Close the dialog after saving
     } catch (error) {
       console.error("Error updating widget:", error);
+      toast({
+        title: "Error updating widget",
+        description: "There was a problem updating the widget. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -129,6 +262,29 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
     if (newVisibility === "Private") {
       setRestrictedAccess(true);
     }
+  };
+
+  const handleTeamSelection = (teamId: any) => {
+    console.log(`Team selection toggled: ${teamId}, type: ${typeof teamId}`);
+    console.log(`Current selected teams: ${selectedTeamIds.join(', ') || 'None'}`);
+    
+    setSelectedTeamIds(prev => {
+      // Direct comparison without type conversion to handle UUIDs properly
+      const isSelected = prev.includes(teamId);
+      console.log(`Team ${teamId} is currently ${isSelected ? 'selected' : 'not selected'}`);
+      
+      if (isSelected) {
+        // Remove team from selection
+        const newSelection = prev.filter(id => id !== teamId);
+        console.log(`Removing team, new selection: ${newSelection.join(', ') || 'None'}`);
+        return newSelection;
+      } else {
+        // Add team to selection
+        const newSelection = [...prev, teamId];
+        console.log(`Adding team, new selection: ${newSelection.join(', ') || 'None'}`);
+        return newSelection;
+      }
+    });
   };
 
   const handleAddCollaborator = async () => {
@@ -231,26 +387,79 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
           <Separator></Separator>
           {/* Visibility Options */}
           <div>
-            <Label>Visibility</Label>
-            <div className="flex items-center space-x-4 mt-2">
+            <Label className="block mb-2">Visibility</Label>
+            <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="radio"
                   id="visibility-private"
                   checked={visibility === "Private"}
-                  onCheckedChange={() => setVisibility("Private")}
+                  onChange={() => handleSetVisibility("Private")}
+                  className="h-4 w-4"
                 />
                 <Label htmlFor="visibility-private">Private</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox
+                <input
+                  type="radio"
                   id="visibility-public"
                   checked={visibility === "Public"}
-                  onCheckedChange={() => handleSetVisibility("Public")}
+                  onChange={() => handleSetVisibility("Public")}
+                  className="h-4 w-4"
                 />
                 <Label htmlFor="visibility-public">Public</Label>
               </div>
             </div>
           </div>
+
+          {/* Team Access Section (only shown when visibility is Private) */}
+          {visibility === "Private" && (
+            <div className="mt-4">
+              <Label className="block mb-2">Team Access</Label>
+              <div className="border rounded-md p-3 max-h-40 overflow-y-auto">
+                {isLoadingTeams ? (
+                  <div className="flex justify-center py-2">Loading teams...</div>
+                ) : teams.length === 0 ? (
+                  <div className="text-center py-2 text-gray-500">No teams available</div>
+                ) : (
+                  <div className="space-y-2">
+                    {/* Debug info */}
+                    <div className="text-xs text-gray-500 mb-2">
+                      Selected team IDs: {selectedTeamIds.join(', ') || 'None'}
+                    </div>
+                    
+                    {teams.map((team) => {
+                      // Use the raw team_id value without conversion
+                      const teamId = team.team_id;
+                      const isChecked = selectedTeamIds.includes(teamId);
+                      console.log(`Rendering team ${teamId} (${team.team_name}), checked: ${isChecked}, type: ${typeof teamId}`);
+                      
+                      return (
+                        <div key={teamId} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`team-${teamId}`}
+                            checked={isChecked}
+                            onChange={() => {
+                              console.log(`Checkbox clicked for team ${teamId}`);
+                              handleTeamSelection(teamId);
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <Label htmlFor={`team-${teamId}`}>
+                            {team.team_name}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Select which teams can access this private widget
+              </p>
+            </div>
+          )}
 
           <div>
             <div>
@@ -267,7 +476,9 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                 id="restricted-access"
                 checked={restrictedAccess || visibility === "Private"}
                 disabled={visibility === "Private"}
-                onCheckedChange={() => setRestrictedAccess((prev) => !prev)}
+                onCheckedChange={(checked) => 
+                  setRestrictedAccess(checked === true)
+                }
               />
               <Label htmlFor="restricted-access">
                 Generate validation tokens

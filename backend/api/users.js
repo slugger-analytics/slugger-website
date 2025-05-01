@@ -128,7 +128,6 @@ router.post("/sign-in", async (req, res) => {
 
 router.post('/logout', async (req, res) => {
   try {
-    console.log("recieved")
     // If there's no data in the session, nothing to do
     if (!req.session || !req.session.user) {
       return res.status(200).json({ 
@@ -241,7 +240,6 @@ router.post("/validate-session", authGuard, async (req, res) => {
 
 router.post("/generate-token", authGuard, validationMiddleware(generateTokenSchema), async (req, res) => {
   const { userId, publicWidgetId } = req.body;
-  console.log("session:", req.session)
   try {
     // Ensure session is valid (w/ corresponding user)
     // if (req.session.user.user_id !== userId) {
@@ -336,8 +334,6 @@ router.get('/search', async (req, res) => {
 router.post('/send-password-reset-email', async (req, res) => {
   try {
     const { email, otp } = req.body;
-
-    console.log("Recieved.", email, otp)
 
     await sendPasswordResetEmail(email, otp);
 

@@ -179,7 +179,6 @@ router.patch(
 // invite a new member to a team
 router.post("/:teamId/invite", async (req, res) => {
   try {
-    console.log("Invite route hit");
     const teamId = req.params.teamId;
     
     // Verify the team exists
@@ -217,8 +216,6 @@ router.post("/:teamId/invite", async (req, res) => {
 
 // Change from /invite/validate to a more explicit path
 router.post("/validate-invite", async (req, res) => {
-  console.log("Validate invite route hit");
-  console.log("Request body:", req.body);
   try {
     const { inviteToken } = req.body;
     

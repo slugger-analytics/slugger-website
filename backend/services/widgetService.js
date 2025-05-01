@@ -54,61 +54,90 @@ export async function updateWidget({
   publicId,
   restrictedAccess
 }) {
-  const updates = [];
-  const values = [];
-  let index = 1;
-
-  // Dynamically construct query based on which parameters are defined
-  if (name !== undefined) {
-    updates.push(`widget_name = $${index++}`);
-    values.push(name);
-  }
-  if (description !== undefined) {
-    updates.push(`description = $${index++}`);
-    values.push(description);
-  }
-  if (redirectLink !== undefined) {
-    updates.push(`redirect_link = $${index++}`);
-    values.push(redirectLink);
-  }
-  if (visibility !== undefined) {
-    updates.push(`visibility = $${index++}`);
-    values.push(visibility);
-  }
-  if (imageUrl !== undefined) {
-    updates.push(`image_url = $${index++}`);
-    values.push(imageUrl);
-  }
-  if (publicId !== undefined) {
-    updates.push(`public_id = $${index++}`);
-    values.push(publicId);
-  }
-  if (restrictedAccess !== undefined) {
-    updates.push(`restricted_access = $${index++}`);
-    values.push(restrictedAccess);
-  }
-
-  values.push(id);
-
-  const editQuery = `
-        UPDATE widgets
-        SET ${updates.join(", ")}
-        WHERE widget_id = $${index}
-        RETURNING *
-    `;
-
   try {
+    // Start a transaction
+    await pool.query('BEGIN');
+    
+    const updates = [];
+    const values = [];
+    let index = 1;
+
+    // Dynamically construct query based on which parameters are defined
+    if (name !== undefined) {
+      updates.push(`widget_name = $${index++}`);
+      values.push(name);
+    }
+    if (description !== undefined) {
+      updates.push(`description = $${index++}`);
+      values.push(description);
+    }
+    if (redirectLink !== undefined) {
+      updates.push(`redirect_link = $${index++}`);
+      values.push(redirectLink);
+    }
+    
+    // Get current visibility
+    let currentVisibility = null;
+    if (visibility !== undefined) {
+      const currentWidget = await pool.query(selectWidgetById, [id]);
+      if (currentWidget.rows.length > 0) {
+        currentVisibility = currentWidget.rows[0].visibility;
+      }
+      
+      updates.push(`visibility = $${index++}`);
+      values.push(visibility);
+    }
+    
+    if (imageUrl !== undefined) {
+      updates.push(`image_url = $${index++}`);
+      values.push(imageUrl);
+    }
+    if (publicId !== undefined) {
+      updates.push(`public_id = $${index++}`);
+      values.push(publicId);
+    }
+    if (restrictedAccess !== undefined) {
+      updates.push(`restricted_access = $${index++}`);
+      values.push(restrictedAccess);
+    }
+
+    values.push(id);
+
     let updatedWidget;
     if (updates.length === 0) {
       // There are no fields to update
       const res = await pool.query(selectWidgetById, [id]);
       updatedWidget = res.rows[0];
     } else {
+      const editQuery = `
+        UPDATE widgets
+        SET ${updates.join(", ")}
+        WHERE widget_id = $${index}
+        RETURNING *
+      `;
+      
       const res = await pool.query(editQuery, values);
       updatedWidget = res.rows[0];
+      
+      // If visibility changed from private to public, remove team access
+      if (currentVisibility && 
+          currentVisibility.toLowerCase() === 'private' && 
+          visibility && 
+          visibility.toLowerCase() === 'public') {
+        await pool.query(
+          `DELETE FROM widget_team_access WHERE widget_id = $1`,
+          [id]
+        );
+      }
     }
+    
+    // Commit transaction
+    await pool.query('COMMIT');
+    
     return updatedWidget;
   } catch (error) {
+    // Rollback if error occurs
+    await pool.query('ROLLBACK');
     console.error("Error updating widget:", error);
     throw new Error("Failed to update widget");
   }
@@ -238,6 +267,7 @@ export async function createApprovedWidget({
   widget_name,
   description,
   visibility,
+  selectedTeams = [],
 }) {
   try {
     
@@ -253,59 +283,269 @@ export async function createApprovedWidget({
       visibility,
       "approved",
     ]);
-    return result.rows[0]["widget_id"]; // Return the newly created widget ID
+
+    const widgetId = result.rows[0].widget_id;
+    
+    // If it's a private widget, handle team access
+    if (visibility === "private" && selectedTeams && selectedTeams.length > 0) {
+      // Create team access records
+      for (const teamId of selectedTeams) {
+        await addTeamWidgetAccess(widgetId, teamId);
+      }
+    }
+
+    return widgetId;
   } catch (error) {
-    console.error("Error creating approved widget:", error.message);
-    throw error;
+    console.error("Error creating approved widget:", error);
+    throw new Error("Failed to create approved widget");
   }
 }
 
+// Function to add team access to a widget
+export async function addTeamWidgetAccess(widgetId, teamId) {
+  try {
+    // Convert widgetId to integer, but keep teamId as UUID
+    const widgetIdInt = parseInt(widgetId, 10);
+    
+    if (isNaN(widgetIdInt)) {
+      throw new Error(`Invalid widget ID (${widgetId})`);
+    }
+      
+    const query = `
+      INSERT INTO widget_team_access (widget_id, team_id)
+      VALUES ($1, $2)
+      ON CONFLICT (widget_id, team_id) DO NOTHING
+      RETURNING *;
+    `;
+    
+    const result = await pool.query(query, [widgetIdInt, teamId]);
+    return result.rows[0];
+  } catch (error) {
+    console.error(`Error adding team ${teamId} access to widget ${widgetId}:`, error);
+    throw new Error("Failed to add team access to widget");
+  }
+}
 
-export async function getAllWidgets(widget_name, categories, page, limit) {
-  // When we select * from widgets,
-  // need to get all user_ids from user_widget where user_widget.widget_id === widgets.widget_id
-const widgetsQuery = `
-    SELECT
-        w.*,
-        ARRAY_AGG(DISTINCT uw.user_id) AS developer_ids,
-        COALESCE(
-            JSON_AGG(
-                DISTINCT JSONB_BUILD_OBJECT('id', c.id, 'name', c.name, 'hex_code', c.hex_code)
-            ) FILTER (WHERE c.name IS NOT NULL),
-            '[]'
-        ) AS categories,
-        JSONB_BUILD_OBJECT(
-            'weeklyLaunches', COALESCE(MAX(wm_weekly.total_launches), 0),
-            'weeklyUniqueLaunches', COALESCE(MAX(wm_weekly.unique_launches), 0),
-            'monthlyLaunches', COALESCE(MAX(wm_monthly.total_launches), 0),
-            'monthlyUniqueLaunches', COALESCE(MAX(wm_monthly.unique_launches), 0),
-            'yearlyLaunches', COALESCE(MAX(wm_yearly.total_launches), 0),
-            'yearlyUniqueLaunches', COALESCE(MAX(wm_yearly.unique_launches), 0),
-            'allTimeLaunches', COALESCE(MAX(wm_all_time.total_launches), 0),
-            'allTimeUniqueLaunches', COALESCE(MAX(wm_all_time.unique_launches), 0)
-        ) AS metrics
-    FROM
-        widgets w
-    LEFT JOIN
-        user_widget uw ON w.widget_id = uw.widget_id
-    LEFT JOIN 
-        widget_categories AS wc ON w.widget_id = wc.widget_id
-    LEFT JOIN
-        categories AS c ON wc.category_id = c.id
-    LEFT JOIN
-        widget_metrics wm_weekly ON w.widget_id = wm_weekly.widget_id AND wm_weekly.timeframe_type = 'weekly'
-    LEFT JOIN
-        widget_metrics wm_monthly ON w.widget_id = wm_monthly.widget_id AND wm_monthly.timeframe_type = 'monthly'
-    LEFT JOIN
-        widget_metrics wm_yearly ON w.widget_id = wm_yearly.widget_id AND wm_yearly.timeframe_type = 'yearly'
-    LEFT JOIN
-        widget_metrics wm_all_time ON w.widget_id = wm_all_time.widget_id AND wm_all_time.timeframe_type = 'all_time'
-    GROUP BY
-        w.widget_id;
-`;
+// Function to remove team access from a widget
+export async function removeTeamWidgetAccess(widgetId, teamId) {
+  try {
+    const query = `
+      DELETE FROM widget_team_access
+      WHERE widget_id = $1 AND team_id = $2
+      RETURNING *;
+    `;
+    
+    const result = await pool.query(query, [widgetId, teamId]);
+    return result.rows[0];
+  } catch (error) {
+    console.error(`Error removing team ${teamId} access from widget ${widgetId}:`, error);
+    throw new Error("Failed to remove team access from widget");
+  }
+}
 
-  const result = await pool.query(widgetsQuery);
-  return result.rows;
+// Function to get all teams with access to a widget
+export async function getTeamsWithWidgetAccess(widgetId) {
+  try {
+    const query = `
+      SELECT t.* 
+      FROM team t
+      JOIN widget_team_access wta ON t.team_id = wta.team_id
+      WHERE wta.widget_id = $1;
+    `;
+    
+    const result = await pool.query(query, [widgetId]);
+    return result.rows;
+  } catch (error) {
+    console.error(`Error getting teams with access to widget ${widgetId}:`, error);
+    throw new Error("Failed to get teams with widget access");
+  }
+}
+
+export async function getAllWidgets(widget_name, categories, page, limit, userId) {
+  try {
+    // Get user's team id if available
+    let userTeamId = null;
+    if (userId) {
+      try {
+        // Convert userId to integer in case it's a string
+        const userIdInt = parseInt(userId, 10);
+        if (isNaN(userIdInt)) {
+          throw new Error("Invalid userId format");
+        }
+        
+        const userResult = await pool.query(
+          "SELECT team_id FROM users WHERE user_id = $1",
+          [userIdInt]
+        );
+        
+        if (userResult.rows.length > 0 && userResult.rows[0].team_id) {
+          userTeamId = userResult.rows[0].team_id;
+        }
+      } catch (error) {
+        console.error("Error getting user's team:", error);
+        // Continue with userTeamId as null
+      }
+    }
+
+    // Enhanced debug log
+
+    // Debug query to check visibility values in the widgets table
+    const checkVisibilityQuery = `SELECT widget_id, widget_name, visibility FROM widgets`;
+    const visibilityResult = await pool.query(checkVisibilityQuery);
+    // Get user's role
+    let userRole = null;
+    if (userId) {
+      try {
+        const userRoleResult = await pool.query(
+          "SELECT role FROM users WHERE user_id = $1",
+          [parseInt(userId, 10)]
+        );
+        
+        if (userRoleResult.rows.length > 0) {
+          userRole = userRoleResult.rows[0].role;
+        }
+      } catch (error) {
+        console.error("Error getting user's role:", error);
+      }
+    }
+    
+    let publicWidgetsQuery = `
+      SELECT
+          w.*,
+          ARRAY_AGG(DISTINCT uw.user_id) AS developer_ids,
+          COALESCE(
+              JSON_AGG(
+                  DISTINCT JSONB_BUILD_OBJECT('id', c.id, 'name', c.name, 'hex_code', c.hex_code)
+              ) FILTER (WHERE c.name IS NOT NULL),
+              '[]'
+          ) AS categories,
+          JSONB_BUILD_OBJECT(
+              'weeklyLaunches', COALESCE(MAX(wm_weekly.total_launches), 0),
+              'weeklyUniqueLaunches', COALESCE(MAX(wm_weekly.unique_launches), 0),
+              'monthlyLaunches', COALESCE(MAX(wm_monthly.total_launches), 0),
+              'monthlyUniqueLaunches', COALESCE(MAX(wm_monthly.unique_launches), 0),
+              'yearlyLaunches', COALESCE(MAX(wm_yearly.total_launches), 0),
+              'yearlyUniqueLaunches', COALESCE(MAX(wm_yearly.unique_launches), 0),
+              'allTimeLaunches', COALESCE(MAX(wm_all_time.total_launches), 0),
+              'allTimeUniqueLaunches', COALESCE(MAX(wm_all_time.unique_launches), 0)
+          ) AS metrics
+      FROM
+          widgets w
+      LEFT JOIN
+          user_widget uw ON w.widget_id = uw.widget_id
+      LEFT JOIN 
+          widget_categories AS wc ON w.widget_id = wc.widget_id
+      LEFT JOIN
+          categories AS c ON wc.category_id = c.id
+      LEFT JOIN
+          widget_metrics wm_weekly ON w.widget_id = wm_weekly.widget_id AND wm_weekly.timeframe_type = 'weekly'
+      LEFT JOIN
+          widget_metrics wm_monthly ON w.widget_id = wm_monthly.widget_id AND wm_monthly.timeframe_type = 'monthly'
+      LEFT JOIN
+          widget_metrics wm_yearly ON w.widget_id = wm_yearly.widget_id AND wm_yearly.timeframe_type = 'yearly'
+      LEFT JOIN
+          widget_metrics wm_all_time ON w.widget_id = wm_all_time.widget_id AND wm_all_time.timeframe_type = 'all_time'
+      WHERE 
+          (LOWER(w.visibility) = 'public' OR w.visibility IS NULL)`;
+    
+    // If userId is provided, include widgets they are developers for
+    if (userId) {
+      publicWidgetsQuery += ` OR EXISTS (
+        SELECT 1 FROM user_widget uw2 
+        WHERE uw2.widget_id = w.widget_id 
+        AND uw2.user_id = $1)`;
+    }
+      
+    publicWidgetsQuery += `
+      GROUP BY 
+          w.widget_id, w.widget_name, w.description, w.visibility, w.status, w.created_at, 
+          w.redirect_link, w.image_url, w.public_id, w.restricted_access
+    `;
+
+    // If user has a team, get private widgets accessible to that team
+    let privateWidgetsPromise = Promise.resolve([]);
+    if (userTeamId && userRole !== 'widget developer') {  // Widget developers get their widgets via the public query
+      const privateWidgetsQuery = `
+        SELECT
+            w.*,
+            ARRAY_AGG(DISTINCT uw.user_id) AS developer_ids,
+            COALESCE(
+                JSON_AGG(
+                    DISTINCT JSONB_BUILD_OBJECT('id', c.id, 'name', c.name, 'hex_code', c.hex_code)
+                ) FILTER (WHERE c.name IS NOT NULL),
+                '[]'
+            ) AS categories,
+            JSONB_BUILD_OBJECT(
+                'weeklyLaunches', COALESCE(MAX(wm_weekly.total_launches), 0),
+                'weeklyUniqueLaunches', COALESCE(MAX(wm_weekly.unique_launches), 0),
+                'monthlyLaunches', COALESCE(MAX(wm_monthly.total_launches), 0),
+                'monthlyUniqueLaunches', COALESCE(MAX(wm_monthly.unique_launches), 0),
+                'yearlyLaunches', COALESCE(MAX(wm_yearly.total_launches), 0),
+                'yearlyUniqueLaunches', COALESCE(MAX(wm_yearly.unique_launches), 0),
+                'allTimeLaunches', COALESCE(MAX(wm_all_time.total_launches), 0),
+                'allTimeUniqueLaunches', COALESCE(MAX(wm_all_time.unique_launches), 0)
+            ) AS metrics
+        FROM
+            widgets w
+        JOIN
+            widget_team_access wta ON w.widget_id = wta.widget_id 
+        LEFT JOIN
+            user_widget uw ON w.widget_id = uw.widget_id
+        LEFT JOIN 
+            widget_categories AS wc ON w.widget_id = wc.widget_id
+        LEFT JOIN
+            categories AS c ON wc.category_id = c.id
+        LEFT JOIN
+            widget_metrics wm_weekly ON w.widget_id = wm_weekly.widget_id AND wm_weekly.timeframe_type = 'weekly'
+        LEFT JOIN
+            widget_metrics wm_monthly ON w.widget_id = wm_monthly.widget_id AND wm_monthly.timeframe_type = 'monthly'
+        LEFT JOIN
+            widget_metrics wm_yearly ON w.widget_id = wm_yearly.widget_id AND wm_yearly.timeframe_type = 'yearly'
+        LEFT JOIN
+            widget_metrics wm_all_time ON w.widget_id = wm_all_time.widget_id AND wm_all_time.timeframe_type = 'all_time'
+        WHERE 
+            LOWER(w.visibility) = 'private' AND wta.team_id = $1
+        GROUP BY 
+            w.widget_id, w.widget_name, w.description, w.visibility, w.status, w.created_at, 
+            w.redirect_link, w.image_url, w.public_id, w.restricted_access
+      `;
+      
+      privateWidgetsPromise = pool.query(privateWidgetsQuery, [userTeamId])
+        .then(result => result.rows);
+    }
+
+    // Execute queries in parallel
+    const [publicWidgets, privateWidgets] = await Promise.all([
+      pool.query(publicWidgetsQuery, userId ? [parseInt(userId, 10)] : []).then(result => result.rows),
+      privateWidgetsPromise
+    ]);
+
+    // Combine results
+    const allWidgets = [...publicWidgets, ...privateWidgets];
+    
+    return allWidgets;
+  } catch (error) {
+    console.error("Error fetching widgets:", error);
+    throw new Error(`Failed to fetch widgets: ${error.message}`);
+  }
+}
+
+// Helper function to check if a team has access to a widget
+// This is a stub that will be replaced with actual DB call later
+async function checkTeamWidgetAccess(widgetId, teamId) {
+  try {
+    const query = `
+      SELECT 1 FROM widget_team_access 
+      WHERE widget_id = $1 AND team_id = $2
+      LIMIT 1
+    `;
+    
+    const result = await pool.query(query, [widgetId, teamId]);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error(`Error checking team access for widget ${widgetId}:`, error);
+    return false;
+  }
 }
 
 export async function deleteWidget(id) {

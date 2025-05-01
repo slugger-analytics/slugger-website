@@ -114,9 +114,13 @@ export const declineWidget = async (requestId: string): Promise<string> => {
   }
 };
 
-export const fetchWidgets = async (): Promise<WidgetType[]> => {
+export const fetchWidgets = async (userId?: string): Promise<WidgetType[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/widgets`);
+    const url = userId 
+      ? `${API_URL}/api/widgets?userId=${userId}` 
+      : `${API_URL}/api/widgets`;
+      
+    const response = await fetch(url);
     const res = await response.json();
     if (!res.success) {
       throw new Error(res.message);
@@ -290,6 +294,7 @@ export const createWidget = async (widgetData: {
   description: string;
   visibility: string;
   userId: string;
+  selectedTeams?: string[];
 }): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/api/widgets/create`, {
@@ -361,6 +366,46 @@ export async function deleteWidget(widgetId: number) {
     }
   } catch (error) {
     console.error("Error deleting widget:", error);
+    throw error;
+  }
+}
+
+export async function getWidgetTeamAccess(widgetId: number): Promise<string[]> {
+  try {
+    console.log(`Fetching team access for widget ${widgetId}`);
+    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`);
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message);
+    }
+
+    console.log(`Team access data received:`, JSON.stringify(data.data, null, 2));
+    
+    // Return the raw team_id values without modification
+    return data.data.map((team: { team_id: any }) => team.team_id);
+  } catch (error) {
+    console.error("Error fetching widget team access:", error);
+    return [];
+  }
+}
+
+export async function updateWidgetTeamAccess(widgetId: number, teamIds: string[]): Promise<void> {
+  try {
+    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ teamIds }),
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.message);
+    }
+  } catch (error) {
+    console.error("Error updating widget team access:", error);
     throw error;
   }
 }

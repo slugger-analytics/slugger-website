@@ -31,7 +31,6 @@ router.get("/standings", async (req, res) => {
         const jsonText = await streamToString(s3Response.Body);
         const data = JSON.parse(jsonText);
 
-        console.log(data);
         res.status(200).json({
             success: true,
             message: "Fetched season standings successfully",
@@ -59,7 +58,6 @@ router.get("/leaders", async (req, res) => {
         const jsonText = await streamToString(s3Response.Body);
         const data = JSON.parse(jsonText);
 
-        console.log(data);
         res.status(200).json({
             success: true,
             message: "Fetched league leaders successfully",

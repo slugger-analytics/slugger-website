@@ -23,6 +23,7 @@ export const queryParamsSchema = z.object({
     .positive()
     .max(100, "Limit must be <= 100")
     .optional(),
+  userId: z.coerce.number().int().positive().optional(),
 });
 
 export const registerWidgetSchema = z.object({
