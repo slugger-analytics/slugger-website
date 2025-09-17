@@ -10,7 +10,6 @@ export default function useQueryLeague() {
     try {
       setStandingsLoading(true);
       const standings = await fetchStandings();
-      console.log(standings);
       setStandings(standings);
     } catch (error) {
       console.error("Error fetching standings:", error);
@@ -23,7 +22,6 @@ export default function useQueryLeague() {
     try {
       setLeadersLoading(true);
       const leaders = await fetchLeaders();
-      console.log(leaders);
       setLeagueLeaders(leaders);
     } catch (error) {
       console.error("Error fetching league leaders:", error);
