@@ -22,7 +22,7 @@ dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
 const cognito = new CognitoIdentityServiceProvider({ region: "us-east-2" });
 const JWT_SECRET = process.env.JWT_SECRET;
-const COGNITO_USER_POOL_ID = process.env.USER_POOL_ID;
+const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
 const router = Router();
 
 /**
