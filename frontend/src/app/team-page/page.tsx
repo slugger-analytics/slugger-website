@@ -59,7 +59,7 @@ export default function TeamPage() {
 
   useEffect(() => {
     const fetchTeamData = async () => {
-      if (user.teamId) {
+      if (user.teamId && user.teamId !== "null") {
         try {
           const teamData = await getTeam(user.teamId);
           setTeamName(teamData.team_name);

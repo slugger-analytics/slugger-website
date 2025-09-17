@@ -32,13 +32,6 @@ function useQueryWidgets() {
         fetchWidgets(user.id),
         getCategories(),
       ]);
-
-      // Debug log to check what we're getting
-      console.log("Fetched widgets:", fetchedWidgets.map(w => ({
-        id: w.id,
-        name: w.name,
-        visibility: w.visibility
-      })));
       
       // Check if the user is a Widget Developer
       const isDev = user.role === "widget developer" ? true : false;
@@ -67,7 +60,7 @@ function useQueryWidgets() {
         }
       });
 
-      console.log("Filtered widgets:", filteredWidgets.map(w => ({
+      /*console.log("Filtered widgets:", filteredWidgets.map(w => ({
         id: w.id,
         name: w.name,
         visibility: w.visibility
@@ -75,7 +68,7 @@ function useQueryWidgets() {
       
       if (filteredOutWidgets.length > 0) {
         console.log("Filtered OUT widgets:", filteredOutWidgets);
-      }
+      }*/
 
       setWidgets([...filteredWidgets]);
       
