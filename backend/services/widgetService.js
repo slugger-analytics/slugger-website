@@ -361,169 +361,170 @@ export async function getTeamsWithWidgetAccess(widgetId) {
   }
 }
 
-export async function getAllWidgets(widget_name, categories, page, limit, userId) {
+export async function getAllWidgets(widget_name, categories, page = 1, limit = 50, userId) {
   try {
-    // Get user's team id if available
+    // simple pagination and param sanitization
+    const pageInt = Math.max(1, parseInt(page || 1, 10));
+    const limitInt = Math.min(100, Math.max(1, parseInt(limit || 50, 10)));
+    const offset = (pageInt - 1) * limitInt;
+
+    // Determine user's team & role (reuse existing logic if available)
     let userTeamId = null;
-    if (userId) {
-      try {
-        // Convert userId to integer in case it's a string
-        const userIdInt = parseInt(userId, 10);
-        if (isNaN(userIdInt)) {
-          throw new Error("Invalid userId format");
-        }
-        
-        const userResult = await pool.query(
-          "SELECT team_id FROM users WHERE user_id = $1",
-          [userIdInt]
-        );
-        
-        if (userResult.rows.length > 0 && userResult.rows[0].team_id) {
-          userTeamId = userResult.rows[0].team_id;
-        }
-      } catch (error) {
-        console.error("Error getting user's team:", error);
-        // Continue with userTeamId as null
-      }
-    }
-
-    // Enhanced debug log
-
-    // Debug query to check visibility values in the widgets table
-    const checkVisibilityQuery = `SELECT widget_id, widget_name, visibility FROM widgets`;
-    const visibilityResult = await pool.query(checkVisibilityQuery);
-    // Get user's role
     let userRole = null;
     if (userId) {
       try {
-        const userRoleResult = await pool.query(
-          "SELECT role FROM users WHERE user_id = $1",
-          [parseInt(userId, 10)]
-        );
-        
-        if (userRoleResult.rows.length > 0) {
-          userRole = userRoleResult.rows[0].role;
+        const userResult = await pool.query("SELECT team_id, role FROM users WHERE user_id = $1", [parseInt(userId, 10)]);
+        if (userResult.rows.length > 0) {
+          userTeamId = userResult.rows[0].team_id || null;
+          userRole = userResult.rows[0].role || null;
         }
-      } catch (error) {
-        console.error("Error getting user's role:", error);
+      } catch (err) {
+        console.error("Error fetching user team/role:", err);
       }
     }
-    
-    let publicWidgetsQuery = `
-      SELECT
-          w.*,
-          ARRAY_AGG(DISTINCT uw.user_id) AS developer_ids,
-          COALESCE(
-              JSON_AGG(
-                  DISTINCT JSONB_BUILD_OBJECT('id', c.id, 'name', c.name, 'hex_code', c.hex_code)
-              ) FILTER (WHERE c.name IS NOT NULL),
-              '[]'
-          ) AS categories,
-          JSONB_BUILD_OBJECT(
-              'weeklyLaunches', COALESCE(MAX(wm_weekly.total_launches), 0),
-              'weeklyUniqueLaunches', COALESCE(MAX(wm_weekly.unique_launches), 0),
-              'monthlyLaunches', COALESCE(MAX(wm_monthly.total_launches), 0),
-              'monthlyUniqueLaunches', COALESCE(MAX(wm_monthly.unique_launches), 0),
-              'yearlyLaunches', COALESCE(MAX(wm_yearly.total_launches), 0),
-              'yearlyUniqueLaunches', COALESCE(MAX(wm_yearly.unique_launches), 0),
-              'allTimeLaunches', COALESCE(MAX(wm_all_time.total_launches), 0),
-              'allTimeUniqueLaunches', COALESCE(MAX(wm_all_time.unique_launches), 0)
-          ) AS metrics
-      FROM
-          widgets w
-      LEFT JOIN
-          user_widget uw ON w.widget_id = uw.widget_id
-      LEFT JOIN 
-          widget_categories AS wc ON w.widget_id = wc.widget_id
-      LEFT JOIN
-          categories AS c ON wc.category_id = c.id
-      LEFT JOIN
-          widget_metrics wm_weekly ON w.widget_id = wm_weekly.widget_id AND wm_weekly.timeframe_type = 'weekly'
-      LEFT JOIN
-          widget_metrics wm_monthly ON w.widget_id = wm_monthly.widget_id AND wm_monthly.timeframe_type = 'monthly'
-      LEFT JOIN
-          widget_metrics wm_yearly ON w.widget_id = wm_yearly.widget_id AND wm_yearly.timeframe_type = 'yearly'
-      LEFT JOIN
-          widget_metrics wm_all_time ON w.widget_id = wm_all_time.widget_id AND wm_all_time.timeframe_type = 'all_time'
-      WHERE 
-          (LOWER(w.visibility) = 'public' OR w.visibility IS NULL)`;
-    
-    // If userId is provided, include widgets they are developers for
+
+    // Build base (lightweight) query: select widget rows only
+    const baseParams = [];
+    const baseConditions = ["(LOWER(w.visibility) = 'public' OR w.visibility IS NULL)"];
     if (userId) {
-      publicWidgetsQuery += ` OR EXISTS (
-        SELECT 1 FROM user_widget uw2 
-        WHERE uw2.widget_id = w.widget_id 
-        AND uw2.user_id = $1)`;
+      baseParams.push(parseInt(userId, 10));
+      baseConditions.push(`EXISTS (SELECT 1 FROM user_widget uw2 WHERE uw2.widget_id = w.widget_id AND uw2.user_id = $${baseParams.length})`);
     }
-      
-    publicWidgetsQuery += `
-      GROUP BY 
-          w.widget_id, w.widget_name, w.description, w.visibility, w.status, w.created_at, 
-          w.redirect_link, w.image_url, w.public_id, w.restricted_access
+    if (userTeamId && userRole !== 'widget developer') {
+      baseParams.push(userTeamId);
+      baseConditions.push(`EXISTS (SELECT 1 FROM widget_team_access wta WHERE wta.widget_id = w.widget_id AND wta.team_id = $${baseParams.length})`);
+    }
+
+    // Optional: filter by widget_name (simple ILIKE)
+    if (widget_name) {
+      baseParams.push(`%${widget_name.toLowerCase()}%`);
+      baseConditions.push(`LOWER(w.widget_name) ILIKE $${baseParams.length}`);
+    }
+
+    const baseQuery = `
+      SELECT
+        w.widget_id,
+        w.widget_name,
+        w.description,
+        w.visibility,
+        w.status,
+        w.created_at,
+        w.redirect_link,
+        w.image_url,
+        w.public_id,
+        w.restricted_access
+      FROM widgets w
+      WHERE ${baseConditions.join(" OR ")}
+      ORDER BY w.widget_id
+      LIMIT $${baseParams.length + 1}
+      OFFSET $${baseParams.length + 2}
     `;
+    baseParams.push(limitInt, offset);
 
-    // If user has a team, get private widgets accessible to that team
-    let privateWidgetsPromise = Promise.resolve([]);
-    if (userTeamId && userRole !== 'widget developer') {  // Widget developers get their widgets via the public query
-      const privateWidgetsQuery = `
-        SELECT
-            w.*,
-            ARRAY_AGG(DISTINCT uw.user_id) AS developer_ids,
-            COALESCE(
-                JSON_AGG(
-                    DISTINCT JSONB_BUILD_OBJECT('id', c.id, 'name', c.name, 'hex_code', c.hex_code)
-                ) FILTER (WHERE c.name IS NOT NULL),
-                '[]'
-            ) AS categories,
-            JSONB_BUILD_OBJECT(
-                'weeklyLaunches', COALESCE(MAX(wm_weekly.total_launches), 0),
-                'weeklyUniqueLaunches', COALESCE(MAX(wm_weekly.unique_launches), 0),
-                'monthlyLaunches', COALESCE(MAX(wm_monthly.total_launches), 0),
-                'monthlyUniqueLaunches', COALESCE(MAX(wm_monthly.unique_launches), 0),
-                'yearlyLaunches', COALESCE(MAX(wm_yearly.total_launches), 0),
-                'yearlyUniqueLaunches', COALESCE(MAX(wm_yearly.unique_launches), 0),
-                'allTimeLaunches', COALESCE(MAX(wm_all_time.total_launches), 0),
-                'allTimeUniqueLaunches', COALESCE(MAX(wm_all_time.unique_launches), 0)
-            ) AS metrics
-        FROM
-            widgets w
-        JOIN
-            widget_team_access wta ON w.widget_id = wta.widget_id 
-        LEFT JOIN
-            user_widget uw ON w.widget_id = uw.widget_id
-        LEFT JOIN 
-            widget_categories AS wc ON w.widget_id = wc.widget_id
-        LEFT JOIN
-            categories AS c ON wc.category_id = c.id
-        LEFT JOIN
-            widget_metrics wm_weekly ON w.widget_id = wm_weekly.widget_id AND wm_weekly.timeframe_type = 'weekly'
-        LEFT JOIN
-            widget_metrics wm_monthly ON w.widget_id = wm_monthly.widget_id AND wm_monthly.timeframe_type = 'monthly'
-        LEFT JOIN
-            widget_metrics wm_yearly ON w.widget_id = wm_yearly.widget_id AND wm_yearly.timeframe_type = 'yearly'
-        LEFT JOIN
-            widget_metrics wm_all_time ON w.widget_id = wm_all_time.widget_id AND wm_all_time.timeframe_type = 'all_time'
-        WHERE 
-            LOWER(w.visibility) = 'private' AND wta.team_id = $1
-        GROUP BY 
-            w.widget_id, w.widget_name, w.description, w.visibility, w.status, w.created_at, 
-            w.redirect_link, w.image_url, w.public_id, w.restricted_access
-      `;
-      
-      privateWidgetsPromise = pool.query(privateWidgetsQuery, [userTeamId])
-        .then(result => result.rows);
+    const baseRes = await pool.query(baseQuery, baseParams);
+    const baseRows = baseRes.rows;
+    if (baseRows.length === 0) return [];
+
+    const widgetIds = baseRows.map((r) => r.widget_id);
+
+    // Fetch categories for these widgets
+    const categoriesRes = await pool.query(
+      `SELECT wc.widget_id, c.id, c.name, c.hex_code
+       FROM widget_categories wc
+       JOIN categories c ON c.id = wc.category_id
+       WHERE wc.widget_id = ANY($1::int[])`,
+      [widgetIds]
+    );
+
+    // Fetch developer relations
+    const devsRes = await pool.query(
+      `SELECT widget_id, user_id FROM user_widget WHERE widget_id = ANY($1::int[])`,
+      [widgetIds]
+    );
+
+    // Fetch metrics for these widgets (all timeframes stored)
+    const metricsRes = await pool.query(
+      `SELECT widget_id, timeframe_type, total_launches, unique_launches
+       FROM widget_metrics
+       WHERE widget_id = ANY($1::int[])`,
+      [widgetIds]
+    );
+
+    // Aggregate into maps for quick lookup
+    const categoriesMap = new Map();
+    for (const row of categoriesRes.rows) {
+      const list = categoriesMap.get(row.widget_id) || [];
+      list.push({ id: row.id, name: row.name, hex_code: row.hex_code });
+      categoriesMap.set(row.widget_id, list);
     }
 
-    // Execute queries in parallel
-    const [publicWidgets, privateWidgets] = await Promise.all([
-      pool.query(publicWidgetsQuery, userId ? [parseInt(userId, 10)] : []).then(result => result.rows),
-      privateWidgetsPromise
-    ]);
+    const devsMap = new Map();
+    for (const row of devsRes.rows) {
+      const list = devsMap.get(row.widget_id) || [];
+      list.push(row.user_id);
+      devsMap.set(row.widget_id, list);
+    }
 
-    // Combine results
-    const allWidgets = [...publicWidgets, ...privateWidgets];
-    
-    return allWidgets;
+    // Compute metrics structure expected by frontend
+    const metricsMap = new Map();
+    for (const row of metricsRes.rows) {
+      const wId = row.widget_id;
+      const m = metricsMap.get(wId) || {
+        weeklyLaunches: 0, monthlyLaunches: 0, yearlyLaunches: 0, allTimeLaunches: 0,
+        weeklyUniqueLaunches: 0, monthlyUniqueLaunches: 0, yearlyUniqueLaunches: 0, allTimeUniqueLaunches: 0
+      };
+      const t = row.timeframe_type;
+      if (t === 'weekly') {
+        m.weeklyLaunches = Math.max(m.weeklyLaunches, row.total_launches || 0);
+        m.weeklyUniqueLaunches = Math.max(m.weeklyUniqueLaunches, row.unique_launches || 0);
+      } else if (t === 'monthly') {
+        m.monthlyLaunches = Math.max(m.monthlyLaunches, row.total_launches || 0);
+        m.monthlyUniqueLaunches = Math.max(m.monthlyUniqueLaunches, row.unique_launches || 0);
+      } else if (t === 'yearly') {
+        m.yearlyLaunches = Math.max(m.yearlyLaunches, row.total_launches || 0);
+        m.yearlyUniqueLaunches = Math.max(m.yearlyUniqueLaunches, row.unique_launches || 0);
+      } else if (t === 'all_time') {
+        m.allTimeLaunches = Math.max(m.allTimeLaunches, row.total_launches || 0);
+        m.allTimeUniqueLaunches = Math.max(m.allTimeUniqueLaunches, row.unique_launches || 0);
+      }
+      metricsMap.set(wId, m);
+    }
+
+    // Assemble final cleaned data to match frontend expectations
+    const cleaned = baseRows.map((w) => {
+      const cats = (categoriesMap.get(w.widget_id) || []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        hex_code: c.hex_code,
+      }));
+      const devs = devsMap.get(w.widget_id) || [];
+      const metrics = metricsMap.get(w.widget_id) || {
+        weeklyLaunches: 0, monthlyLaunches: 0, yearlyLaunches: 0, allTimeLaunches: 0,
+        weeklyUniqueLaunches: 0, monthlyUniqueLaunches: 0, yearlyUniqueLaunches: 0, allTimeUniqueLaunches: 0
+      };
+
+      return {
+        widget_id: w.widget_id,
+        widget_name: w.widget_name,
+        description: w.description,
+        visibility: w.visibility,
+        redirect_link: w.redirect_link,
+        image_url: w.image_url,
+        public_id: w.public_id,
+        restricted_access: w.restricted_access,
+        developer_ids: devs,
+        categories: cats,
+        metrics
+      };
+    });
+
+    // If the caller requested category filtering, apply it in JS (or you can add a subquery in baseQuery for strict DB filtering)
+    if (categories && Array.isArray(categories) && categories.length > 0) {
+      const wanted = new Set(categories.map((c) => Number(c)));
+      return cleaned.filter((w) => (w.categories || []).some((c) => wanted.has(c.id)));
+    }
+
+    return cleaned;
   } catch (error) {
     console.error("Error fetching widgets:", error);
     throw new Error(`Failed to fetch widgets: ${error.message}`);
