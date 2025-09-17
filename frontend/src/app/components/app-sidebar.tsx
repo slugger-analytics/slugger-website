@@ -88,10 +88,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Image
                     src="/alpb-logo.png"
-                    height={30}
                     width={30}
+                    height={30}
                     alt="ALPB Logo"
-                    className="object-cover"
+                    className="h-auto w-auto"
+                    sizes="30px"
                   />
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">

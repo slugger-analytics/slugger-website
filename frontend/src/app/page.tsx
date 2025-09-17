@@ -40,9 +40,9 @@ export default function Home() {
           <Image
             src="/alpb_background.png"
             alt="ALPB Background"
-            layout="fill"
-            objectFit="cover"
-            className="opacity-60 scale-105 transform hover:scale-110 transition-transform duration-10000"
+            fill
+            sizes="100vw"
+            className="object-cover opacity-60 scale-105 transform hover:scale-110 transition-transform duration-10000"
             priority={true}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/90 via-black/70 to-gray-900/90" />
@@ -60,9 +60,9 @@ export default function Home() {
                 alt="ALPB Logo"
                 width={180}
                 height={180}
-                style={{ height: 'auto' }}
-                className="mx-auto hover:scale-105 transition-transform duration-300"
+                className="w-auto h-auto max-w-full hover:scale-105 transition-transform duration-300"
                 priority
+                sizes="(max-width: 768px) 140px, 180px"
               />
             </motion.div>
 
