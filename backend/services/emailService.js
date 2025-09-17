@@ -7,7 +7,11 @@ import pkg from "aws-sdk"; // Import AWS SDK
 const { SES } = pkg; // Extract the SES (Simple Email Service) class
 
 // Initialize an SES instance with the specified AWS region
-const ses = new SES({ region: "us-east-2" });
+const ses = new SES({
+  region: "us-east-2",
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+});
 
 /**
  * Sends an email containing an API key to the specified recipient.
