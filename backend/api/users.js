@@ -20,7 +20,11 @@ import { sendPasswordResetEmail } from "../services/emailService.js";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
-const cognito = new CognitoIdentityServiceProvider({ region: "us-east-2" });
+const cognito = new CognitoIdentityServiceProvider({
+  region: "us-east-2",
+  accessKeyId: process.env.AWS_ACCESS_KEY,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+});
 const JWT_SECRET = process.env.JWT_SECRET;
 const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
 const router = Router();
