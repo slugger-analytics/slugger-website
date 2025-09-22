@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { confirmSignUp } from "../../services/authService"; // You'll implement this function
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { confirmSignUp, resendConfirmationCode } from "../../services/authService";
 import SubmitButton from "../components/input/SubmitButton";
 import {
   Card,
@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { Input } from "@/app/components/ui/input";
+import { Button } from "@/app/components/ui/button";
 
 // Component for confirming sign-up
 export function ConfirmSignUpForm() {
@@ -22,7 +23,49 @@ export function ConfirmSignUpForm() {
     message: "",
     textClass: "black",
   });
+  const [isDeveloper, setIsDeveloper] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const emailParam = searchParams.get("email");
+    const typeParam = searchParams.get("type");
+
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+    if (typeParam === "developer") {
+      setIsDeveloper(true);
+    }
+  }, [searchParams]);
+
+  // Handle resending confirmation code
+  const handleResendCode = async () => {
+    if (!email) {
+      setSubmitStatus({
+        message: "Please enter your email address first",
+        textClass: "text-red-600",
+      });
+      return;
+    }
+
+    setIsResending(true);
+    try {
+      await resendConfirmationCode(email);
+      setSubmitStatus({
+        message: "Confirmation code resent! Please check your email.",
+        textClass: "text-green-600",
+      });
+    } catch (error: unknown) {
+      setSubmitStatus({
+        message: error instanceof Error ? error.message : "Failed to resend confirmation code",
+        textClass: "text-red-600",
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   // Handle form submission
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -34,15 +77,12 @@ export function ConfirmSignUpForm() {
     });
 
     try {
-      // Call the confirmSignUp function to verify the account
       await confirmSignUp(email, confirmationCode);
-      // Update submission status on success
       setSubmitStatus({
-        message: "Account confirmed! Redirecting to login...",
+        message: isDeveloper ? "Email confirmed! Your account is now pending approval." : "Account confirmed! Redirecting to login...",
         textClass: "text-green-600",
       });
-      // Redirect to login after successful confirmation
-      setTimeout(() => router.push("/sign-in"), 200);
+      setTimeout(() => router.push(isDeveloper ? "/pending-developer" : "/sign-in"), isDeveloper ? 2000 : 200);
     } catch (error: unknown) {
       // Update submission status on failure
       setSubmitStatus({
@@ -87,6 +127,20 @@ export function ConfirmSignUpForm() {
             />
             {/* Submit button */}
             <SubmitButton btnText="Confirm Sign Up" />
+            
+            {/* Resend code button */}
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleResendCode}
+                disabled={isResending || !email}
+                className="w-full"
+              >
+                {isResending ? "Resending..." : "Resend Confirmation Code"}
+              </Button>
+            </div>
+            
             {/* Display submission status message */}
             <div className="flex justify-center text-sm">
               <p
