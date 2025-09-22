@@ -18,6 +18,7 @@ import teams from "./api/teams.js";
 import categories from "./api/widget-categories.js";
 import developers from "./api/developers.js";
 import league from "./api/league.js";
+import auth from "./api/auth.js";
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // Initialize the Express app
@@ -74,6 +75,8 @@ app.use("/api/widget-categories", categories);
 app.use("/api/developers", developers);
 
 app.use("/api/league", league);
+
+app.use("/api/auth", auth);
 
 // ---------------------------------------------------
 // Root Route
