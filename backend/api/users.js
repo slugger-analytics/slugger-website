@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 import pkg from "aws-sdk";
 import dotenv from "dotenv";
@@ -120,35 +121,9 @@ router.post("/sign-in", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Sign-in error:', error);
-
-    // Handle specific Cognito authentication errors
-    if (error.code === 'NotAuthorizedException' || error.code === 'UserNotFoundException') {
-      return res.status(401).json({
-        success: false,
-        message: "Incorrect username or password",
-      });
-    }
-
-    // Handle other authentication-related errors
-    if (error.code === 'UserNotConfirmedException') {
-      return res.status(403).json({
-        success: false,
-        message: "User account is not confirmed",
-      });
-    }
-
-    if (error.code === 'PasswordResetRequiredException') {
-      return res.status(403).json({
-        success: false,
-        message: "Password reset required",
-      });
-    }
-
-    // Generic server error for other issues
     res.status(500).json({
       success: false,
-      message: "Internal server error",
+      message: error.message,
     });
   }
 });
