@@ -104,7 +104,7 @@ router.post("/sign-in", async (req, res) => {
       message: "Login successful",
       data: {
         authData: {
-          acceessToken: AccessToken,
+          accessToken: AccessToken,
           idToken: IdToken,
           refreshToken: RefreshToken
         },
