@@ -100,6 +100,21 @@ export async function declineDeveloper(requestId) {
   }
 }
 
+export async function disableCognitoAccount(email) {
+    const params = {
+        UserPoolId: process.env.COGNITO_USER_POOL_ID,
+        Username: email,
+    };
+
+    try {
+        await cognito.adminDisableUser(params).promise();
+        console.log(`Successfully disabled Cognito account for ${email}`);
+    } catch (error) {
+        console.error(`Error disabling Cognito account for ${email}:`, error);
+        throw error;
+    }
+}
+
 export async function getPendingDevelopers() {
   const result = await pool.query(`
     SELECT pd.*, u.email 
