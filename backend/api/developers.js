@@ -1,5 +1,7 @@
 import { Router } from "express";
-import { approveDeveloper, declineDeveloper, getPendingDevelopers } from "../services/developerService.js";
+import pool from "../db.js";
+import { createPendingDeveloper, approveDeveloper, declineDeveloper } from "../services/developerService.js";
+import { signUpUserWithCognito } from "../services/userService.js";
 
 const router = Router();
 
@@ -38,13 +40,41 @@ router.post("/pending/:id/decline", async (req, res) => {
   }
 });
 
+router.post("/register", async (req, res) => {
+  try {
+    const { email, password, firstName, lastName } = req.body;
+    // Create pending developer using the service
+    const result = await createPendingDeveloper({
+      email,
+      password,
+      firstName,
+      lastName,
+    });
+    res.status(201).json({
+      success: true,
+      message: "Developer registration pending approval",
+      data: result
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Error creating pending developer: ${error.message}`
+    });
+  }
+});
+
 router.get("/pending", async (req, res) => {
   try {
-    const result = await getPendingDevelopers();
+    const result = await pool.query(`
+      SELECT request_id, email, first_name, last_name, status, created_at 
+      FROM pending_developers 
+      WHERE status = 'pending'
+      ORDER BY created_at DESC
+    `);
 
     res.status(200).json({
       success: true,
-      data: result
+      data: result.rows
     });
   } catch (error) {
     res.status(500).json({
