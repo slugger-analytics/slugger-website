@@ -1,3 +1,4 @@
+# This dockerfile is not yet configured for CI/CD pipeline
 # STAGE 1: Base image with dependencies
 # This stage installs all node modules in a clean environment.
 FROM node:18-alpine AS base
