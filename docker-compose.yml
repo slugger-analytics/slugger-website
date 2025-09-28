@@ -13,6 +13,7 @@ services:
       - "3001:3001"
     volumes:
       - ./backend:/app/backend
+      - /app/backend/node_modules  # Prevent local node_modules override
     working_dir: /app
     networks:
       - slugger-network
@@ -49,6 +50,7 @@ services:
     volumes:
       - ./frontend:/app/frontend
       - /app/frontend/.next
+      - /app/frontend/node_modules  # Prevent local node_modules override
     working_dir: /app
     environment:
       - NODE_ENV=development
