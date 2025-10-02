@@ -64,7 +64,7 @@ This document catalogs all AWS resources provisioned for the Slugger ECS Fargate
   - Desired Count: 1
 - **Backend Service**: `slugger-backend-service` ✅
   - ARN: `arn:aws:ecs:us-east-2:746669223415:service/slugger-cluster/slugger-backend-service`
-  - Task Definition: `slugger-backend:2`
+  - Task Definition: `slugger-backend:4` (Updated 2025-10-02)
   - Desired Count: 1
 
 ### Task Definitions
@@ -104,6 +104,7 @@ This document catalogs all AWS resources provisioned for the Slugger ECS Fargate
 - **ID**: `sg-0c985525970ae7372`
 - **Inbound Rules**:
   - Port 3000 from `sg-0c35c445084f80855` (ALB → Frontend)
+  - Port 3001 from `sg-0c35c445084f80855` (ALB → Backend) ✅ **FIXED 2025-10-02**
   - Port 3001 from `sg-0c985525970ae7372` (Frontend → Backend inter-task communication)
 
 ---
