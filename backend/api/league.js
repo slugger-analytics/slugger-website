@@ -1,7 +1,7 @@
 import { Router } from "express";
 import dotenv from "dotenv";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { streamToString } from "../utils/stream";
+import { streamToString } from "../utils/stream.js";
 
 dotenv.config();
 
