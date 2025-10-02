@@ -1,0 +1,39 @@
+# Production Dockerfile for the SLUGGER frontend (Next.js) service
+
+# Stage 1: install dependencies (including dev for build)
+FROM node:18-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+# Use npm install to regenerate lockfile if out of sync
+RUN npm install --legacy-peer-deps
+
+# Stage 2: build the Next.js application
+FROM node:18-alpine AS builder
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+# Stage 3: create a lean production image
+FROM node:18-alpine AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Install only production dependencies
+COPY package.json package-lock.json ./
+RUN npm install --omit=dev --legacy-peer-deps && npm cache clean --force
+
+# Copy build artifacts and public assets
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.mjs ./next.config.mjs
+
+# Expose the Next.js port
+EXPOSE 3000
+
+# Run as non-root user for security
+USER node
+
+CMD ["npm", "run", "start"]

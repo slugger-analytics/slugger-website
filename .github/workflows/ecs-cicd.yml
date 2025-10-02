@@ -1,0 +1,140 @@
+name: ECS Fargate CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-2
+  FRONTEND_REPOSITORY: slugger-frontend
+  BACKEND_REPOSITORY: slugger-backend
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-push:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      frontend-image: ${{ steps.export.outputs.frontend_image }}
+      backend-image: ${{ steps.export.outputs.backend_image }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm ci
+
+      - name: Run lint across workspaces
+        run: npm run lint --workspaces
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: slugger-ecs-cicd
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build container images
+        env:
+          ECR_REGISTRY: 746669223415.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+        run: |
+          set -eux
+          FRONTEND_IMAGE="$ECR_REGISTRY/${{ env.FRONTEND_REPOSITORY }}"
+          BACKEND_IMAGE="$ECR_REGISTRY/${{ env.BACKEND_REPOSITORY }}"
+
+          docker build -f frontend/Dockerfile.prod -t "$FRONTEND_IMAGE:${{ env.IMAGE_TAG }}" frontend
+          docker build -f backend/Dockerfile.prod -t "$BACKEND_IMAGE:${{ env.IMAGE_TAG }}" backend
+
+          docker tag "$FRONTEND_IMAGE:${{ env.IMAGE_TAG }}" "$FRONTEND_IMAGE:latest"
+          docker tag "$BACKEND_IMAGE:${{ env.IMAGE_TAG }}" "$BACKEND_IMAGE:latest"
+
+          echo "FRONTEND_IMAGE_URI=$FRONTEND_IMAGE" >> "$GITHUB_ENV"
+          echo "BACKEND_IMAGE_URI=$BACKEND_IMAGE" >> "$GITHUB_ENV"
+
+      - name: Push container images to ECR
+        run: |
+          set -eux
+          docker push "$FRONTEND_IMAGE_URI:${{ env.IMAGE_TAG }}"
+          docker push "$FRONTEND_IMAGE_URI:latest"
+          docker push "$BACKEND_IMAGE_URI:${{ env.IMAGE_TAG }}"
+          docker push "$BACKEND_IMAGE_URI:latest"
+
+      - id: export
+        name: Export image URIs
+        run: |
+          echo "frontend_image=$FRONTEND_IMAGE_URI:${{ env.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
+          echo "backend_image=$BACKEND_IMAGE_URI:${{ env.IMAGE_TAG }}" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy to ECS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    environment:
+      name: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: slugger-ecs-cicd
+
+      - name: Render backend task definition
+        id: render-backend
+        uses: aws-actions/amazon-ecs-render-task-definition@v2
+        with:
+          task-definition: aws/task-definition-backend.json
+          container-name: backend
+          image: ${{ needs.build-and-push.outputs.backend-image }}
+
+      - name: Render frontend task definition
+        id: render-frontend
+        uses: aws-actions/amazon-ecs-render-task-definition@v2
+        with:
+          task-definition: aws/task-definition-frontend.json
+          container-name: frontend
+          image: ${{ needs.build-and-push.outputs.frontend-image }}
+
+      - name: Deploy backend service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-backend.outputs.task-definition }}
+          service: slugger-backend-service
+          cluster: slugger-cluster
+          wait-for-service-stability: true
+
+      - name: Deploy frontend service
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render-frontend.outputs.task-definition }}
+          service: slugger-frontend-service
+          cluster: slugger-cluster
+          wait-for-service-stability: true
+
+      - name: Smoke test endpoints
+        env:
+          PUBLIC_BASE_URL: ${{ secrets.SLUGGER_PUBLIC_BASE_URL }}
+        run: |
+          set -eux
+          curl --fail --show-error --silent "$PUBLIC_BASE_URL/"
+          curl --fail --show-error --silent "$PUBLIC_BASE_URL/api/health"

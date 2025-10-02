@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { validationMiddleware } from "../middleware/validation-middleware";
+import { validationMiddleware } from "../middleware/validation-middleware.js";
 import {
   getTeams,
   getTeam,
@@ -8,11 +8,11 @@ import {
   promoteTeamMember,
   demoteTeamMember,
   updateMemberTeam,
-} from "../services/teamService";
-import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas";
+} from "../services/teamService.js";
+import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas.js";
 import jwt from 'jsonwebtoken';
-import { getUserData } from "../services/widgetService";
-import pool from "../db";
+import { getUserData } from "../services/widgetService.js";
+import pool from "../db.js";
 
 const router = Router();
 
