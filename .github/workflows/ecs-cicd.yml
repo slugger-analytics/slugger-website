@@ -54,9 +54,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Fetch build-time secrets from SSM
+        id: fetch-secrets
+        run: |
+          set -eux
+          API_URL=$(aws ssm get-parameter --name /slugger/api-url --region ${{ env.AWS_REGION }} --query 'Parameter.Value' --output text)
+          COGNITO_CLIENT_ID=$(aws ssm get-parameter --name /slugger/cognito-app-client-id-public --region ${{ env.AWS_REGION }} --query 'Parameter.Value' --output text)
+          echo "::add-mask::$COGNITO_CLIENT_ID"
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
+          echo "cognito_client_id=$COGNITO_CLIENT_ID" >> "$GITHUB_OUTPUT"
+
       - name: Build container images
         env:
           ECR_REGISTRY: 746669223415.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          NEXT_PUBLIC_API_URL: ${{ steps.fetch-secrets.outputs.api_url }}
+          NEXT_PUBLIC_COGNITO_APP_CLIENT_ID: ${{ steps.fetch-secrets.outputs.cognito_client_id }}
         run: |
           set -eux
           FRONTEND_IMAGE="$ECR_REGISTRY/${{ env.FRONTEND_REPOSITORY }}"
@@ -65,6 +77,8 @@ jobs:
           # Build for linux/amd64 platform (required for ECS Fargate)
           docker buildx build --platform linux/amd64 \
             -f frontend/Dockerfile.prod \
+            --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+            --build-arg NEXT_PUBLIC_COGNITO_APP_CLIENT_ID="$NEXT_PUBLIC_COGNITO_APP_CLIENT_ID" \
             -t "$FRONTEND_IMAGE:${{ env.IMAGE_TAG }}" \
             -t "$FRONTEND_IMAGE:latest" \
             --load \

@@ -22,10 +22,6 @@
         { "name": "NODE_ENV", "value": "production" },
         { "name": "PORT", "value": "3000" }
       ],
-      "secrets": [
-        { "name": "NEXT_PUBLIC_API_URL", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/api-url" },
-        { "name": "NEXT_PUBLIC_COGNITO_APP_CLIENT_ID", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/cognito-app-client-id-public" }
-      ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
