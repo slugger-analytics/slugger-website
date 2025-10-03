@@ -33,7 +33,8 @@
   "scripts": {
     "dev": "tsx watch server.js",
     "build": "tsc --project tsconfig.json",
-    "start": "node dist/server.js",
+    "start": "node server.js",
+    "lint": "echo 'Backend linting skipped - no ESLint config'",
     "prettier": "npx prettier . --write"
   }
 }
