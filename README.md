@@ -2,16 +2,22 @@
 
 The first centralized data analytics platform for the Atlantic League of Professional Baseball. Powered by Trackman radar data and developed in collaboration with the [Johns Hopkins University's Sports Analytics Research Group](https://sports-analytics.cs.jhu.edu/), SLUGGER enables analysts, players, coaches, and more to access interactive analytical tools and game-changing insights.
 
-## Production Deployment
+## Tech Stack
 
-The application is deployed on **AWS ECS Fargate** with automated CI/CD via GitHub Actions.
+- **Frontend**: Next.js 14, React, TailwindCSS
+- **Backend**: Express.js, Node.js
+- **Database**: PostgreSQL (AWS RDS)
+- **Authentication**: AWS Cognito
+- **Infrastructure**: AWS ECS Fargate, Application Load Balancer, ECR
+- **CI/CD**: GitHub Actions
 
-- **Frontend**: Next.js application
-- **Backend**: Express.js API
-- **Infrastructure**: Multi-container ECS with Application Load Balancer
-- **CI/CD**: Automated builds and deployments on push to `main`
+## Production
 
-See [`documentation/GITHUB-ACTIONS-GUIDE.md`](documentation/GITHUB-ACTIONS-GUIDE.md) for deployment details.
+**URL**: `http://slugger-alb-1518464736.us-east-2.elb.amazonaws.com`
+
+Deployed on AWS ECS Fargate with automated CI/CD. Push to `main` triggers automatic deployment.
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for deployment guide.
 
 ## Local Development
 
@@ -70,15 +76,5 @@ docker-compose up --build
 
 ## Documentation
 
+- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment and CI/CD
 - **[AWS Infrastructure](aws/AWS-INFRASTRUCTURE.md)** - Complete AWS resource catalog
-- **[GitHub Actions Guide](documentation/GITHUB-ACTIONS-GUIDE.md)** - CI/CD workflow documentation
-- **[Quick Reference](documentation/CICD-QUICK-REFERENCE.md)** - Common deployment commands
-
-## Tech Stack
-
-- **Frontend**: Next.js 14, React, TailwindCSS
-- **Backend**: Express.js, Node.js
-- **Database**: PostgreSQL (AWS RDS)
-- **Authentication**: AWS Cognito
-- **Infrastructure**: AWS ECS Fargate, Application Load Balancer, ECR
-- **CI/CD**: GitHub Actions
