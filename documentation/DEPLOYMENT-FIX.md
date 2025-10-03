@@ -25,18 +25,40 @@ The deployed frontend was trying to connect to `localhost:3001` instead of the A
 ### 4. Fixed SSM Parameter
 - Updated `/slugger/api-url` from `https://temp-placeholder.com` to `http://slugger-alb-1518464736.us-east-2.elb.amazonaws.com`
 
+## IAM Permission Fix (REQUIRED FIRST)
+
+The GitHub Actions role needs permission to read SSM parameters. Run this command:
+
+```bash
+aws iam put-role-policy \
+  --role-name github-actions-deploy \
+  --policy-name SSMParameterReadAccess \
+  --policy-document file://github-actions-ssm-policy.json \
+  --region us-east-2
+```
+
+**Verify the policy was attached**:
+```bash
+aws iam get-role-policy \
+  --role-name github-actions-deploy \
+  --policy-name SSMParameterReadAccess \
+  --region us-east-2
+```
+
 ## Deployment Instructions
 
 ### Option 1: Trigger GitHub Actions (Recommended)
 
-1. **Commit and push the changes**:
+1. **First, fix IAM permissions** (see above)
+
+2. **Commit and push the changes**:
    ```bash
    git add .
    git commit -m "Fix: Inject Next.js environment variables at build time"
    git push origin main
    ```
 
-2. **Monitor the GitHub Actions workflow**:
+3. **Monitor the GitHub Actions workflow**:
    - Go to Actions tab in your repository
    - Watch the "ECS Fargate CI/CD" workflow
    - It will automatically build with the correct environment variables and deploy
