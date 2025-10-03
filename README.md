@@ -1,74 +1,84 @@
-# SLUGGER (Formerly ALPB Analytics)
+# SLUGGER
 
-The first centralized data analytics platform for the Atlantic League of Professional Baseball, built to make cutting-edge baseball insights accessible across the league. Powered by Trackman radar data and developed in collaboration with the [Johns Hopkins University's Sports Analytics Research Group](https://sports-analytics.cs.jhu.edu/), SLUGGER enables analysts, players, coaches, and more to tap into a growing library of interactive "widgets" — analytical tools that use our API to drive game-changing insights.
+The first centralized data analytics platform for the Atlantic League of Professional Baseball. Powered by Trackman radar data and developed in collaboration with the [Johns Hopkins University's Sports Analytics Research Group](https://sports-analytics.cs.jhu.edu/), SLUGGER enables analysts, players, coaches, and more to access interactive analytical tools and game-changing insights.
 
-## Accessing the Platform
+## Production Deployment
 
-Visit [ALPB Analytics](https://alpb-analytics.com/) to get started.
-**Players, coaches, and front office members** should look out for an invite from a team administrator after signing up.
+The application is deployed on **AWS ECS Fargate** with automated CI/CD via GitHub Actions.
 
-## Deploying Locally
+- **Frontend**: Next.js application
+- **Backend**: Express.js API
+- **Infrastructure**: Multi-container ECS with Application Load Balancer
+- **CI/CD**: Automated builds and deployments on push to `main`
 
-### Option 1: Traditional Setup (Without Docker)
+See [`documentation/GITHUB-ACTIONS-GUIDE.md`](documentation/GITHUB-ACTIONS-GUIDE.md) for deployment details.
 
-1. Clone this repository and navigate to the project directory.
+## Local Development
 
-2. To run the backend server:
+### Prerequisites
 
-   i. Navigate to the `backend` directory.
-   ii. Install packages using `npm install`.
-   iii. Copy `.env.example` to `.env` in the project root and configure all environment variables.
-   iv. Run `npm start`. This will start the server at `http://localhost:3001`
+- Node.js 18+
+- Docker and Docker Compose
+- `.env` file with required environment variables (see `.env.example`)
 
-3. To run the frontend:
+### Quick Start with Docker
 
-   i. Navigate to `frontend` directory.
-   ii. Install packages using `npm install`.
-   iii. Configure environment variables in `.env` file.
-   iv. Run `npm dev`. This will run the application at `http://localhost:3000`.
+```bash
+# Clone and navigate to project
+git clone <repository-url>
+cd slugger-website
 
-### Option 2: Docker Setup
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env with your configuration
 
-#### Prerequisites
-- Docker and Docker Compose installed on your system
-- Latest `.env` file with all required environment variables in the project root
+# Start all services
+docker-compose up --build
+```
 
-#### Quick Start
+**Access the application:**
 
-1. Clone the repository and navigate to the project directory
-2. Ensure you have the latest `.env` file with all required variables (see `.env.example` for reference)
-3. Run the application:
+- Frontend: <http://localhost:3000>
+- Backend API: <http://localhost:3001>
 
-   ```bash
-   # Build and start all services
-   docker-compose up --build
-   ```
+### Manual Setup (Without Docker)
 
-4. Access the application:
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend API: [http://localhost:3001](http://localhost:3001)
+```bash
+# Backend
+cd backend
+npm install
+npm start  # Runs on port 3001
 
-#### Development Workflow
+# Frontend (in separate terminal)
+cd frontend
+npm install
+npm run dev  # Runs on port 3000
+```
 
-- **Starting services**: `docker-compose up`
-- **Rebuild images**: `docker-compose up --build`
-- **View logs**: `docker-compose logs -f`
-- **Stop services**: `docker-compose down`
-- **Run tests**: `docker-compose run backend npm test`
+### Common Commands
 
-#### Important Notes
+```bash
+# View logs
+docker-compose logs -f
 
-- The root `.env` file is required and will be used by both frontend and backend services
-- Database data is persisted in a Docker volume
-- Frontend hot-reload works in development mode
-- For production builds, use the included Dockerfile with appropriate build arguments
+# Stop services
+docker-compose down
 
-#### Environment Variables
+# Rebuild after changes
+docker-compose up --build
+```
 
-Make sure your `.env` file includes all required variables (see `.env.example` for reference). Key variables include:
+## Documentation
 
-- Database credentials
-- AWS credentials
-- Cognito configuration
-- API endpoints
-- Session secrets
+- **[AWS Infrastructure](aws/AWS-INFRASTRUCTURE.md)** - Complete AWS resource catalog
+- **[GitHub Actions Guide](documentation/GITHUB-ACTIONS-GUIDE.md)** - CI/CD workflow documentation
+- **[Quick Reference](documentation/CICD-QUICK-REFERENCE.md)** - Common deployment commands
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React, TailwindCSS
+- **Backend**: Express.js, Node.js
+- **Database**: PostgreSQL (AWS RDS)
+- **Authentication**: AWS Cognito
+- **Infrastructure**: AWS ECS Fargate, Application Load Balancer, ECR
+- **CI/CD**: GitHub Actions
