@@ -1,5 +1,5 @@
 import { atom } from "nanostores";
-import { persistentMap } from "@nanostores/persistent";
+import { persistentAtom } from "@nanostores/persistent";
 import { UserType } from "@/data/types";
 
 const emptyUser: UserType = {
@@ -12,7 +12,23 @@ const emptyUser: UserType = {
   is_admin: false,
 };
 
-export const $user = persistentMap<UserType>("user:", emptyUser);
+export const $user = persistentAtom<UserType>(
+  "user",
+  emptyUser,
+  {
+    encode: (value) => JSON.stringify(value),
+    decode: (value) => {
+      if (!value) return emptyUser;
+
+      try {
+        return JSON.parse(value) as UserType;
+      } catch (error) {
+        console.warn("Failed to decode user persistent atom", error);
+        return emptyUser;
+      }
+    },
+  },
+);
 
 export const $otpCode = atom<string>("");
 export const $passwordResetEmail = atom<string>("");
