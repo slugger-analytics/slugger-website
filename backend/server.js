@@ -100,7 +100,18 @@ app.get("/", (req, res) => {
 /**
  * Route: `/api/health`
  * Health check endpoint for ALB and smoke tests.
- * Returns 200 OK with server status and database connectivity.
+ * Returns 200 OK for healthy (can serve traffic) and 503 for unhealthy (database unavailable).
+ * 
+ * This endpoint is used by:
+ * 1. ALB target health checks (determines if traffic should be routed here)
+ * 2. ECS container health checks (determines if container should be restarted)
+ * 3. Deployment smoke tests (validates successful deployment)
+ * 
+ * The behavior has been carefully designed:
+ * - Returns 200 when database is connected (healthy, can serve traffic)
+ * - Returns 503 when database is disconnected (unhealthy, cannot serve traffic)
+ * - Uses a short timeout (2s) to avoid blocking health check probes
+ * - Uses a simpler query to reduce overhead
  */
 app.get("/api/health", async (req, res) => {
   const health = {
@@ -110,19 +121,35 @@ app.get("/api/health", async (req, res) => {
     database: "unknown"
   };
 
-  // Check database connectivity
+  // Check database connectivity with a timeout
+  // Create a race between the query and a timeout to avoid hanging
   try {
-    await pool.query('SELECT 1');
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Health check timeout')), 2000);
+    });
+    
+    const queryPromise = pool.query('SELECT 1');
+    
+    // Race between query and timeout
+    await Promise.race([queryPromise, timeoutPromise]);
+    
     health.database = "connected";
+    health.status = "healthy";
+    
+    // Return 200 OK when healthy - ALB will route traffic here
+    return res.status(200).json(health);
+    
   } catch (error) {
     console.error('Health check: Database connection failed:', error.message);
     health.database = "disconnected";
-    health.status = "degraded";
+    health.status = "unhealthy";
+    
+    // Return 503 Service Unavailable when database is down
+    // This tells the ALB to stop routing traffic to this instance
+    // However, the container stays running (won't be restarted by ECS)
+    // This is correct behavior: transient DB issues shouldn't restart the container
+    return res.status(503).json(health);
   }
-
-  // Return 200 even if database is down - allows container to stay healthy
-  // while database issues are resolved
-  res.status(200).json(health);
 });
 
 // ---------------------------------------------------
