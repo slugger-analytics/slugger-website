@@ -101,6 +101,7 @@ app.get("/", (req, res) => {
  * Route: `/api/health`
  * Health check endpoint for ALB and smoke tests.
  * Returns 200 OK with server status and database connectivity.
+ * Returns 503 if database is unavailable to trigger health check failure.
  */
 app.get("/api/health", async (req, res) => {
   const health = {
@@ -114,15 +115,21 @@ app.get("/api/health", async (req, res) => {
   try {
     await pool.query('SELECT 1');
     health.database = "connected";
+    res.status(200).json(health);
   } catch (error) {
     console.error('Health check: Database connection failed:', error.message);
+    console.error('Database config:', {
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      user: process.env.DB_USERNAME,
+      port: process.env.DB_PORT || 5432
+    });
     health.database = "disconnected";
-    health.status = "degraded";
+    health.status = "unhealthy";
+    health.error = error.message;
+    // Return 503 Service Unavailable - triggers ALB health check failure
+    res.status(503).json(health);
   }
-
-  // Return 200 even if database is down - allows container to stay healthy
-  // while database issues are resolved
-  res.status(200).json(health);
 });
 
 // ---------------------------------------------------
