@@ -46,14 +46,15 @@ git push origin main
 
 Configure in repository settings → Secrets and variables → Actions:
 
-| Secret | Value |
-|--------|-------|
-| `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::746669223415:role/github-actions-deploy` |
+| Secret                    | Value                                                       |
+| ------------------------- | ----------------------------------------------------------- |
+| `AWS_DEPLOY_ROLE_ARN`     | `arn:aws:iam::746669223415:role/github-actions-deploy`      |
 | `SLUGGER_PUBLIC_BASE_URL` | `http://slugger-alb-1518464736.us-east-2.elb.amazonaws.com` |
 
 ### IAM Role Permissions
 
 The `github-actions-deploy` role must have:
+
 - `AmazonEC2ContainerRegistryPowerUser` (ECR push/pull)
 - `AmazonECS_FullAccess` (ECS deployments)
 - SSM read access for `/slugger/*` parameters
@@ -63,6 +64,7 @@ The `github-actions-deploy` role must have:
 ### Automatic (Recommended)
 
 1. **Push to main**:
+
    ```bash
    git add .
    git commit -m "Your changes"
@@ -168,11 +170,11 @@ aws ecs list-task-definitions --family-prefix slugger-frontend --region us-east-
 ### Rollback to Previous Version
 
 ```bash
-# Backend (replace :4 with desired revision)
+# Backend (replace :6 with desired revision)
 aws ecs update-service \
   --cluster slugger-cluster \
   --service slugger-backend-service \
-  --task-definition slugger-backend:3 \
+  --task-definition slugger-backend:5 \
   --region us-east-2
 
 # Frontend (replace :3 with desired revision)
@@ -188,6 +190,7 @@ aws ecs update-service \
 ### Build Failures
 
 **Platform mismatch error**:
+
 ```
 image Manifest does not contain descriptor matching platform 'linux/amd64'
 ```
@@ -197,11 +200,13 @@ image Manifest does not contain descriptor matching platform 'linux/amd64'
 ### Deployment Failures
 
 **Service won't stabilize**:
+
 1. Check service events: `aws ecs describe-services --cluster slugger-cluster --services slugger-backend-service --region us-east-2 --query 'services[0].events[:5]'`
 2. Check container logs: `aws logs tail /ecs/slugger-backend --since 10m --region us-east-2`
 3. Check target health: `aws elbv2 describe-target-health --target-group-arn <ARN> --region us-east-2`
 
 **Health check failures**:
+
 - Verify security groups allow ALB → ECS traffic (port 3000, 3001)
 - Check container logs for startup errors
 - Ensure environment variables are set correctly in SSM
@@ -232,21 +237,25 @@ aws ecs update-service --cluster slugger-cluster \
 ## Infrastructure
 
 ### ECS Resources
+
 - **Cluster**: `slugger-cluster`
-- **Backend Service**: `slugger-backend-service` (Task: `slugger-backend:4`)
+- **Backend Service**: `slugger-backend-service` (Task: `slugger-backend:6`)
 - **Frontend Service**: `slugger-frontend-service` (Task: `slugger-frontend:3`)
 
 ### Load Balancer
+
 - **DNS**: `slugger-alb-1518464736.us-east-2.elb.amazonaws.com`
 - **Routing**:
   - `/api/*` → Backend (port 3001)
   - `/*` → Frontend (port 3000)
 
 ### ECR Repositories
+
 - `746669223415.dkr.ecr.us-east-2.amazonaws.com/slugger-backend`
 - `746669223415.dkr.ecr.us-east-2.amazonaws.com/slugger-frontend`
 
 ### Security Groups
+
 - **ALB**: `sg-0c35c445084f80855` (allows 80, 443 from internet)
 - **ECS Tasks**: `sg-0c985525970ae7372` (allows 3000, 3001 from ALB)
 
