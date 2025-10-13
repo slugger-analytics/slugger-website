@@ -568,6 +568,14 @@ router.put("/:id/teams", async (req, res) => {
       });
     }
 
+    // Additional validation: ensure no teams are provided for public widgets
+    if (widgetVisibility.toLowerCase() === 'public' && teamIds && teamIds.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Public widgets cannot have team access"
+      });
+    }
+
     // Start a transaction
     await pool.query('BEGIN');
 
