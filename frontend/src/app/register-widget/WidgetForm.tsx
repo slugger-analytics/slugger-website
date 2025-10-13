@@ -61,7 +61,7 @@ export function WidgetForm() {
     };
 
     fetchTeams();
-  }, []);
+  }, [toast]);
 
   const handleTeamChange = (teamId: string, checked: boolean) => {
     if (checked) {
@@ -90,6 +90,7 @@ export function WidgetForm() {
         widgetName: data["widget-name"],
         description: data["description"],
         visibility: visibility,
+        teamIds: visibility === "private" ? selectedTeams : undefined,
       };
 
       await registerWidget(widgetData, parseInt(user.id));

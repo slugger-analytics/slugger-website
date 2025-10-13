@@ -126,7 +126,7 @@ router.post(
   "/register",
   validationMiddleware({ bodySchema: registerWidgetSchema }),
   async (req, res) => {
-    const { widgetName, description, visibility, userId } = req.body; // Extract widget details and userId from the request body
+    const { widgetName, description, visibility, userId, teamIds } = req.body; // Extract widget details and userId from the request body
 
     try {
       const requestedWidget = await registerWidget(
@@ -134,6 +134,7 @@ router.post(
         widgetName,
         description,
         visibility,
+        teamIds || [],
       );
       res.status(200).json({
         success: true,
