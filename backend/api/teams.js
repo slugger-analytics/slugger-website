@@ -13,6 +13,8 @@ import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas";
 import jwt from 'jsonwebtoken';
 import { getUserData } from "../services/widgetService";
 import pool from "../db";
+import { requireAuth } from "../middleware/permission-guards.js";
+import { requireTeamManager, requireTeamMembership } from "../middleware/ownership-guards.js";
 
 const router = Router();
 
@@ -58,6 +60,7 @@ router.get(
 // get all members from a team
 router.get(
   "/:teamId/members",
+  requireTeamMembership,
   validationMiddleware({ paramsSchema: getTeamSchema }),
   async (req, res) => {
     try {
@@ -103,6 +106,7 @@ router.get(
 // promote a team member
 router.post(
   "/:teamId/members/:memberId/promote",
+  requireTeamManager,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -128,6 +132,7 @@ router.post(
 // demote a team member
 router.post(
   "/:teamId/members/:memberId/demote",
+  requireTeamManager,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -153,6 +158,7 @@ router.post(
 // change a member's team
 router.patch(
   "/:teamId/members/:memberId",
+  requireTeamManager,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -177,7 +183,7 @@ router.patch(
 );
 
 // invite a new member to a team
-router.post("/:teamId/invite", async (req, res) => {
+router.post("/:teamId/invite", requireTeamManager, async (req, res) => {
   try {
     const teamId = req.params.teamId;
     
@@ -248,7 +254,7 @@ router.post("/validate-invite", async (req, res) => {
 });
 
 // remove a member from a team
-router.delete("/:teamId/members/:memberId", async (req, res) => {
+router.delete("/:teamId/members/:memberId", requireTeamManager, async (req, res) => {
   const { teamId, memberId } = req.params;
   try {
     await getTeam(teamId); // Assert team exists
