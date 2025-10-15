@@ -16,6 +16,7 @@ import authGuard from "../middleware/auth-guard.js";
 import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
+import { requireSelfOrAdmin } from "../middleware/ownership-guards.js";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
@@ -197,7 +198,7 @@ router.post('/logout', async (req, res) => {
  * PATCH /users/:userId/add-favorite
  * Add a widget to a user's favorites.
  */
-router.patch("/:userId/add-favorite", async (req, res) => {
+router.patch("/:userId/add-favorite", requireSelfOrAdmin, async (req, res) => {
   const userId = parseInt(req.params.userId);
   const widgetId = parseInt(req.body.widgetId);
   try {
@@ -219,7 +220,7 @@ router.patch("/:userId/add-favorite", async (req, res) => {
  * PATCH /users/:userId/remove-favorite
  * Remove a widget from a user's favorites.
  */
-router.patch("/:userId/remove-favorite", async (req, res) => {
+router.patch("/:userId/remove-favorite", requireSelfOrAdmin, async (req, res) => {
   const userId = parseInt(req.params.userId);
   const widgetId = parseInt(req.body.widgetId);
   try {
@@ -241,7 +242,7 @@ router.patch("/:userId/remove-favorite", async (req, res) => {
  * GET /users/:userId/favorite-widgets
  * Retrieve a user's favorite widgets.
  */
-router.get("/:userId/favorite-widgets", async (req, res) => {
+router.get("/:userId/favorite-widgets", requireSelfOrAdmin, async (req, res) => {
   const userId = parseInt(req.params.userId);
   try {
     const favorites = await getFavorites(userId);
@@ -451,7 +452,7 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-router.patch('/:id', authGuard, async (req, res) => {
+router.patch('/:id', requireSelfOrAdmin, async (req, res) => {
   const { first, last } = req.body;
 
   try {
