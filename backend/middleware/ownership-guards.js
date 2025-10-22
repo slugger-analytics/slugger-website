@@ -22,7 +22,7 @@ export const requireWidgetOwnership = async (req, res, next) => {
 
   try {
     // Check if user is admin (admins can access any widget)
-    if (req.session?.user?.role === 'admin' || req.session?.user?.is_admin) {
+    if (req.session?.user?.role === 'admin') {
       return next();
     }
 
@@ -70,7 +70,7 @@ export const requireWidgetOwner = async (req, res, next) => {
 
   try {
     // Check if user is admin (admins can access any widget)
-    if (req.session?.user?.role === 'admin' || req.session?.user?.is_admin) {
+    if (req.session?.user?.role === 'admin') {
       return next();
     }
 
