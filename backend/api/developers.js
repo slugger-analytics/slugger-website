@@ -4,9 +4,9 @@ import { requireAdmin } from "../middleware/permission-guards.js";
 
 const router = Router();
 
-router.post("/pending/:id/approve", requireAdmin, async (req, res) => {
+router.post("/pending/:developerId/approve", requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.developerId);
     const result = await approveDeveloper(id);
     
     res.status(200).json({
@@ -22,9 +22,9 @@ router.post("/pending/:id/approve", requireAdmin, async (req, res) => {
   }
 });
 
-router.post("/pending/:id/decline", requireAdmin, async (req, res) => {
+router.post("/pending/:developerId/decline", requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.developerId);
     await declineDeveloper(id);
 
     res.status(200).json({
