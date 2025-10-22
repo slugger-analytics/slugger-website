@@ -55,8 +55,8 @@ router.post('/', requireAdmin, validationMiddleware({ bodySchema: createCategory
 });
 
 // PATCH - Update a widget category
-router.patch('/:id', requireAdmin, validationMiddleware({ bodySchema: updateCategorySchema }), async (req, res) => {
-  const id = parseInt(req.params.id);
+router.patch('/:categoryId', requireAdmin, validationMiddleware({ bodySchema: updateCategorySchema }), async (req, res) => {
+  const id = parseInt(req.params.categoryId);
   const { name, hexCode } = req.body;
   
   if (!name && !hexCode) {
@@ -109,7 +109,7 @@ router.patch('/:id', requireAdmin, validationMiddleware({ bodySchema: updateCate
 });
 
 // DELETE - Delete a widget category
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:categoryId', requireAdmin, async (req, res) => {
   const { id } = parseInt(req.params);
 
   try {

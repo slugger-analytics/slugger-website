@@ -18,7 +18,6 @@ import {
 } from "../services/widgetService.js";
 import { requireAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner, validateUserIdMatch } from "../middleware/ownership-guards.js";
-// TODO give ids more descriptive names
 
 const selectWidgetById = `
     SELECT *
@@ -54,14 +53,14 @@ router.get(
 
 // edit a widget
 router.patch(
-  "/:id",
+  "/:widgetId",
   requireWidgetOwnership,
   validationMiddleware({ bodySchema: editWidgetSchema }),
   async (req, res) => {
     const { name, description, redirectLink, visibility, imageUrl, publicId, restrictedAccess } = req.body;
 
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.widgetId);
 
       // Ensure target widget exists
       const targetWidgetRes = await pool.query(selectWidgetById, [id]);
@@ -99,9 +98,9 @@ router.patch(
 );
 
 // delete a widget
-router.delete("/:id", requireWidgetOwnership, async (req, res) => {
+router.delete("/:widgetId", requireWidgetOwnership, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.widgetId);
     const targetWidgetRes = await pool.query(selectWidgetById, [id]);
     // Ensure target widget exists
     if (targetWidgetRes.rowCount === 0) {
@@ -156,9 +155,9 @@ router.post(
 );
 
 // Get categories for a widget
-router.get("/:id/categories", async (req, res) => {
+router.get("/:widgetId/categories", async (req, res) => {
   try {
-    const widgetId = parseInt(req.params.id);
+    const widgetId = parseInt(req.params.widgetId);
 
     // Check if widget exists
     const widgetExists = await pool.query(selectWidgetById, [widgetId]);
@@ -192,9 +191,9 @@ router.get("/:id/categories", async (req, res) => {
 });
 
 // Add a category to a widget
-router.post("/:id/categories", requireWidgetOwnership, validationMiddleware({ bodySchema: addCategoryToWidgetSchema }), async (req, res) => {
+router.post("/:widgetId/categories", requireWidgetOwnership, validationMiddleware({ bodySchema: addCategoryToWidgetSchema }), async (req, res) => {
   try {
-    const widgetId = parseInt(req.params.id);
+    const widgetId = parseInt(req.params.widgetId);
     const { categoryId } = req.body;
 
     if (!categoryId) {
@@ -503,9 +502,9 @@ router.get("/:widgetId/collaborators", async (req, res) => {
 });
 
 // Get teams with access to a widget
-router.get("/:id/teams", async (req, res) => {
+router.get("/:widgetId/teams", async (req, res) => {
   try {
-    const widgetId = parseInt(req.params.id);
+    const widgetId = parseInt(req.params.widgetId);
 
     // Check if widget exists
     const widgetExists = await pool.query(selectWidgetById, [widgetId]);
@@ -534,7 +533,7 @@ router.get("/:id/teams", async (req, res) => {
       data: teamsResult.rows
     });
   } catch (error) {
-    console.error(`Error getting teams for widget ${req.params.id}:`, error);
+    console.error(`Error getting teams for widget ${req.params.widgetId}:`, error);
     res.status(500).json({
       success: false,
       message: `Internal error: ${error.message}`
@@ -543,9 +542,9 @@ router.get("/:id/teams", async (req, res) => {
 });
 
 // Update teams with access to a widget
-router.put("/:id/teams", requireWidgetOwnership, async (req, res) => {
+router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
   try {
-    const widgetId = parseInt(req.params.id);
+    const widgetId = parseInt(req.params.widgetId);
     const { teamIds } = req.body;
 
     if (!Array.isArray(teamIds)) {
@@ -622,7 +621,7 @@ router.put("/:id/teams", requireWidgetOwnership, async (req, res) => {
       console.error("Error during rollback:", rollbackError);
     }
     
-    console.error(`Error updating team access for widget ${req.params.id}:`, error);
+    console.error(`Error updating team access for widget ${req.params.widgetId}:`, error);
     res.status(500).json({
       success: false,
       message: `Internal error: ${error.message}`
@@ -649,9 +648,9 @@ router.get("/pending", requireAdmin, async (req, res) => {
 });
 
 // Approve a pending widget request
-router.post("/pending/:id/approve", requireAdmin, async (req, res) => {
+router.post("/pending/:requestId/approve", requireAdmin, async (req, res) => {
   try {
-    const requestId = parseInt(req.params.id);
+    const requestId = parseInt(req.params.requestId);
     const result = await createApprovedWidget(requestId);
     
     res.status(200).json({
@@ -668,9 +667,9 @@ router.post("/pending/:id/approve", requireAdmin, async (req, res) => {
 });
 
 // Decline a pending widget request
-router.post("/pending/:id/decline", requireAdmin, async (req, res) => {
+router.post("/pending/:requestId/decline", requireAdmin, async (req, res) => {
   try {
-    const requestId = parseInt(req.params.id);
+    const requestId = parseInt(req.params.requestId);
     const result = await removeRequest(requestId);
     
     res.status(200).json({

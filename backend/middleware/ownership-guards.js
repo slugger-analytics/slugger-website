@@ -17,7 +17,7 @@ export const requireWidgetOwnership = async (req, res, next) => {
     });
   }
 
-  const widgetId = parseInt(req.params.id || req.params.widgetId);
+  const widgetId = parseInt(req.params.widgetId);
   const userId = req.session.user.user_id;
 
   if (isNaN(widgetId)) {
@@ -72,7 +72,7 @@ export const requireWidgetOwner = async (req, res, next) => {
     });
   }
 
-  const widgetId = parseInt(req.params.id || req.params.widgetId);
+  const widgetId = parseInt(req.params.widgetId);
   const userId = req.session.user.user_id;
 
   if (isNaN(widgetId)) {
@@ -125,7 +125,7 @@ export const requireSelfOrAdmin = (req, res, next) => {
     });
   }
 
-  const targetUserId = parseInt(req.params.id || req.params.userId);
+  const targetUserId = parseInt(req.params.userId);
   const currentUserId = req.session.user.user_id;
 
   if (isNaN(targetUserId)) {

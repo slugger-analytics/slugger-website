@@ -452,11 +452,11 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-router.patch('/:id', requireSelfOrAdmin, async (req, res) => {
+router.patch('/:userId', requireSelfOrAdmin, async (req, res) => {
   const { first, last } = req.body;
 
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.userId);
 
     // Ensure target user exists
     const selectUserById = `
