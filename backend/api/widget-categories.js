@@ -2,7 +2,7 @@ import { Router } from "express";
 import { validationMiddleware } from "../middleware/validation-middleware";
 import { createCategorySchema, updateCategorySchema } from "../validators/schemas";
 import pool from "../db.js";
-import { requireAdmin } from "../middleware/permission-guards.js";
+import { requireSiteAdmin } from "../middleware/permission-guards.js";
 
 const router = Router();
 
@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
 });
 
 // POST - Create a new widget category
-router.post('/', requireAdmin, validationMiddleware({ bodySchema: createCategorySchema }), async (req, res) => {
+router.post('/', requireSiteAdmin, validationMiddleware({ bodySchema: createCategorySchema }), async (req, res) => {
   const { name, hexCode } = req.body;
 
   const params = [name];
@@ -55,7 +55,7 @@ router.post('/', requireAdmin, validationMiddleware({ bodySchema: createCategory
 });
 
 // PATCH - Update a widget category
-router.patch('/:categoryId', requireAdmin, validationMiddleware({ bodySchema: updateCategorySchema }), async (req, res) => {
+router.patch('/:categoryId', requireSiteAdmin, validationMiddleware({ bodySchema: updateCategorySchema }), async (req, res) => {
   const id = parseInt(req.params.categoryId);
   const { name, hexCode } = req.body;
   
@@ -109,7 +109,7 @@ router.patch('/:categoryId', requireAdmin, validationMiddleware({ bodySchema: up
 });
 
 // DELETE - Delete a widget category
-router.delete('/:categoryId', requireAdmin, async (req, res) => {
+router.delete('/:categoryId', requireSiteAdmin, async (req, res) => {
   const { id } = parseInt(req.params);
 
   try {

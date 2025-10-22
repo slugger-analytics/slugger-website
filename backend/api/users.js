@@ -12,11 +12,10 @@ import {
   updateUser,
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
-import authGuard from "../middleware/auth-guard.js";
 import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
-import { requireSelfOrAdmin } from "../middleware/ownership-guards.js";
+import { requireAuth, requireSiteAdmin } from "../middleware/permission-guards.js";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
@@ -33,7 +32,7 @@ const router = Router();
  * GET /users
  * Retrieve user data by ID.
  */
-router.get("/", async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   const { id } = req.body;
   try {
     const user = await getUserData(id);
@@ -56,6 +55,15 @@ router.get("/", async (req, res) => {
  */
 router.post("/sign-up", async (req, res) => {
   try {
+    const { role } = req.body;
+    if (!(role in ["admin", "master", "widget developer", "league"])) {
+      res.status(400).json({
+        success: false,
+        message: "Invalid role"
+      });
+      return;
+    }
+    
     const result = await signUpUserWithCognito(req.body);
     res.status(200).json({
       success: true,
@@ -198,8 +206,8 @@ router.post('/logout', async (req, res) => {
  * PATCH /users/:userId/add-favorite
  * Add a widget to a user's favorites.
  */
-router.patch("/:userId/add-favorite", requireSelfOrAdmin, async (req, res) => {
-  const userId = parseInt(req.params.userId);
+router.patch("/add-favorite", requireAuth, async (req, res) => {
+  const userId = req.session?.user?.user_id;
   const widgetId = parseInt(req.body.widgetId);
   try {
     const result = await favoriteWidget(userId, widgetId);
@@ -220,8 +228,8 @@ router.patch("/:userId/add-favorite", requireSelfOrAdmin, async (req, res) => {
  * PATCH /users/:userId/remove-favorite
  * Remove a widget from a user's favorites.
  */
-router.patch("/:userId/remove-favorite", requireSelfOrAdmin, async (req, res) => {
-  const userId = parseInt(req.params.userId);
+router.patch("/remove-favorite", requireAuth, async (req, res) => {
+  const userId = req.session?.user?.user_id;
   const widgetId = parseInt(req.body.widgetId);
   try {
     const result = await unfavoriteWidget(userId, widgetId);
@@ -242,8 +250,8 @@ router.patch("/:userId/remove-favorite", requireSelfOrAdmin, async (req, res) =>
  * GET /users/:userId/favorite-widgets
  * Retrieve a user's favorite widgets.
  */
-router.get("/:userId/favorite-widgets", requireSelfOrAdmin, async (req, res) => {
-  const userId = parseInt(req.params.userId);
+router.get("/favorite-widgets", requireAuth, async (req, res) => {
+  const userId = req.session?.user?.user_id;
   try {
     const favorites = await getFavorites(userId);
     res.status(200).json({
@@ -259,14 +267,14 @@ router.get("/:userId/favorite-widgets", requireSelfOrAdmin, async (req, res) => 
   }
 });
 
-router.post("/validate-session", authGuard, async (req, res) => {
+router.post("/validate-session", requireAuth, async (req, res) => {
   res.status(200).json({
     success: true,
     message: "Session is valid"
   })
 });
 
-router.post("/generate-token", authGuard, validationMiddleware(generateTokenSchema), async (req, res) => {
+router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSchema), async (req, res) => {
   const { userId, publicWidgetId } = req.body;
   try {
     // Ensure session is valid (w/ corresponding user)
@@ -328,7 +336,7 @@ router.post("/generate-token", authGuard, validationMiddleware(generateTokenSche
   }
 })
 
-router.get('/search', async (req, res) => {
+router.get('/search', requireSiteAdmin, async (req, res) => {
   try {
     const { email } = req.query;
     
@@ -452,11 +460,11 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-router.patch('/:userId', requireSelfOrAdmin, async (req, res) => {
+router.patch('/', requireAuth, async (req, res) => {
   const { first, last } = req.body;
 
   try {
-    const id = parseInt(req.params.userId);
+    const id = req.session?.user?.user_id;
 
     // Ensure target user exists
     const selectUserById = `

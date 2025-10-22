@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { approveDeveloper, declineDeveloper, getPendingDevelopers } from "../services/developerService.js";
-import { requireAdmin } from "../middleware/permission-guards.js";
+import { requireSiteAdmin } from "../middleware/permission-guards.js";
 
 const router = Router();
 
-router.post("/pending/:developerId/approve", requireAdmin, async (req, res) => {
+router.post("/pending/:developerId/approve", requireSiteAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.developerId);
     const result = await approveDeveloper(id);
@@ -22,7 +22,7 @@ router.post("/pending/:developerId/approve", requireAdmin, async (req, res) => {
   }
 });
 
-router.post("/pending/:developerId/decline", requireAdmin, async (req, res) => {
+router.post("/pending/:developerId/decline", requireSiteAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.developerId);
     await declineDeveloper(id);
@@ -39,7 +39,7 @@ router.post("/pending/:developerId/decline", requireAdmin, async (req, res) => {
   }
 });
 
-router.get("/pending", requireAdmin, async (req, res) => {
+router.get("/pending", requireSiteAdmin, async (req, res) => {
   try {
     const result = await getPendingDevelopers();
 
