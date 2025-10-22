@@ -10,17 +10,10 @@ import pool from "../db.js";
  * Checks if the authenticated user is an owner or collaborator of the widget
  */
 export const requireWidgetOwnership = async (req, res, next) => {
-  if (!req.session.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required"
-    });
-  }
-
   const widgetId = parseInt(req.params.widgetId);
-  const userId = req.session.user.user_id;
+  const userId = req.session?.user?.user_id;
 
-  if (isNaN(widgetId)) {
+  if (isNaN(widgetId) || !userId) {
     return res.status(400).json({
       success: false,
       message: "Invalid widget ID"
@@ -29,7 +22,7 @@ export const requireWidgetOwnership = async (req, res, next) => {
 
   try {
     // Check if user is admin (admins can access any widget)
-    if (req.session.user.is_admin) {
+    if (req.session?.user?.role === 'admin' || req.session?.user?.is_admin) {
       return next();
     }
 
@@ -65,17 +58,10 @@ export const requireWidgetOwnership = async (req, res, next) => {
  * More restrictive than requireWidgetOwnership
  */
 export const requireWidgetOwner = async (req, res, next) => {
-  if (!req.session.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required"
-    });
-  }
-
   const widgetId = parseInt(req.params.widgetId);
-  const userId = req.session.user.user_id;
+  const userId = req.session?.user?.user_id;
 
-  if (isNaN(widgetId)) {
+  if (isNaN(widgetId) || !userId) {
     return res.status(400).json({
       success: false,
       message: "Invalid widget ID"
@@ -84,7 +70,7 @@ export const requireWidgetOwner = async (req, res, next) => {
 
   try {
     // Check if user is admin (admins can access any widget)
-    if (req.session.user.is_admin) {
+    if (req.session?.user?.role === 'admin' || req.session?.user?.is_admin) {
       return next();
     }
 
@@ -114,55 +100,23 @@ export const requireWidgetOwner = async (req, res, next) => {
 };
 
 /**
- * Middleware to require self-access or admin privileges
- * Users can only access their own resources unless they're admin
+ * Middleware to require team membership
+ * Checks if the authenticated user belongs to the team specified in params
  */
-export const requireSelfOrAdmin = (req, res, next) => {
-  if (!req.session.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required"
-    });
-  }
+export const requireTeamMembership = async (req, res, next) => {
+  const teamId = req.params.teamId;
+  const userId = req.session?.user?.user_id;
 
-  const targetUserId = parseInt(req.params.userId);
-  const currentUserId = req.session.user.user_id;
-
-  if (isNaN(targetUserId)) {
+  if (!userId) {
     return res.status(400).json({
       success: false,
       message: "Invalid user ID"
     });
   }
 
-  // Allow if user is admin or accessing their own data
-  if (req.session.user.is_admin || currentUserId === targetUserId) {
-    return next();
-  }
-
-  return res.status(403).json({
-    success: false,
-    message: "Access denied: You can only access your own data"
-  });
-};
-
-/**
- * Middleware to require team membership
- * Checks if the authenticated user belongs to the team specified in params
- */
-export const requireTeamMembership = async (req, res, next) => {
-  if (!req.session.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required"
-    });
-  }
-
-  const teamId = req.params.teamId;
-
   try {
     // Check if user is admin (admins can access any team)
-    if (req.session.user.is_admin) {
+    if (req.session?.user?.role === 'admin') {
       return next();
     }
 
@@ -182,36 +136,4 @@ export const requireTeamMembership = async (req, res, next) => {
       message: "Error verifying team access"
     });
   }
-};
-
-/**
- * Middleware to validate that userId in request body matches session
- * Used for endpoints that accept userId in body but need to verify it matches the session
- */
-export const validateUserIdMatch = (req, res, next) => {
-  if (!req.session.user) {
-    return res.status(401).json({
-      success: false,
-      message: "Authentication required"
-    });
-  }
-
-  const requestUserId = parseInt(req.body.userId);
-  const sessionUserId = req.session.user.user_id;
-
-  if (isNaN(requestUserId)) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid userId in request"
-    });
-  }
-
-  if (requestUserId !== sessionUserId) {
-    return res.status(403).json({
-      success: false,
-      message: "UserId in request does not match authenticated user"
-    });
-  }
-
-  next();
 };
