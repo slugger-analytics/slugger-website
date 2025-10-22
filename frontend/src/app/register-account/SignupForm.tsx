@@ -116,10 +116,10 @@ export function SignupForm() {
       return;
     }
 
-    // Checks if the user is trying to create an admin or master account without permission
-    if (data["account-type"] as string in ["admin", "master"]) {
+    // Checks if the user is trying to create an admin account without permission
+    if (data["account-type"] === "admin") {
       toast({
-        title: "You must have permission from an administrator to create an admin or master account",
+        title: "You must have permission from an administrator to create an admin account",
         description: "Please select a different account type",
         variant: "destructive",
       });

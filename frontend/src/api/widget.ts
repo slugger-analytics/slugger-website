@@ -30,6 +30,7 @@ export const registerWidget = async (
 
     const response = await fetch(`${API_URL}/api/widgets/register`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -51,7 +52,9 @@ export const registerWidget = async (
 
 export const fetchPendingWidgets = async (): Promise<PendingWidget[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/widgets/pending`);
+    const response = await fetch(`${API_URL}/api/widgets/pending`, {
+      credentials: "include",
+    });
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
@@ -72,6 +75,7 @@ export const approveWidget = async (requestId: string): Promise<string> => {
       `${API_URL}/api/widgets/pending/${requestId}/approve`,
       {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
       },
     );
@@ -95,6 +99,7 @@ export const declineWidget = async (requestId: string): Promise<string> => {
       `${API_URL}/api/widgets/pending/${requestId}/decline`,
       {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
       },
     );
@@ -172,6 +177,7 @@ export const updateWidget = async ({
   try {
     const response = await fetch(`${API_URL}/api/widgets/${id}`, {
       method: "PATCH",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -264,6 +270,7 @@ export const recordWidgetInteraction = async (
   try {
     const response = await fetch(`${API_URL}/api/widgets/metrics`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
