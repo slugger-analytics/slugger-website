@@ -110,7 +110,7 @@ router.patch('/:categoryId', requireSiteAdmin, validationMiddleware({ bodySchema
 
 // DELETE - Delete a widget category
 router.delete('/:categoryId', requireSiteAdmin, async (req, res) => {
-  const { id } = parseInt(req.params);
+  const id = parseInt(req.params.categoryId);
 
   try {
     // First delete related entries in the join table
