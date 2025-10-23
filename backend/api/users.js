@@ -56,7 +56,7 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/sign-up", async (req, res) => {
   try {
     const { role } = req.body;
-    if (!(role in ["admin", "master", "widget developer", "league"])) {
+    if (!["admin", "master", "widget developer", "league"].includes(role)) {
       res.status(400).json({
         success: false,
         message: "Invalid role"
