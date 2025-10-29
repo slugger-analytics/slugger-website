@@ -31,7 +31,7 @@ const app = express();
 
 app.use(cors({
   credentials: true,
-  origin: ["https://alpb-analytics.com/", "http://localhost:3000"]
+  origin: ["https://alpb-analytics.com", "https://www.alpb-analytics.com", "http://localhost:3000"]
 }))
 
 /**
