@@ -7,7 +7,9 @@ export const checkAccountStatus = async (email: string) => {
 };
 
 export const fetchPendingDevelopers = async () => {
-  const response = await fetch(`${API_URL}/api/developers/pending`);
+  const response = await fetch(`${API_URL}/api/developers/pending`, {
+    credentials: "include",
+  });
   const data = await response.json();
   if (!data.success) {
     throw new Error(data.message);
@@ -20,6 +22,7 @@ export const approveDeveloper = async (requestId: string) => {
     `${API_URL}/api/developers/pending/${requestId}/approve`,
     {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
     },
   );
@@ -36,6 +39,7 @@ export const declineDeveloper = async (requestId: string) => {
     `${API_URL}/api/developers/pending/${requestId}/decline`,
     {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
     },
   );

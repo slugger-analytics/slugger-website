@@ -36,7 +36,9 @@ export async function getTeam(teamId: string): Promise<Team> {
 
 export async function getTeamMembers(teamId: string): Promise<TeamMember[]> {
   try {
-    const response = await fetch(`${API_URL}/api/teams/${teamId}/members`);
+    const response = await fetch(`${API_URL}/api/teams/${teamId}/members`, {
+      credentials: "include",
+    });
     const data = await response.json();
 
     if (!data.success) {
@@ -59,6 +61,7 @@ export async function promoteTeamMember(
       `${API_URL}/api/teams/${teamId}/members/${memberId}/promote`,
       {
         method: "POST",
+        credentials: "include",
       },
     );
     const data = await response.json();
@@ -83,6 +86,7 @@ export async function demoteTeamMember(
       `${API_URL}/api/teams/${teamId}/members/${memberId}/demote`,
       {
         method: "POST",
+        credentials: "include",
       },
     );
     const data = await response.json();
@@ -107,6 +111,7 @@ export async function removeTeamMember(
       `${API_URL}/api/teams/${teamId}/members/${memberId}`,
       {
         method: "DELETE",
+        credentials: "include",
       },
     );
     const data = await response.json();

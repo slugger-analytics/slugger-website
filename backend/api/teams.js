@@ -13,6 +13,8 @@ import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas";
 import jwt from 'jsonwebtoken';
 import { getUserData } from "../services/widgetService";
 import pool from "../db";
+import { requireTeamAdmin } from "../middleware/permission-guards.js";
+import { requireTeamMembership } from "../middleware/ownership-guards.js";
 
 const router = Router();
 
@@ -58,6 +60,7 @@ router.get(
 // get all members from a team
 router.get(
   "/:teamId/members",
+  requireTeamMembership,
   validationMiddleware({ paramsSchema: getTeamSchema }),
   async (req, res) => {
     try {
@@ -80,6 +83,7 @@ router.get(
 // get a team member by id
 router.get(
   "/:teamId/members/:memberId",
+  requireTeamMembership,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -103,6 +107,7 @@ router.get(
 // promote a team member
 router.post(
   "/:teamId/members/:memberId/promote",
+  requireTeamAdmin,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -128,6 +133,7 @@ router.post(
 // demote a team member
 router.post(
   "/:teamId/members/:memberId/demote",
+  requireTeamAdmin,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -153,6 +159,7 @@ router.post(
 // change a member's team
 router.patch(
   "/:teamId/members/:memberId",
+  requireTeamAdmin,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -177,7 +184,7 @@ router.patch(
 );
 
 // invite a new member to a team
-router.post("/:teamId/invite", async (req, res) => {
+router.post("/:teamId/invite", requireTeamAdmin, async (req, res) => {
   try {
     const teamId = req.params.teamId;
     
@@ -248,7 +255,7 @@ router.post("/validate-invite", async (req, res) => {
 });
 
 // remove a member from a team
-router.delete("/:teamId/members/:memberId", async (req, res) => {
+router.delete("/:teamId/members/:memberId", requireTeamAdmin, async (req, res) => {
   const { teamId, memberId } = req.params;
   try {
     await getTeam(teamId); // Assert team exists

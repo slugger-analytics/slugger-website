@@ -9,6 +9,7 @@ dotenv.config();
  */
 const DEBUG = false;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+export type RoleType = "admin" | "master" | "widget developer" | "league";
 
 /**
  * Signs up a new user by sending their details to the backend API.
@@ -30,7 +31,7 @@ export async function signUpUser(data: {
   password: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role: RoleType;
   teamId?: string;
   teamRole?: string;
   inviteToken?: string;

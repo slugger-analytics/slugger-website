@@ -20,11 +20,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 export const addFavorite = async (userId: number, widgetId: number) => {
   try {
     const response = await fetch(
-      `${API_URL}/api/users/${userId}/add-favorite`,
+      `${API_URL}/api/users/add-favorite`,
       {
         method: "PATCH", // HTTP PATCH request to update the user's favorites
         headers: { "Content-Type": "application/json" }, // Set the content type to JSON
         body: JSON.stringify({ widgetId }), // Send the widget ID in the request body
+        credentials: "include", // Include session cookie for authentication
       },
     );
 
@@ -53,11 +54,12 @@ export const addFavorite = async (userId: number, widgetId: number) => {
 export const removeFavorite = async (userId: number, widgetId: number) => {
   try {
     const response = await fetch(
-      `${API_URL}/api/users/${userId}/remove-favorite`,
+      `${API_URL}/api/users/remove-favorite`,
       {
         method: "PATCH", // HTTP PATCH request to update the user's favorites
         headers: { "Content-Type": "application/json" }, // Set the content type to JSON
         body: JSON.stringify({ widgetId }), // Send the widget ID in the request body
+        credentials: "include", // Include session cookie for authentication
       },
     );
 
@@ -85,9 +87,10 @@ export const removeFavorite = async (userId: number, widgetId: number) => {
 export const getFavorites = async (userId: number) => {
   try {
     const response = await fetch(
-      `${API_URL}/api/users/${userId}/favorite-widgets/`,
+      `${API_URL}/api/users/favorite-widgets`,
       {
         method: "GET", // HTTP GET request to retrieve user's favorites
+        credentials: "include", // Include session cookie for authentication
       },
     );
 
@@ -131,7 +134,9 @@ export const generateToken = async (userId: number, publicWidgetId: string) => {
 
 export const searchUserByEmail = async (email: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/api/users/search?email=${email}`);
+    const response = await fetch(`${API_URL}/api/users/search?email=${email}`, {
+      credentials: "include",
+    });
     const res = await response.json();
 
     if (!res.success) {
@@ -150,7 +155,7 @@ type updateUserType = {
 };
 export const editUser = async (id: number, data: updateUserType) => {
   try {
-    const response = await fetch(`${API_URL}/api/users/${id}`, {
+    const response = await fetch(`${API_URL}/api/users`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
