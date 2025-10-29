@@ -213,6 +213,7 @@ export const addCategoryToWidget = async (
       `${API_URL}/api/widgets/${widgetId}/categories`,
       {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -244,6 +245,7 @@ export const removeCategoryFromWidget = async (
       `${API_URL}/api/widgets/${widgetId}/categories/${categoryId}`,
       {
         method: "DELETE",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -299,6 +301,9 @@ export const getWidgetCollaborators = async (
   try {
     const response = await fetch(
       `${API_URL}/api/widgets/${widgetId}/developers`,
+      {
+        credentials: "include",
+      },
     );
 
     const res = await response.json();
@@ -317,6 +322,7 @@ export async function addWidgetCollaborator(widgetId: number, email: string) {
     `${API_URL}/api/widgets/${widgetId}/collaborators`,
     {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -336,6 +342,7 @@ export async function deleteWidget(widgetId: number) {
   try {
     const response = await fetch(`${API_URL}/api/widgets/${widgetId}`, {
       method: "DELETE",
+      credentials: "include",
     });
 
     const res = await response.json();
@@ -350,7 +357,9 @@ export async function deleteWidget(widgetId: number) {
 
 export async function getWidgetTeamAccess(widgetId: number): Promise<string[]> {
   try {
-    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`);
+    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`, {
+      credentials: "include",
+    });
     const data = await response.json();
 
     if (!data.success) {
@@ -370,6 +379,7 @@ export async function updateWidgetTeamAccess(widgetId: number, teamIds: string[]
   try {
     const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`, {
       method: "PUT",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },

@@ -134,7 +134,9 @@ export const generateToken = async (userId: number, publicWidgetId: string) => {
 
 export const searchUserByEmail = async (email: string): Promise<any> => {
   try {
-    const response = await fetch(`${API_URL}/api/users/search?email=${email}`);
+    const response = await fetch(`${API_URL}/api/users/search?email=${email}`, {
+      credentials: "include",
+    });
     const res = await response.json();
 
     if (!res.success) {
