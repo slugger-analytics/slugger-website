@@ -79,6 +79,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       setRoleDisplay("Developer Account");
     } else if (user.role.toLowerCase() === "master") {
       setRoleDisplay("Master Account");
+    } else if (user.role.toLowerCase() === "admin") {
+      setRoleDisplay("Admin Account");
     } else {
       setRoleDisplay("League Account");
     }
