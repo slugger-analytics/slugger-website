@@ -107,10 +107,10 @@ export const requireTeamMembership = async (req, res, next) => {
   const teamId = req.params.teamId;
   const userId = req.session?.user?.user_id;
 
-  if (!userId) {
+  if (!userId || !teamId) {
     return res.status(400).json({
       success: false,
-      message: "Invalid user ID"
+      message: "Invalid user ID or team ID"
     });
   }
 
@@ -121,7 +121,7 @@ export const requireTeamMembership = async (req, res, next) => {
     }
 
     // Check if user belongs to the team
-    if (req.session.user.team_id !== teamId) {
+    if (req.session?.user?.team_id !== teamId) {
       return res.status(403).json({
         success: false,
         message: "Access denied: You don't belong to this team"

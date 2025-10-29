@@ -56,14 +56,18 @@ router.get("/", requireAuth, async (req, res) => {
 router.post("/sign-up", async (req, res) => {
   try {
     const { role } = req.body;
-    if (!["admin", "master", "widget developer", "league"].includes(role)) {
+
+    // Only allow non-privileged roles for public sign-up
+    const allowedRoles = ["widget developer", "league"];
+
+    if (!role || !allowedRoles.includes(role)) {
       res.status(400).json({
         success: false,
-        message: "Invalid role"
+        message: "Invalid role. Allowed roles: widget developer, league"
       });
       return;
     }
-    
+
     const result = await signUpUserWithCognito(req.body);
     res.status(200).json({
       success: true,
@@ -476,7 +480,7 @@ router.patch('/', requireAuth, async (req, res) => {
     if (targetUserRes.rowCount === 0) {
       res.status(404).json({
         success: false,
-        message: "Widget not found",
+        message: "User not found",
       });
       return;
     }
