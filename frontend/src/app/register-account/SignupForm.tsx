@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import SubmitButton from "../components/input/SubmitButton";
-import { signUpUser } from "../../api/auth";
+import { RoleType, signUpUser } from "../../api/auth";
 import {
   Card,
   CardContent,
@@ -106,6 +106,26 @@ export function SignupForm() {
       return;
     }
 
+    // Checks if a valid account type has been selected by the user
+    if (!(data["account-type"] as RoleType)) {
+      toast({
+        title: "Invalid account type",
+        description: "Please select a valid account type",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Checks if the user is trying to create an admin account without permission
+    if (data["account-type"] === "admin") {
+      toast({
+        title: "You must have permission from an administrator to create an admin account",
+        description: "Please select a different account type",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const searchParams = new URLSearchParams(window.location.search);
     const inviteToken = searchParams.get("invite");
 
@@ -115,7 +135,7 @@ export function SignupForm() {
         password: data["password"] as string,
         firstName: data["first-name"] as string,
         lastName: data["last-name"] as string,
-        role: data["account-type"] as string,
+        role: data["account-type"] as RoleType,
         teamId: invitedTeam ? invitedTeam.team_id : undefined,
         teamRole: data["team-role"] as string,
         inviteToken: inviteToken || undefined,
@@ -226,7 +246,8 @@ export function SignupForm() {
                         Widget Developer
                       </SelectItem>
                       <SelectItem value="league">League</SelectItem>
-                      {/* <SelectItem value="master">Master</SelectItem> */}
+                      <SelectItem value="master">Master</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectGroup>
                   </SelectContent>
                 </Select>

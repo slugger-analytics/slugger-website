@@ -1,19 +1,14 @@
 "use client";
 
-import TextareaInput from "../components/input/TextareaInput";
-import { registerWidget, createWidget } from "../../api/widget";
+import { registerWidget } from "../../api/widget";
 import { useStore } from "@nanostores/react";
 import { useAuth } from "../contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import InputField from "../components/input/InputField";
 import SubmitButton from "../components/input/SubmitButton";
-import SelectField from "../components/input/SelectField";
-import { signUpUser } from "../../api/auth"; // Now importing from api/auth
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card";
@@ -34,6 +29,7 @@ import { $user } from "@/lib/userStore";
 import { useToast } from "@/hooks/use-toast";
 import { getTeams } from "@/api/teams";
 import { Checkbox } from "@/app/components/ui/checkbox";
+import { RegisterWidgetDataType } from "@/data/types";
 
 interface Team {
   team_id: string;
@@ -41,7 +37,7 @@ interface Team {
 }
 
 export function WidgetForm() {
-  const [visibility, setVisibility] = useState("");
+  const [visibility, setVisibility] = useState<"public" | "private" | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
   const router = useRouter();
@@ -65,9 +61,14 @@ export function WidgetForm() {
     };
 
     fetchTeams();
-  }, []);
+  }, [toast]);
 
   const handleTeamChange = (teamId: string, checked: boolean) => {
+    // Prevent team selection for public widgets
+    if (visibility === "public") {
+      return;
+    }
+    
     if (checked) {
       setSelectedTeams(prev => [...prev, teamId]);
     } else {
@@ -85,20 +86,28 @@ export function WidgetForm() {
       data[key] = value as string;
     });
 
+    if (!visibility) {
+      toast({
+        title: "Error",
+        description: "Please select a visibility",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // if (!idToken) {
       //   throw new Error("ID Token not found. Please log in again.");
       // }
 
-      const widgetData = {
-        widget_name: data["widget-name"],
+      const widgetData: RegisterWidgetDataType = {
+        widgetName: data["widget-name"],
         description: data["description"],
         visibility: visibility,
-        userId: user.id,
-        selectedTeams: visibility === "private" ? selectedTeams : [],
+        teamIds: visibility === "private" ? selectedTeams : undefined,
       };
 
-      await createWidget(widgetData);
+      await registerWidget(widgetData, parseInt(user.id));
       router.push("/dashboard"); // or wherever you want to redirect after success
     } catch (error) {
       console.error(error);
@@ -148,7 +157,13 @@ export function WidgetForm() {
               <Select
                 name="account-type"
                 required={true}
-                onValueChange={(vis) => setVisibility(vis)}
+                onValueChange={(vis) => {
+                  setVisibility(vis as "public" | "private");
+                  // Clear selected teams if switching to public
+                  if (vis === "public") {
+                    setSelectedTeams([]);
+                  }
+                }}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select visibility" />

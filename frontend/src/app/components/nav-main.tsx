@@ -35,8 +35,8 @@ export function NavMain({ items }: { items: Item[] }) {
   const shouldShowItem = (title: string) => {
     if (title === "Register Widget" || title === "API Documentation") return role === "widget developer";
     if (title === "My Team") return role === "league";
-    if (title === "Pending Developers") return role === "master";
-    if (title === "Home") return role !== "master";
+    if (title === "Pending Developers" || title === "Pending Widgets") return role === "admin";
+    if (title === "Home") return role !== "admin";
     return true;
   };
 

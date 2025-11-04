@@ -19,7 +19,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const registerWidget = async (
   widgetData: RegisterWidgetDataType,
-  userId: string,
+  userId: number,
 ): Promise<any> => {
   try {
     // Attach user ID to the payload
@@ -30,6 +30,7 @@ export const registerWidget = async (
 
     const response = await fetch(`${API_URL}/api/widgets/register`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -51,7 +52,9 @@ export const registerWidget = async (
 
 export const fetchPendingWidgets = async (): Promise<PendingWidget[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/widgets/pending`);
+    const response = await fetch(`${API_URL}/api/widgets/pending`, {
+      credentials: "include",
+    });
     if (!response.ok) {
       throw new Error(`Error: ${response.statusText}`);
     }
@@ -72,6 +75,7 @@ export const approveWidget = async (requestId: string): Promise<string> => {
       `${API_URL}/api/widgets/pending/${requestId}/approve`,
       {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
       },
     );
@@ -95,6 +99,7 @@ export const declineWidget = async (requestId: string): Promise<string> => {
       `${API_URL}/api/widgets/pending/${requestId}/decline`,
       {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
       },
     );
@@ -172,6 +177,7 @@ export const updateWidget = async ({
   try {
     const response = await fetch(`${API_URL}/api/widgets/${id}`, {
       method: "PATCH",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -207,6 +213,7 @@ export const addCategoryToWidget = async (
       `${API_URL}/api/widgets/${widgetId}/categories`,
       {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -238,6 +245,7 @@ export const removeCategoryFromWidget = async (
       `${API_URL}/api/widgets/${widgetId}/categories/${categoryId}`,
       {
         method: "DELETE",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -264,6 +272,7 @@ export const recordWidgetInteraction = async (
   try {
     const response = await fetch(`${API_URL}/api/widgets/metrics`, {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -286,38 +295,15 @@ export const recordWidgetInteraction = async (
   }
 };
 
-export const createWidget = async (widgetData: {
-  widget_name: string;
-  description: string;
-  visibility: string;
-  userId: string;
-  selectedTeams?: string[];
-}): Promise<any> => {
-  try {
-    const response = await fetch(`${API_URL}/api/widgets/create`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(widgetData),
-      credentials: "include",
-    });
-
-    const res = await response.json();
-    if (!res.success) {
-      throw new Error(res.message);
-    }
-    return res.data;
-  } catch (error) {
-    console.error("Error creating widget:", error);
-    throw error;
-  }
-};
-
 export const getWidgetCollaborators = async (
   widgetId: number,
 ): Promise<any> => {
   try {
     const response = await fetch(
       `${API_URL}/api/widgets/${widgetId}/developers`,
+      {
+        credentials: "include",
+      },
     );
 
     const res = await response.json();
@@ -336,6 +322,7 @@ export async function addWidgetCollaborator(widgetId: number, email: string) {
     `${API_URL}/api/widgets/${widgetId}/collaborators`,
     {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -355,6 +342,7 @@ export async function deleteWidget(widgetId: number) {
   try {
     const response = await fetch(`${API_URL}/api/widgets/${widgetId}`, {
       method: "DELETE",
+      credentials: "include",
     });
 
     const res = await response.json();
@@ -369,7 +357,9 @@ export async function deleteWidget(widgetId: number) {
 
 export async function getWidgetTeamAccess(widgetId: number): Promise<string[]> {
   try {
-    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`);
+    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`, {
+      credentials: "include",
+    });
     const data = await response.json();
 
     if (!data.success) {
@@ -389,6 +379,7 @@ export async function updateWidgetTeamAccess(widgetId: number, teamIds: string[]
   try {
     const response = await fetch(`${API_URL}/api/widgets/${widgetId}/teams`, {
       method: "PUT",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },

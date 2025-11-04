@@ -38,8 +38,8 @@ const LoginForm = () => {
       setIdToken(result.authData.idToken); // Set the ID token in the context
 
       // Handle successful login and redirect based on user role
-      if (result.user.role === "master") {
-        router.push("/pending-developers"); // Redirect to pending widgets page for master role
+      if (result.user.role === "admin") {
+        router.push("/pending-developers"); // Redirect to pending widgets page for admin role
       } else {
         router.push("/dashboard"); // Redirect to dashboard for other roles
       }

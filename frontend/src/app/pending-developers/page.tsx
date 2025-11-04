@@ -67,7 +67,7 @@ export default function PendingDevelopersPage() {
   };
 
   return (
-    <ProtectedRoute role="master">
+    <ProtectedRoute role="admin">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
