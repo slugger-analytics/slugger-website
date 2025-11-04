@@ -7,11 +7,19 @@ import pkg from "aws-sdk"; // Import AWS SDK
 const { SES } = pkg; // Extract the SES (Simple Email Service) class
 
 // Initialize an SES instance with the specified AWS region
-const ses = new SES({
-  region: "us-east-2",
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-});
+// Uses IAM role in production, explicit credentials in local dev
+const sesConfig = {
+  region: "us-east-2"
+};
+
+// Only add explicit credentials if provided (for local development)
+// In production (ECS), the SDK will automatically use the task role
+if (process.env.AWS_ACCESS_KEY && process.env.AWS_SECRET_ACCESS_KEY) {
+  sesConfig.accessKeyId = process.env.AWS_ACCESS_KEY;
+  sesConfig.secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+}
+
+const ses = new SES(sesConfig);
 
 /**
  * Sends an email containing an API key to the specified recipient.

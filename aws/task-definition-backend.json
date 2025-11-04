@@ -21,7 +21,8 @@
       "environment": [
         { "name": "NODE_ENV", "value": "production" },
         { "name": "PORT", "value": "3001" },
-        { "name": "SEASON_YEAR", "value": "2024" }
+        { "name": "SEASON_YEAR", "value": "2024" },
+        { "name": "AWS_REGION", "value": "us-east-2" }
       ],
       "secrets": [
         { "name": "COGNITO_APP_CLIENT_ID", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/cognito-app-client-id" },
@@ -34,9 +35,6 @@
         { "name": "SESSION_SECRET", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/session-secret" },
         { "name": "JWT_SECRET", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/jwt-secret" },
         { "name": "TOKEN_SECRET", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/token-secret" },
-        { "name": "AWS_ACCESS_KEY", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/aws-access-key" },
-        { "name": "AWS_SECRET_ACCESS_KEY", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/aws-secret-access-key" },
-        { "name": "AWS_REGION", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/aws-region" },
         { "name": "LAMBDA_API_BASE_URL", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/lambda-api-base-url" },
         { "name": "JSON_BUCKET_NAME", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/json-bucket-name" }
       ],
