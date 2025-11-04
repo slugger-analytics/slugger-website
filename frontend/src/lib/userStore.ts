@@ -1,5 +1,5 @@
 import { atom } from "nanostores";
-import { persistentAtom } from "@nanostores/persistent";
+import { persistentMap } from "@nanostores/persistent";
 import { UserType } from "@/data/types";
 
 const emptyUser: UserType = {
