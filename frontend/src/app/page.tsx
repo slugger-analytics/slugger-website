@@ -2,25 +2,25 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "motion/react";
+import { motion, type Variants } from "motion/react";
 import { AuthProvider } from "./contexts/AuthContext";
 
-const variants = {
+const variants: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: (delay = 0) => ({
+  visible: (custom: number = 0) => ({
     opacity: 1,
     y: 0,
     transition: {
       duration: 0.5,
-      delay,
-      ease: [0.25, 0.1, 0.25, 1],
+      delay: custom,
+      ease: [0.25, 0.1, 0.25, 1] as const,
     },
   }),
   hover: { scale: 1.05, transition: { duration: 0.2 } },
   tap: { scale: 0.95, transition: { duration: 0.2 } },
 };
 
-const containerVariants = {
+const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
