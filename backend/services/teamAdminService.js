@@ -22,6 +22,8 @@ export async function createTeamAdminRequest(userId, teamId, is_admin) {
       if (err.code === '23505') { // unique_violation PG error code
         throw new Error('A pending request already exists for this user');
       }
+      // Re-throw unexpected errors
+      throw err;
     }
 
     await client.query('COMMIT');

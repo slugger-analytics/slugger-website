@@ -44,6 +44,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: false,
     },
     {
+      title: "Team Admins",
+      url: "/team-admins",
+      icon: Users,
+      isActive: false,
+    },
+    {
       title: "Register Widget",
       url: "/register-widget",
       icon: BookOpenCheck,

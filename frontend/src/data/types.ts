@@ -245,3 +245,19 @@ export interface TeamName {
   fullname: string;
   $t: string;
 }
+
+/**
+ * Represents a pending team admin request
+ * Used when a team member requests admin permissions for their team
+ */
+export interface PendingTeamAdmin {
+  request_id: number;
+  user_id: number;
+  team_id: number;
+  status: string;
+  created_at: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  team_name: string;
+}
