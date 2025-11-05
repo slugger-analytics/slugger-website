@@ -6,6 +6,26 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
+ * Creates a team admin request for the authenticated user
+ * User must be authenticated and part of a team
+ * @returns Success response
+ * @throws Error if user is already admin, has pending request, or request fails
+ */
+export const createTeamAdminRequest = async () => {
+  const response = await fetch(`${API_URL}/api/team-admins/request`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message);
+  }
+  return data;
+};
+
+/**
  * Fetches all pending team admin requests
  * @returns Array of pending team admin requests
  * @throws Error if the request fails
