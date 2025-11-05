@@ -11,8 +11,8 @@ import {
 } from "../services/teamService.js";
 import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas.js";
 import jwt from 'jsonwebtoken';
-import { getUserData } from "../services/widgetService";
-import pool from "../db";
+import { getUserData } from "../services/widgetService.js";
+import pool from "../db.js";
 import { requireTeamAdmin } from "../middleware/permission-guards.js";
 import { requireTeamMembership } from "../middleware/ownership-guards.js";
 
