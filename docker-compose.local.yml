@@ -1,0 +1,23 @@
+services:
+  # Local PostgreSQL Database ONLY
+  # Run your app with regular `npm run dev` after starting this
+  postgres:
+    container_name: slugger-postgres-local
+    image: postgres:15
+    environment:
+      POSTGRES_DB: slugger_local
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../init-db:/docker-entrypoint-initdb.d  # Auto-run init scripts
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

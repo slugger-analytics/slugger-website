@@ -1,22 +1,35 @@
 import { Router } from "express";
 import dotenv from "dotenv";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { streamToString } from "../utils/stream";
+import { streamToString } from "../utils/stream.js";
 
-dotenv.config();
+dotenv.config({ path: "../.env" });
 
 const router = Router();
 
 const YEAR = process.env.SEASON_YEAR;
 const BUCKET_NAME = process.env.JSON_BUCKET_NAME;
 
-const s3 = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
+// Configure S3 client - uses IAM role in production, explicit credentials in local dev
+const s3Config = {
+    region: process.env.AWS_REGION || "us-east-2"
+};
+
+// Only add explicit credentials if provided (for local development)
+// In production (ECS), the SDK will automatically use the task role
+// Check that both keys are present AND non-empty to avoid invalid credential objects
+if (process.env.AWS_ACCESS_KEY && process.env.AWS_SECRET_ACCESS_KEY && 
+    process.env.AWS_ACCESS_KEY.trim() !== '' && process.env.AWS_SECRET_ACCESS_KEY.trim() !== '') {
+    console.log('Using explicit AWS credentials from environment variables');
+    s3Config.credentials = {
         accessKeyId: process.env.AWS_ACCESS_KEY,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-});
+    };
+} else {
+    console.log('Using ECS task role for AWS credentials');
+}
+
+const s3 = new S3Client(s3Config);
 
 router.get("/standings", async (req, res) => {
     const key = `standings/${YEAR}-standings.json`;

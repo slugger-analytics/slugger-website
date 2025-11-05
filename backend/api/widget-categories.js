@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { validationMiddleware } from "../middleware/validation-middleware";
-import { createCategorySchema, updateCategorySchema } from "../validators/schemas";
+import { validationMiddleware } from "../middleware/validation-middleware.js";
+import { createCategorySchema, updateCategorySchema } from "../validators/schemas.js";
 import pool from "../db.js";
 import { requireSiteAdmin } from "../middleware/permission-guards.js";
 

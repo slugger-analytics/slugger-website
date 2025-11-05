@@ -101,13 +101,32 @@ router.post("/sign-in", async (req, res) => {
       authResult.AuthenticationResult;
 
     const query = "SELECT * FROM users WHERE email = $1";
-    const dbResult = await pool.query(query, [email]);
+    let dbResult = await pool.query(query, [email]);
+    
+    let user;
     if (dbResult.rows.length === 0) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      // User authenticated with Cognito but doesn't exist in DB - auto-create
+      console.log(`Auto-creating user for ${email} after successful Cognito auth`);
+      
+      // Get user details from Cognito
+      const cognitoUser = await cognito.getUser({ AccessToken }).promise();
+      const firstName = cognitoUser.UserAttributes.find(attr => attr.Name === 'given_name')?.Value || '';
+      const lastName = cognitoUser.UserAttributes.find(attr => attr.Name === 'family_name')?.Value || '';
+      const cognitoUserId = cognitoUser.Username;
+      
+      // Create user in database
+      user = await createUser({
+        cognitoUserId,
+        email,
+        first: firstName,
+        last: lastName,
+        role: 'user' // Default role
+      });
+      
+      console.log(`User created successfully: ${user.user_id}`);
+    } else {
+      user = dbResult.rows[0];
     }
-    const user = dbResult.rows[0];
 
     req.session.user = user; // IMPORTANT stores session in req body
 

@@ -1,74 +1,120 @@
-# SLUGGER (Formerly ALPB Analytics)
+# SLUGGER
 
-The first centralized data analytics platform for the Atlantic League of Professional Baseball, built to make cutting-edge baseball insights accessible across the league. Powered by Trackman radar data and developed in collaboration with the [Johns Hopkins University's Sports Analytics Research Group](https://sports-analytics.cs.jhu.edu/), SLUGGER enables analysts, players, coaches, and more to tap into a growing library of interactive "widgets" — analytical tools that use our API to drive game-changing insights.
+The first centralized data analytics platform for the Atlantic League of Professional Baseball. Powered by Trackman radar data and developed in collaboration with the [Johns Hopkins University's Sports Analytics Research Group](https://sports-analytics.cs.jhu.edu/), SLUGGER enables analysts, players, coaches, and more to access interactive analytical tools and game-changing insights.
 
-## Accessing the Platform
+## Tech Stack
 
-Visit [ALPB Analytics](https://alpb-analytics.com/) to get started.
-**Players, coaches, and front office members** should look out for an invite from a team administrator after signing up.
+- **Frontend**: Next.js 14, React, TailwindCSS
+- **Backend**: Express.js, Node.js
+- **Database**: PostgreSQL (AWS RDS for production, Docker for local)
+- **Authentication**: AWS Cognito
+- **Infrastructure**: AWS ECS Fargate, Application Load Balancer, ECR
+- **CI/CD**: GitHub Actions
 
-## Deploying Locally
+## Production
 
-### Option 1: Traditional Setup (Without Docker)
+**URL**: `http://slugger-alb-1518464736.us-east-2.elb.amazonaws.com`
 
-1. Clone this repository and navigate to the project directory.
+Deployed on AWS ECS Fargate with automated CI/CD. Push to `main` triggers automatic deployment.
 
-2. To run the backend server:
+## Why Local Database?
 
-   i. Navigate to the `backend` directory.
-   ii. Install packages using `npm install`.
-   iii. Copy `.env.example` to `.env` in the project root and configure all environment variables.
-   iv. Run `npm start`. This will start the server at `http://localhost:3001`
+**Benefits:**
+- ⚡ **Fast**: No network latency, instant queries
+- 💰 **Cost-effective**: No RDS charges during development
+- 🔒 **Safe**: Can't corrupt production data
+- 🌐 **Offline**: Work without internet
+- 🧪 **Experimental**: Test destructive operations safely
 
-3. To run the frontend:
+**Development Workflow:**
+```
+1. Initial Setup (once)
+   └─ Start local DB → Clone production data
 
-   i. Navigate to `frontend` directory.
-   ii. Install packages using `npm install`.
-   iii. Configure environment variables in `.env` file.
-   iv. Run `npm dev`. This will run the application at `http://localhost:3000`.
+2. Daily Development
+   └─ Code changes → Test locally → Fast iteration
 
-### Option 2: Docker Setup
+3. Refresh Data (when needed)
+   └─ Pull latest production data → Continue testing
 
-#### Prerequisites
-- Docker and Docker Compose installed on your system
-- Latest `.env` file with all required environment variables in the project root
+4. Deploy (code only)
+   └─ git push → CI/CD deploys → Production updated
+```
 
-#### Quick Start
+**Important**: Local DB is for testing. Production data stays in RDS.
 
-1. Clone the repository and navigate to the project directory
-2. Ensure you have the latest `.env` file with all required variables (see `.env.example` for reference)
-3. Run the application:
+## Quick Start
 
-   ```bash
-   # Build and start all services
-   docker-compose up --build
-   ```
+### Prerequisites
 
-4. Access the application:
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend API: [http://localhost:3001](http://localhost:3001)
+- **Node.js 18+**
+- **Docker Desktop**
+- **AWS credentials** (in `.env` file)
 
-#### Development Workflow
+### Local Development Setup
 
-- **Starting services**: `docker-compose up`
-- **Rebuild images**: `docker-compose up --build`
-- **View logs**: `docker-compose logs -f`
-- **Stop services**: `docker-compose down`
-- **Run tests**: `docker-compose run backend npm test`
+```bash
+# 1. Install dependencies
+npm install
 
-#### Important Notes
+# 2. Start local PostgreSQL
+npm run db:local:start
 
-- The root `.env` file is required and will be used by both frontend and backend services
-- Database data is persisted in a Docker volume
-- Frontend hot-reload works in development mode
-- For production builds, use the included Dockerfile with appropriate build arguments
+# 3. Clone production data (first time only)
+./pull-rds-data.sh
 
-#### Environment Variables
+# 4. Start the application
+export $(cat .env.local | grep -v '^#' | xargs) && npm run dev
+```
 
-Make sure your `.env` file includes all required variables (see `.env.example` for reference). Key variables include:
+**Access:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:3001
 
-- Database credentials
-- AWS credentials
-- Cognito configuration
-- API endpoints
-- Session secrets
+### Essential Commands
+
+```bash
+# Development
+npm run dev                    # Start app (uses .env.local for local DB)
+export $(cat .env | xargs) && npm run dev  # Use cloud RDS instead
+
+# Database
+npm run db:local:start         # Start local PostgreSQL
+npm run db:local:stop          # Stop local PostgreSQL
+./pull-rds-data.sh             # Refresh with latest production data
+
+# Database access
+docker exec -it slugger-postgres-local psql -U postgres -d slugger_local
+```
+
+### Environment Files
+
+- **`.env`**: Production RDS credentials (for pulling data)
+- **`.env.local`**: Local database settings (for development)
+
+```env
+# .env.local
+DB_HOST=localhost
+DB_USERNAME=postgres
+DB_PASSWORD=localpassword
+DB_NAME=slugger_local
+DB_PORT=5432
+```
+
+## Deployment
+
+```bash
+# Automatic deployment (recommended)
+git push origin main           # CI/CD auto-deploys to production
+
+# Monitor deployment
+# GitHub Actions → ECS Fargate CI/CD workflow
+```
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for advanced deployment options.
+
+## Documentation
+
+- **[DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md)** - Complete development workflow and best practices
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment, monitoring, rollback
+- **[aws/AWS-INFRASTRUCTURE.md](aws/AWS-INFRASTRUCTURE.md)** - Complete AWS resource catalog

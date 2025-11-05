@@ -1,0 +1,25 @@
+# Production Dockerfile for the SLUGGER backend service
+FROM node:18-alpine
+
+# Install build dependencies required for native modules like bcrypt and runtime health checks
+RUN apk add --no-cache python3 make g++ curl
+
+WORKDIR /app
+
+# Copy dependency manifests
+COPY package.json package-lock.json ./
+
+# Install production dependencies only
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Copy backend source code
+COPY . .
+
+# Expose backend port
+EXPOSE 3001
+
+# Use the non-root node user for runtime
+USER node
+
+# Start the express server
+CMD ["node", "server.js"]

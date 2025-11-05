@@ -7,9 +7,12 @@
     "backend"
   ],
   "scripts": {
+    "dev": "npm-run-all --parallel dev:frontend dev:backend",
     "dev:frontend": "npm run dev --workspace=frontend",
     "dev:backend": "npm run dev --workspace=backend",
-    "dev": "npm-run-all --parallel dev:*",
+    "dev:cloud": "echo 'Using cloud RDS database' && npm run dev",
+    "db:local:start": "docker-compose -f docker-compose.local.yml up -d",
+    "db:local:stop": "docker-compose -f docker-compose.local.yml down",
     "build": "npm run build --workspaces",
     "start": "npm run start --workspace=backend",
     "lint": "npm run lint --workspaces"

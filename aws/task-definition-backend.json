@@ -1,0 +1,58 @@
+{
+  "family": "slugger-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::746669223415:role/slugger-ecs-execution",
+  "taskRoleArn": "arn:aws:iam::746669223415:role/slugger-backend-task",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "746669223415.dkr.ecr.us-east-2.amazonaws.com/slugger-backend:latest",
+      "portMappings": [
+        {
+          "containerPort": 3001,
+          "hostPort": 3001,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true,
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3001" },
+        { "name": "SEASON_YEAR", "value": "2024" },
+        { "name": "AWS_REGION", "value": "us-east-2" }
+      ],
+      "secrets": [
+        { "name": "COGNITO_APP_CLIENT_ID", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/cognito-app-client-id" },
+        { "name": "COGNITO_USER_POOL_ID", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/cognito-user-pool-id" },
+        { "name": "DB_HOST", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/db-host" },
+        { "name": "DB_NAME", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/db-name" },
+        { "name": "DB_USERNAME", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/db-username" },
+        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/db-password" },
+        { "name": "DB_PORT", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/db-port" },
+        { "name": "SESSION_SECRET", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/session-secret" },
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/jwt-secret" },
+        { "name": "TOKEN_SECRET", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/token-secret" },
+        { "name": "LAMBDA_API_BASE_URL", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/lambda-api-base-url" },
+        { "name": "JSON_BUCKET_NAME", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/json-bucket-name" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/slugger-backend",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:3001/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      }
+    }
+  ]
+}

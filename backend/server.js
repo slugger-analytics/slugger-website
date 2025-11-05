@@ -42,12 +42,19 @@ app.use(json());
 
 const PostgresStore = pgSession(session);
 
+// Create session store with error handling
+const sessionStore = new PostgresStore({
+  pool: pool,
+  pruneSessionInterval: 60 * 15, // how often to clean up expired sessions from db (minutes)
+  errorLog: (err) => {
+    console.error('Session store error:', err);
+    // Don't crash the server on session store errors
+  }
+});
+
 app.use(
   session({
-    store: new PostgresStore({
-      pool: pool,
-      pruneSessionInterval: 60 * 15, // how often to clean up expired sessions from db (minutes)
-    }),
+    store: sessionStore,
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -88,6 +95,41 @@ app.use("/api/auth", auth);
  */
 app.get("/", (req, res) => {
   res.send("Server is running");
+});
+
+/**
+ * Route: `/api/health`
+ * Health check endpoint for ALB and smoke tests.
+ * Returns 200 OK with server status and database connectivity.
+ * Returns 503 if database is unavailable to trigger health check failure.
+ */
+app.get("/api/health", async (req, res) => {
+  const health = {
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    database: "unknown"
+  };
+
+  // Check database connectivity
+  try {
+    await pool.query('SELECT 1');
+    health.database = "connected";
+    res.status(200).json(health);
+  } catch (error) {
+    console.error('Health check: Database connection failed:', error.message);
+    console.error('Database config:', {
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      user: process.env.DB_USERNAME,
+      port: process.env.DB_PORT || 5432
+    });
+    health.database = "disconnected";
+    health.status = "unhealthy";
+    health.error = error.message;
+    // Return 503 Service Unavailable - triggers ALB health check failure
+    res.status(503).json(health);
+  }
 });
 
 // ---------------------------------------------------
