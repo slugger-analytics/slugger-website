@@ -69,7 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Report a Bug",
-      url: "https://docs.google.com/forms/d/e/1FAIpQLScyL8zEK3hY5Qj-UVGXFTAA3G0pK88RNoIbWfJ0F6itVTlGpA/viewform?usp=sharing&ouid=105746933824230397559",
+      url: "https://docs.google.com/forms/d/e/1FAIpQLScyL8zEK3hY5Qj-UVGXFTAA3G0pK88RNoIbWfJ0F6itVTlGpA/viewform?usp=dialog",
       icon: Bug,
       isActive: false,
     },

@@ -129,7 +129,7 @@ export default function Home() {
           <p className="text-sm font-medium text-gray-400">
             Questions?{" "}
             <Link
-              href="https://docs.google.com/forms/d/e/1FAIpQLSf2YnXL5XnTFYlzd40fad55tkFnE3ua2Oq-hTIRMQeGmIPHBA/viewform?usp=header"
+              href="https://docs.google.com/forms/d/e/1FAIpQLScyL8zEK3hY5Qj-UVGXFTAA3G0pK88RNoIbWfJ0F6itVTlGpA/viewform?usp=dialog"
               className="text-blue-400 hover:text-blue-300 transition-colors duration-300 font-semibold"
             >
               Contact us here
