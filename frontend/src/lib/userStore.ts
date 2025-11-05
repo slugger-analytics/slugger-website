@@ -1,5 +1,5 @@
 import { atom } from "nanostores";
-import { persistentAtom } from "@nanostores/persistent";
+import { persistentMap } from "@nanostores/persistent";
 import { UserType } from "@/data/types";
 
 const emptyUser: UserType = {
@@ -12,23 +12,22 @@ const emptyUser: UserType = {
   is_admin: false,
 };
 
-export const $user = persistentAtom<UserType>(
-  "user",
-  emptyUser,
-  {
-    encode: (value) => JSON.stringify(value),
-    decode: (value) => {
-      if (!value) return emptyUser;
-
-      try {
-        return JSON.parse(value) as UserType;
-      } catch (error) {
-        console.warn("Failed to decode user persistent atom", error);
-        return emptyUser;
-      }
-    },
+// Custom encoder/decoder to handle boolean values
+const booleanEncoder = {
+  encode: (value: any) => {
+    if (typeof value === 'boolean') {
+      return String(value);
+    }
+    return value;
   },
-);
+  decode: (value: any) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  }
+};
+
+export const $user = persistentMap("user:", emptyUser, booleanEncoder);
 
 export const $otpCode = atom<string>("");
 export const $passwordResetEmail = atom<string>("");
@@ -41,6 +40,10 @@ export function clearUserStore() {
 
 export function setUser(user: UserType) {
   $user.set(user);
+}
+
+export function getUser(): UserType {
+  return $user.get();
 }
 
 type UpdateUserType = {

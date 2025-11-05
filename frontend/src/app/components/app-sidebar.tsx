@@ -38,6 +38,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: false,
     },
     {
+      title: "Pending Widgets",
+      url: "/pending-widgets",
+      icon: Home,
+      isActive: false,
+    },
+    {
       title: "Register Widget",
       url: "/register-widget",
       icon: BookOpenCheck,
@@ -63,7 +69,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Report a Bug",
-      url: "https://docs.google.com/forms/d/e/1FAIpQLSf2YnXL5XnTFYlzd40fad55tkFnE3ua2Oq-hTIRMQeGmIPHBA/viewform?usp=header",
+      url: "https://docs.google.com/forms/d/e/1FAIpQLScyL8zEK3hY5Qj-UVGXFTAA3G0pK88RNoIbWfJ0F6itVTlGpA/viewform?usp=sharing&ouid=105746933824230397559",
       icon: Bug,
       isActive: false,
     },
@@ -73,6 +79,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       setRoleDisplay("Developer Account");
     } else if (user.role.toLowerCase() === "master") {
       setRoleDisplay("Master Account");
+    } else if (user.role.toLowerCase() === "admin") {
+      setRoleDisplay("Admin Account");
     } else {
       setRoleDisplay("League Account");
     }

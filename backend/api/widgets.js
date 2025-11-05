@@ -9,14 +9,15 @@ import {
 } from "../validators/schemas.js";
 import {
   createApprovedWidget,
-  getUserData,
-  createUserWidgetRelation,
   getAllWidgets,
   registerWidget,
   updateWidget,
   deleteWidget,
+  getPendingWidgets,
+  removeRequest,
 } from "../services/widgetService.js";
-import authGuard from "../middleware/auth-guard.js";
+import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
+import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
 
 const selectWidgetById = `
     SELECT *
@@ -52,13 +53,14 @@ router.get(
 
 // edit a widget
 router.patch(
-  "/:id",
+  "/:widgetId",
+  requireWidgetOwnership,
   validationMiddleware({ bodySchema: editWidgetSchema }),
   async (req, res) => {
     const { name, description, redirectLink, visibility, imageUrl, publicId, restrictedAccess } = req.body;
 
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.widgetId);
 
       // Ensure target widget exists
       const targetWidgetRes = await pool.query(selectWidgetById, [id]);
@@ -96,9 +98,9 @@ router.patch(
 );
 
 // delete a widget
-router.delete("/:id", async (req, res) => {
+router.delete("/:widgetId", requireWidgetOwnership, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.widgetId);
     const targetWidgetRes = await pool.query(selectWidgetById, [id]);
     // Ensure target widget exists
     if (targetWidgetRes.rowCount === 0) {
@@ -122,47 +124,13 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.post("/create", authGuard, async (req, res) => {
-  try {
-    const userId = req.body.userId;
-    const widgetData = req.body;
-
-    // Create widget directly using the existing approved widget logic
-    const approvedID = await createApprovedWidget(widgetData);
-
-    // Get user data
-    const user = await getUserData(userId);
-    const userEmail = user["email"];
-
-    // Create user-widget relation
-    const userWidgetRelation = await createUserWidgetRelation(
-      userId,
-      approvedID,
-      "owner"
-    );
-
-    
-
-    res.status(200).json({
-      success: true,
-      message: "Widget created and API key sent via email",
-      data: userWidgetRelation,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Internal error: ${error.message}`,
-    });
-  }
-});
-
-
 // register a widget
 router.post(
   "/register",
+  requireAuth,
   validationMiddleware({ bodySchema: registerWidgetSchema }),
   async (req, res) => {
-    const { widgetName, description, visibility, userId } = req.body; // Extract widget details and userId from the request body
+    const { widgetName, description, visibility, userId, teamIds } = req.body; // Extract widget details and userId from the request body
 
     try {
       const requestedWidget = await registerWidget(
@@ -170,6 +138,7 @@ router.post(
         widgetName,
         description,
         visibility,
+        teamIds || [],
       );
       res.status(200).json({
         success: true,
@@ -186,9 +155,9 @@ router.post(
 );
 
 // Get categories for a widget
-router.get("/:id/categories", async (req, res) => {
+router.get("/:widgetId/categories", async (req, res) => {
   try {
-    const widgetId = parseInt(req.params.id);
+    const widgetId = parseInt(req.params.widgetId);
 
     // Check if widget exists
     const widgetExists = await pool.query(selectWidgetById, [widgetId]);
@@ -222,9 +191,9 @@ router.get("/:id/categories", async (req, res) => {
 });
 
 // Add a category to a widget
-router.post("/:id/categories", validationMiddleware({ bodySchema: addCategoryToWidgetSchema }), async (req, res) => {
+router.post("/:widgetId/categories", requireWidgetOwnership, validationMiddleware({ bodySchema: addCategoryToWidgetSchema }), async (req, res) => {
   try {
-    const widgetId = parseInt(req.params.id);
+    const widgetId = parseInt(req.params.widgetId);
     const { categoryId } = req.body;
 
     if (!categoryId) {
@@ -285,7 +254,7 @@ router.post("/:id/categories", validationMiddleware({ bodySchema: addCategoryToW
 });
 
 // Remove a category from a widget
-router.delete("/:widgetId/categories/:categoryId", async (req, res) => {
+router.delete("/:widgetId/categories/:categoryId", requireWidgetOwnership, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const categoryId = parseInt(req.params.categoryId);
@@ -327,7 +296,7 @@ router.delete("/:widgetId/categories/:categoryId", async (req, res) => {
   }
 });
 
-router.post("/metrics", async (req, res) => {
+router.post("/metrics", requireAuth, async (req, res) => { // TODO remove userId since should be inferred from user store
   try {
     const { widgetId, userId, metricType } = req.body;
 
@@ -354,7 +323,7 @@ router.post("/metrics", async (req, res) => {
   }
 })
 
-router.get('/:widgetId/developers', async (req, res) => {
+router.get('/:widgetId/developers', requireAuth, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const response = await pool.query(`
@@ -378,7 +347,7 @@ router.get('/:widgetId/developers', async (req, res) => {
   }
 })
 
-router.get('/:widgetId/developers', async (req, res) => {
+router.post('/:widgetId/developers', requireWidgetOwner, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const developerId = parseInt(req.body.developerId);
@@ -418,7 +387,7 @@ router.get('/:widgetId/developers', async (req, res) => {
 })
 
 // Add collaborator to widget
-router.post("/:widgetId/collaborators", async (req, res) => {
+router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const { email } = req.body;
@@ -499,7 +468,7 @@ router.post("/:widgetId/collaborators", async (req, res) => {
 });
 
 // Get widget collaborators
-router.get("/:widgetId/collaborators", async (req, res) => {
+router.get("/:widgetId/collaborators", requireAuth, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     
@@ -533,9 +502,9 @@ router.get("/:widgetId/collaborators", async (req, res) => {
 });
 
 // Get teams with access to a widget
-router.get("/:id/teams", async (req, res) => {
+router.get("/:widgetId/teams", requireAuth, async (req, res) => {
   try {
-    const widgetId = parseInt(req.params.id);
+    const widgetId = parseInt(req.params.widgetId);
 
     // Check if widget exists
     const widgetExists = await pool.query(selectWidgetById, [widgetId]);
@@ -564,7 +533,7 @@ router.get("/:id/teams", async (req, res) => {
       data: teamsResult.rows
     });
   } catch (error) {
-    console.error(`Error getting teams for widget ${req.params.id}:`, error);
+    console.error(`Error getting teams for widget ${req.params.widgetId}:`, error);
     res.status(500).json({
       success: false,
       message: `Internal error: ${error.message}`
@@ -573,9 +542,9 @@ router.get("/:id/teams", async (req, res) => {
 });
 
 // Update teams with access to a widget
-router.put("/:id/teams", async (req, res) => {
+router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
   try {
-    const widgetId = parseInt(req.params.id);
+    const widgetId = parseInt(req.params.widgetId);
     const { teamIds } = req.body;
 
     if (!Array.isArray(teamIds)) {
@@ -644,10 +613,65 @@ router.put("/:id/teams", async (req, res) => {
       console.error("Error during rollback:", rollbackError);
     }
     
-    console.error(`Error updating team access for widget ${req.params.id}:`, error);
+    console.error(`Error updating team access for widget ${req.params.widgetId}:`, error);
     res.status(500).json({
       success: false,
       message: `Internal error: ${error.message}`
+    });
+  }
+});
+
+// Get all pending widget requests
+router.get("/pending", requireSiteAdmin, async (req, res) => {
+  try {
+    const pendingWidgets = await getPendingWidgets();
+    
+    res.status(200).json({
+      success: true,
+      message: "Pending widgets retrieved successfully",
+      data: pendingWidgets
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Error fetching pending widgets: ${error.message}`
+    });
+  }
+});
+
+// Approve a pending widget request
+router.post("/pending/:requestId/approve", requireSiteAdmin, async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.requestId);
+    const result = await createApprovedWidget(requestId);
+    
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: { widgetId: result.widgetId }
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Error approving widget: ${error.message}`
+    });
+  }
+});
+
+// Decline a pending widget request
+router.post("/pending/:requestId/decline", requireSiteAdmin, async (req, res) => {
+  try {
+    const requestId = parseInt(req.params.requestId);
+    const result = await removeRequest(requestId);
+    
+    res.status(200).json({
+      success: true,
+      message: result.message
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Error declining widget: ${error.message}`
     });
   }
 });
