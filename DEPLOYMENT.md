@@ -263,12 +263,12 @@ For complete infrastructure details, see [`aws/AWS-INFRASTRUCTURE.md`](aws/AWS-I
 
 ## Best Practices
 
-1. **Test locally first**: Use `docker-compose up` to test changes before deploying
-2. **Run linting**: `npm run lint --workspaces` before pushing
-3. **Monitor deployments**: Watch GitHub Actions and ECS service events
+1. **Test locally first**: Run `npm run dev` with local database before pushing
+2. **Run linting**: `npm run lint --workspaces` before committing
+3. **Monitor deployments**: Watch GitHub Actions workflow
 4. **Check logs**: Review CloudWatch logs after deployment
 5. **Use feature branches**: Test on branches before merging to main
-6. **Keep secrets in SSM**: Never commit credentials to the repository
+6. **Keep secrets in SSM**: Never commit credentials to repository
 
 ## Common Tasks
 

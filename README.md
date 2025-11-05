@@ -6,7 +6,7 @@ The first centralized data analytics platform for the Atlantic League of Profess
 
 - **Frontend**: Next.js 14, React, TailwindCSS
 - **Backend**: Express.js, Node.js
-- **Database**: PostgreSQL (AWS RDS)
+- **Database**: PostgreSQL (AWS RDS for production, Docker for local)
 - **Authentication**: AWS Cognito
 - **Infrastructure**: AWS ECS Fargate, Application Load Balancer, ECR
 - **CI/CD**: GitHub Actions
@@ -17,64 +17,104 @@ The first centralized data analytics platform for the Atlantic League of Profess
 
 Deployed on AWS ECS Fargate with automated CI/CD. Push to `main` triggers automatic deployment.
 
-See [`DEPLOYMENT.md`](DEPLOYMENT.md) for deployment guide.
+## Why Local Database?
 
-## Local Development
+**Benefits:**
+- ⚡ **Fast**: No network latency, instant queries
+- 💰 **Cost-effective**: No RDS charges during development
+- 🔒 **Safe**: Can't corrupt production data
+- 🌐 **Offline**: Work without internet
+- 🧪 **Experimental**: Test destructive operations safely
+
+**Development Workflow:**
+```
+1. Initial Setup (once)
+   └─ Start local DB → Clone production data
+
+2. Daily Development
+   └─ Code changes → Test locally → Fast iteration
+
+3. Refresh Data (when needed)
+   └─ Pull latest production data → Continue testing
+
+4. Deploy (code only)
+   └─ git push → CI/CD deploys → Production updated
+```
+
+**Important**: Local DB is for testing. Production data stays in RDS.
+
+## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- Docker and Docker Compose
-- `.env` file with required environment variables (see `.env.example`)
+- **Node.js 18+**
+- **Docker Desktop**
+- **AWS credentials** (in `.env` file)
 
-### Quick Start with Docker
-
-```bash
-# Clone and navigate to project
-git clone <repository-url>
-cd slugger-website
-
-# Copy and configure environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Start all services
-docker-compose up --build
-```
-
-**Access the application:**
-
-- Frontend: <http://localhost:3000>
-- Backend API: <http://localhost:3001>
-
-### Manual Setup (Without Docker)
+### Local Development Setup
 
 ```bash
-# Backend
-cd backend
+# 1. Install dependencies
 npm install
-npm start  # Runs on port 3001
 
-# Frontend (in separate terminal)
-cd frontend
-npm install
-npm run dev  # Runs on port 3000
+# 2. Start local PostgreSQL
+npm run db:local:start
+
+# 3. Clone production data (first time only)
+./pull-rds-data.sh
+
+# 4. Start the application
+export $(cat .env.local | grep -v '^#' | xargs) && npm run dev
 ```
 
-### Common Commands
+**Access:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:3001
+
+### Essential Commands
 
 ```bash
-# View logs
-docker-compose logs -f
+# Development
+npm run dev                    # Start app (uses .env.local for local DB)
+export $(cat .env | xargs) && npm run dev  # Use cloud RDS instead
 
-# Stop services
-docker-compose down
+# Database
+npm run db:local:start         # Start local PostgreSQL
+npm run db:local:stop          # Stop local PostgreSQL
+./pull-rds-data.sh             # Refresh with latest production data
 
-# Rebuild after changes
-docker-compose up --build
+# Database access
+docker exec -it slugger-postgres-local psql -U postgres -d slugger_local
 ```
+
+### Environment Files
+
+- **`.env`**: Production RDS credentials (for pulling data)
+- **`.env.local`**: Local database settings (for development)
+
+```env
+# .env.local
+DB_HOST=localhost
+DB_USERNAME=postgres
+DB_PASSWORD=localpassword
+DB_NAME=slugger_local
+DB_PORT=5432
+```
+
+## Deployment
+
+```bash
+# Automatic deployment (recommended)
+git push origin main           # CI/CD auto-deploys to production
+
+# Monitor deployment
+# GitHub Actions → ECS Fargate CI/CD workflow
+```
+
+See [`DEPLOYMENT.md`](DEPLOYMENT.md) for advanced deployment options.
 
 ## Documentation
 
-- **[Deployment Guide](DEPLOYMENT.md)** - Production deployment and CI/CD
-- **[AWS Infrastructure](aws/AWS-INFRASTRUCTURE.md)** - Complete AWS resource catalog
+- **[DEVELOPMENT-GUIDE.md](DEVELOPMENT-GUIDE.md)** - Complete development workflow and best practices
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment, monitoring, rollback
+- **[aws/AWS-INFRASTRUCTURE.md](aws/AWS-INFRASTRUCTURE.md)** - Complete AWS resource catalog
