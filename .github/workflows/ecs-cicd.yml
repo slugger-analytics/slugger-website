@@ -131,7 +131,7 @@ jobs:
 
       - name: Render backend task definition
         id: render-backend
-        uses: aws-actions/amazon-ecs-render-task-definition@v2
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: aws/task-definition-backend.json
           container-name: backend
@@ -139,14 +139,14 @@ jobs:
 
       - name: Render frontend task definition
         id: render-frontend
-        uses: aws-actions/amazon-ecs-render-task-definition@v2
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: aws/task-definition-frontend.json
           container-name: frontend
           image: ${{ needs.build-and-push.outputs.frontend-image }}
 
       - name: Deploy backend service
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-backend.outputs.task-definition }}
           service: slugger-backend-service
@@ -154,7 +154,7 @@ jobs:
           wait-for-service-stability: true
 
       - name: Deploy frontend service
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.render-frontend.outputs.task-definition }}
           service: slugger-frontend-service
