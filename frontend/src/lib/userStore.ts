@@ -50,8 +50,9 @@ type UpdateUserType = {
   first?: string;
   last?: string;
   teamId?: string;
+  is_admin?: boolean;
 };
-export function updateStoreUser({ first, last, teamId }: UpdateUserType) {
+export function updateStoreUser({ first, last, teamId, is_admin }: UpdateUserType) {
   const user = $user.get();
 
   if (!user) return;
@@ -61,6 +62,7 @@ export function updateStoreUser({ first, last, teamId }: UpdateUserType) {
     ...(first !== undefined && { first }),
     ...(last !== undefined && { last }),
     ...(teamId !== undefined && { teamId }),
+    ...(is_admin !== undefined && { is_admin }),
   });
 }
 

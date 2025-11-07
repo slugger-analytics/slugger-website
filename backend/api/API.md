@@ -40,6 +40,17 @@ This document lists all available API endpoints and their required permissions.
 | POST | `/teams/validate-invite` | None | Validate team invite token |
 | DELETE | `/teams/:teamId/members/:memberId` | Team Admin | Remove member from team |
 
+## Team Admin Management Endpoints (`/team-admins`)
+
+| Method | Endpoint | Permission Required | Description |
+|--------|----------|-------------------|--------------|
+| POST | `/team-admins/request` | Authentication + Team Membership | Request team admin privileges |
+| GET | `/team-admins/pending` | Site Admin | Get all pending admin requests |
+| POST | `/team-admins/pending/:requestId/approve` | Site Admin | Approve admin request |
+| POST | `/team-admins/pending/:requestId/decline` | Site Admin | Decline admin request |
+| GET | `/team-admins` | Site Admin | Get all team admins across all teams |
+| DELETE | `/team-admins/:userId` | Site Admin | Remove admin permissions from user |
+
 ## User Management Endpoints (`/users`)
 
 | Method | Endpoint | Permission Required | Description |

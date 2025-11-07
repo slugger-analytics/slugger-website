@@ -25,6 +25,7 @@ import {
   removeTeamMember,
   getTeam,
 } from "@/api/teams";
+import { createTeamAdminRequest } from "@/api/teamAdmin";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,6 +55,7 @@ export default function TeamPage() {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [numAdmins, setNumAdmins] = useState<number>(0);
   const [dialgoueOpen, setDialogueOpen] = useState<boolean>(false);
+  const [hasPendingRequest, setHasPendingRequest] = useState<boolean>(false);
   const { toast } = useToast();
   const user = useStore($user);
 
@@ -115,6 +117,13 @@ export default function TeamPage() {
     try {
       const membersData = await getTeamMembers(user.teamId);
       setMembers(membersData);
+
+      // Update user store if current user's admin status changed
+      // Use == for loose comparison to handle string/number mismatch
+      const currentUserMember = membersData.find((m) => m.user_id == user.id);
+      if (currentUserMember && currentUserMember.is_admin !== user.is_admin) {
+        updateStoreUser({ is_admin: currentUserMember.is_admin });
+      }
     } catch (error) {
       console.error("Error fetching team members:", error);
       toast({
@@ -201,6 +210,39 @@ export default function TeamPage() {
         title: "Error removing team member",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRequestTeamAdmin = async () => {
+    try {
+      await createTeamAdminRequest();
+      setHasPendingRequest(true);
+      toast({
+        title: "Request submitted",
+        description: "Your team admin request has been submitted for approval.",
+        variant: "success",
+      });
+    } catch (error: any) {
+      if (error.message === "User is already a team admin") {
+        toast({
+          title: "Already an admin",
+          description: "You already have team admin permissions.",
+          variant: "destructive",
+        });
+      } else if (error.message === "A pending request already exists for this user") {
+        setHasPendingRequest(true);
+        toast({
+          title: "Request already pending",
+          description: "You already have a pending team admin request.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Request failed",
+          description: error.message || "Failed to submit team admin request.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -483,6 +525,34 @@ export default function TeamPage() {
                   )}
                 </div>
               </div>
+
+              {/* Request Team Admin Section - Only show if user is not admin and has a team */}
+              {!user.is_admin && user.teamId && user.teamId !== "null" && user.teamId !== "" && (
+                <div className="bg-white rounded-lg shadow-sm border p-6 mt-8">
+                  <div className="flex flex-col items-center gap-4">
+                    <h2 className="text-xl font-semibold">Request Team Admin Access</h2>
+                    <p className="text-gray-500 text-center max-w-md">
+                      Request elevated permissions to manage team members and settings
+                    </p>
+                    {hasPendingRequest ? (
+                      <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200 w-full max-w-md">
+                        <p className="text-sm text-yellow-800 text-center">
+                          Your team admin request is pending approval from a site administrator.
+                        </p>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="flex items-center gap-2"
+                        onClick={handleRequestTeamAdmin}
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Request Team Admin
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </SidebarInset>
