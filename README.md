@@ -76,7 +76,7 @@ export $(cat .env.local | grep -v '^#' | xargs) && npm run dev
 ```bash
 # Development
 npm run dev                    # Start app (uses .env.local for local DB)
-export $(cat .env | xargs) && npm run dev  # Use cloud RDS instead
+export $(cat .env | grep -v '^#' | xargs) && npm run dev  # Use cloud RDS instead
 
 # Database
 npm run db:local:start         # Start local PostgreSQL
