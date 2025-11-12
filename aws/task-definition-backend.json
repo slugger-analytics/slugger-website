@@ -36,7 +36,8 @@
         { "name": "JWT_SECRET", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/jwt-secret" },
         { "name": "TOKEN_SECRET", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/token-secret" },
         { "name": "LAMBDA_API_BASE_URL", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/lambda-api-base-url" },
-        { "name": "JSON_BUCKET_NAME", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/json-bucket-name" }
+        { "name": "JSON_BUCKET_NAME", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/json-bucket-name" },
+        { "name": "FRONTEND_URL", "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/frontend-url" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

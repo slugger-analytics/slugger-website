@@ -30,9 +30,22 @@ const app = express();
 // ---------------------------------------------------
 
 
+// CORS configuration - allow frontend origins
+const allowedOrigins = [
+  "https://alpb-analytics.com",
+  "https://www.alpb-analytics.com",
+  "https://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
+  "http://localhost:3000"
+];
+
+// Add FRONTEND_URL from environment if set
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
+
 app.use(cors({
   credentials: true,
-  origin: ["https://alpb-analytics.com", "https://www.alpb-analytics.com", "http://localhost:3000"]
+  origin: allowedOrigins
 }))
 
 /**
