@@ -66,6 +66,9 @@ const sessionStore = new PostgresStore({
   }
 });
 
+// Detect if running in production (HTTPS environment)
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.use(
   session({
     store: sessionStore,
@@ -74,9 +77,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // TODO change to true for prod
+      secure: isProduction, // Use secure cookies in production (HTTPS)
+      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin in production
       maxAge: 24 * 60 /*minutes*/ * 60 /*seconds*/ * 1000, // session length (ms)
-      // maxAge: 1000 * 5 // TODO change back to normal amount!
     },
   }),
 );
