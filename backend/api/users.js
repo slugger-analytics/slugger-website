@@ -105,7 +105,22 @@ router.post("/sign-in", async (req, res) => {
     
     let user;
     if (dbResult.rows.length === 0) {
-      // User authenticated with Cognito but doesn't exist in DB - auto-create
+      // User authenticated with Cognito but doesn't exist in DB
+      // Check if they're a pending developer first
+      const pendingCheck = await pool.query(
+        'SELECT * FROM pending_developers WHERE email = $1',
+        [email]
+      );
+
+      if (pendingCheck.rows.length > 0) {
+        // This is a pending developer - they should not login until approved
+        return res.status(403).json({
+          success: false,
+          message: "Your developer account is pending approval. Please wait for admin confirmation.",
+        });
+      }
+
+      // Not a pending developer - auto-create with default role
       console.log(`Auto-creating user for ${email} after successful Cognito auth`);
       
       // Get user details from Cognito
