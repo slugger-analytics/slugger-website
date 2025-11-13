@@ -120,6 +120,25 @@ FRONTEND_URL=http://localhost:3000
 - Never set `NODE_ENV=production` when running `npm run dev` - it breaks Next.js build
 - The backend defaults to development mode, which is correct for localhost
 
+## Docker Build (for CI/CD)
+
+This monorepo uses npm workspaces. The Dockerfiles are configured to work with the workspace structure:
+
+```bash
+# Build using the helper script (recommended)
+./docker-build.sh frontend        # Build frontend image
+./docker-build.sh backend         # Build backend image
+./docker-build.sh all             # Build both images
+
+# Or build manually with proper context
+docker build -f frontend/Dockerfile.prod --build-context root=. -t slugger-frontend:latest frontend/
+docker build -f backend/Dockerfile.prod --build-context root=. -t slugger-backend:latest backend/
+```
+
+**Important**: Docker builds must be run from the monorepo root (`/slugger-website`) because the workspaces share a single `package-lock.json` at the root level.
+
+See [`.documentation/bugs/2025-11-13-docker-npm-workspaces-fix.md`](../.documentation/bugs/2025-11-13-docker-npm-workspaces-fix.md) for technical details.
+
 ## Deployment
 
 ```bash

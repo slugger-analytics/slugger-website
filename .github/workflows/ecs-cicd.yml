@@ -75,21 +75,24 @@ jobs:
           BACKEND_IMAGE="$ECR_REGISTRY/${{ env.BACKEND_REPOSITORY }}"
 
           # Build for linux/amd64 platform (required for ECS Fargate)
+          # Note: --build-context root=. provides access to root package-lock.json for npm workspaces
           docker buildx build --platform linux/amd64 \
             -f frontend/Dockerfile.prod \
+            --build-context root=. \
             --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
             --build-arg NEXT_PUBLIC_COGNITO_APP_CLIENT_ID="$NEXT_PUBLIC_COGNITO_APP_CLIENT_ID" \
             -t "$FRONTEND_IMAGE:${{ env.IMAGE_TAG }}" \
             -t "$FRONTEND_IMAGE:latest" \
             --load \
-            ./frontend
+            frontend
 
           docker buildx build --platform linux/amd64 \
             -f backend/Dockerfile.prod \
+            --build-context root=. \
             -t "$BACKEND_IMAGE:${{ env.IMAGE_TAG }}" \
             -t "$BACKEND_IMAGE:latest" \
             --load \
-            ./backend
+            backend
 
           echo "FRONTEND_IMAGE_URI=$FRONTEND_IMAGE" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE_URI=$BACKEND_IMAGE" >> "$GITHUB_ENV"

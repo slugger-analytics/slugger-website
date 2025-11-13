@@ -1,10 +1,18 @@
 # Production Dockerfile for the SLUGGER frontend (Next.js) service
+# NOTE: This Dockerfile must be built from the monorepo root with frontend/ as context
+# Example: docker build -f frontend/Dockerfile.prod --build-context root=. frontend/
 
 # Stage 1: install dependencies (including dev for build)
 FROM node:18-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
-# Use npm install to regenerate lockfile if out of sync
+
+# Copy package.json from frontend and package-lock.json from root
+COPY package.json ./
+COPY --from=root package-lock.json ./
+
+# Install dependencies using the root lockfile
+# npm will only install dependencies listed in this workspace's package.json
+# but use the root lockfile for version resolution and checksums
 RUN npm install --legacy-peer-deps
 
 # Stage 2: build the Next.js application
@@ -31,7 +39,8 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Install only production dependencies
-COPY package.json package-lock.json ./
+COPY package.json ./
+COPY --from=root package-lock.json ./
 RUN npm install --omit=dev --legacy-peer-deps && npm cache clean --force
 
 # Copy build artifacts and public assets
