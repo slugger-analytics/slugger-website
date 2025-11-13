@@ -66,6 +66,10 @@ const sessionStore = new PostgresStore({
   }
 });
 
+// Trust proxy when running behind ALB/reverse proxy (for secure cookies)
+// This allows Express to trust X-Forwarded-Proto header from the load balancer
+app.set('trust proxy', 1);
+
 // Detect if running in production (HTTPS environment)
 const isProduction = process.env.NODE_ENV === 'production';
 
