@@ -74,32 +74,51 @@ export $(cat .env.local | grep -v '^#' | xargs) && npm run dev
 ### Essential Commands
 
 ```bash
-# Development
-npm run dev                    # Start app (uses .env.local for local DB)
-export $(cat .env | grep -v '^#' | xargs) && npm run dev  # Use cloud RDS instead
+# Development with LOCAL database (default)
+npm run dev                    # Uses .env.local (local PostgreSQL)
 
-# Database
+# Development with PRODUCTION database (when needed)
+export $(cat .env | grep -v '^#' | xargs) && npm run dev  # Uses production RDS
+
+# Database Management
 npm run db:local:start         # Start local PostgreSQL
 npm run db:local:stop          # Stop local PostgreSQL
-./pull-rds-data.sh             # Refresh with latest production data
+./pull-rds-data.sh             # Refresh local DB with latest production data
 
-# Database access
-docker exec -it slugger-postgres-local psql -U postgres -d slugger_local
+# Database Access
+docker exec -it slugger-postgres-local psql -U postgres -d slugger_local  # Local DB
+# For production DB access, use AWS RDS console or approved tools
 ```
 
 ### Environment Files
 
-- **`.env`**: Production RDS credentials (for pulling data)
-- **`.env.local`**: Local database settings (for development)
+- **`.env.local`**: Local database settings (default for `npm run dev`)
+- **`.env`**: Production RDS settings (for working with prod DB locally)
 
 ```env
-# .env.local
+# .env.local - Local Development (default)
 DB_HOST=localhost
 DB_USERNAME=postgres
 DB_PASSWORD=localpassword
 DB_NAME=slugger_local
-DB_PORT=5432
+NEXT_PUBLIC_API_URL=http://localhost:3001
+
+# .env - Production DB Access (when needed)
+DB_HOST=alpb-1.cluster-ro-cx866cecsebt.us-east-2.rds.amazonaws.com
+DB_USERNAME=postgres
+DB_PASSWORD=QETUO123$%^
+DB_NAME=postgres
+LOCAL_DEV=true  # ← Ensures cookies work with http://localhost
+NEXT_PUBLIC_API_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3000
+# Note: Do NOT set NODE_ENV=production - it breaks Next.js dev server
 ```
+
+**Important**:
+
+- `LOCAL_DEV=true` ensures cookies work with `http://localhost` (no secure flag, sameSite=lax)
+- Never set `NODE_ENV=production` when running `npm run dev` - it breaks Next.js build
+- The backend defaults to development mode, which is correct for localhost
 
 ## Deployment
 

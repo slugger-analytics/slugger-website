@@ -70,8 +70,18 @@ const sessionStore = new PostgresStore({
 // This allows Express to trust X-Forwarded-Proto header from the load balancer
 app.set('trust proxy', 1);
 
-// Detect if running in production (HTTPS environment)
+// Detect environment for cookie configuration
+// Use LOCAL_DEV=true to work with prod DB locally (overrides NODE_ENV)
 const isProduction = process.env.NODE_ENV === 'production';
+const isLocalDev = process.env.LOCAL_DEV === 'true';
+const useSecureCookies = isProduction && !isLocalDev;
+
+console.log('Environment configuration:', {
+  NODE_ENV: process.env.NODE_ENV,
+  LOCAL_DEV: process.env.LOCAL_DEV,
+  useSecureCookies,
+  DB_HOST: process.env.DB_HOST
+});
 
 app.use(
   session({
@@ -81,8 +91,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: isProduction, // Use secure cookies in production (HTTPS)
-      sameSite: isProduction ? 'none' : 'lax', // 'none' required for cross-origin in production
+      secure: useSecureCookies, // Secure only in true production (not local dev with prod DB)
+      sameSite: useSecureCookies ? 'none' : 'lax', // 'none' only for true production
       maxAge: 24 * 60 /*minutes*/ * 60 /*seconds*/ * 1000, // session length (ms)
     },
   }),

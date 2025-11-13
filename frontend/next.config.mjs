@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
+const nextConfig = {
+  // Explicitly enable PostCSS processing
+  experimental: {
+    esmExternals: true,
+  },
+};
 
 export default nextConfig;

@@ -216,6 +216,7 @@ docker exec -it slugger-postgres-local psql -U postgres -d slugger_local -c 'SEL
 
 Used for:
 - Pulling data from RDS
+- Working with production database locally (when needed)
 - Connecting to cloud services
 
 ```env
@@ -223,6 +224,10 @@ DB_HOST=alpb-1.cluster-ro-cx866cecsebt.us-east-2.rds.amazonaws.com
 DB_USERNAME=postgres
 DB_PASSWORD=your_rds_password
 DB_NAME=postgres
+LOCAL_DEV=true
+NEXT_PUBLIC_API_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3000
+# Note: Do NOT set NODE_ENV=production - it breaks Next.js dev server
 ```
 
 ### `.env.local` (Local Development)
@@ -239,6 +244,31 @@ DB_NAME=slugger_local
 DB_PORT=5432
 ```
 
+## Working with Production Database Locally
+
+Sometimes you need to work directly with the production database (e.g., debugging production issues):
+
+```bash
+# Use production RDS instead of local DB
+export $(cat .env | grep -v '^#' | xargs) && npm run dev
+```
+
+**Important Notes:**
+- `LOCAL_DEV=true` in `.env` ensures cookies work with `http://localhost`
+- Never set `NODE_ENV=production` when running dev server - it breaks Next.js
+- Backend defaults to development mode (secure: false, sameSite: lax)
+- This is safe - you're using a read-only replica
+
+**When to use production DB:**
+- Debugging production-specific issues
+- Testing with real production data
+- Verifying data integrity
+
+**When to use local DB:**
+- Daily development (faster, offline-capable)
+- Testing destructive operations
+- Experimenting with schema changes
+
 ## Best Practices
 
 1. **Pull fresh data regularly** - Stay in sync with production
@@ -247,6 +277,7 @@ DB_PORT=5432
 4. **Use feature branches** - Keep main stable
 5. **Run linting** - `npm run lint --workspaces`
 6. **Monitor deployments** - Watch GitHub Actions
+7. **Use local DB for daily work** - Save production DB for debugging
 
 ## FAQ
 

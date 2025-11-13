@@ -222,6 +222,22 @@ The frontend requires `NEXT_PUBLIC_*` variables at **build time**, not runtime. 
 --build-arg NEXT_PUBLIC_COGNITO_APP_CLIENT_ID="<value>"
 ```
 
+**NODE_ENV in Production vs Development**:
+
+- **Production (ECS)**: `NODE_ENV=production` is set in task definitions for secure cookies
+- **Local Development**: Never set `NODE_ENV=production` - it breaks Next.js dev server
+- **Local with Prod DB**: Use `LOCAL_DEV=true` instead (overrides cookie security)
+
+```javascript
+// Backend automatically handles this:
+const isProduction = process.env.NODE_ENV === 'production'
+const isLocalDev = process.env.LOCAL_DEV === 'true'
+const useSecureCookies = isProduction && !isLocalDev
+
+// Production: secure: true, sameSite: 'none'
+// Local: secure: false, sameSite: 'lax'
+```
+
 **Update environment variables**:
 
 ```bash
@@ -269,6 +285,9 @@ For complete infrastructure details, see [`aws/AWS-INFRASTRUCTURE.md`](aws/AWS-I
 4. **Check logs**: Review CloudWatch logs after deployment
 5. **Use feature branches**: Test on branches before merging to main
 6. **Keep secrets in SSM**: Never commit credentials to repository
+7. **Environment separation**:
+   - Local dev: No `NODE_ENV=production`, use `LOCAL_DEV=true` for prod DB
+   - Production: `NODE_ENV=production` set in ECS task definitions
 
 ## Common Tasks
 
