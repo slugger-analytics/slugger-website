@@ -82,14 +82,14 @@ jobs:
             -t "$FRONTEND_IMAGE:${{ env.IMAGE_TAG }}" \
             -t "$FRONTEND_IMAGE:latest" \
             --load \
-            frontend
+            ./frontend
 
           docker buildx build --platform linux/amd64 \
             -f backend/Dockerfile.prod \
             -t "$BACKEND_IMAGE:${{ env.IMAGE_TAG }}" \
             -t "$BACKEND_IMAGE:latest" \
             --load \
-            backend
+            ./backend
 
           echo "FRONTEND_IMAGE_URI=$FRONTEND_IMAGE" >> "$GITHUB_ENV"
           echo "BACKEND_IMAGE_URI=$BACKEND_IMAGE" >> "$GITHUB_ENV"
