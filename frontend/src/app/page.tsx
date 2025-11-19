@@ -38,10 +38,11 @@ export default function Home() {
         {/* Hero Section */}
         <div className="relative w-full h-screen overflow-hidden">
           <Image
-            src="/alpb_background.png"
+            src="/alpb_background.webp"
             alt="ALPB Background"
             fill
             sizes="100vw"
+            quality={85}
             className="object-cover opacity-60 scale-105 transform hover:scale-110 transition-transform duration-10000"
             priority={true}
           />
