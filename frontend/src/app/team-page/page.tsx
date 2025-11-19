@@ -24,6 +24,7 @@ import {
   demoteTeamMember,
   removeTeamMember,
   getTeam,
+  setClubhouseManager,
 } from "@/api/teams";
 import { createTeamAdminRequest } from "@/api/teamAdmin";
 import {
@@ -172,6 +173,24 @@ export default function TeamPage() {
       console.error("Error demoting member:", error);
       toast({
         title: "Error demoting team member",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const setMemberAsClubhouseManager = async (memberId: string) => {
+    if (!user.teamId) return;
+    try {
+      await setClubhouseManager(user.teamId, parseInt(memberId));
+      toast({
+        title: "Member set as clubhouse manager",
+        variant: "success",
+      });
+      fetchTeamMembers();
+    } catch (error) {
+      console.error("Error setting clubhouse manager:", error);
+      toast({
+        title: "Error setting clubhouse manager",
         variant: "destructive",
       });
     }
@@ -336,6 +355,17 @@ export default function TeamPage() {
                                     Promote to Admin
                                   </Button>
                                 )}
+                              {member.user_id != user.id && user.is_admin && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    setMemberAsClubhouseManager(member.user_id)
+                                  }
+                                >
+                                  Set as Clubhouse Manager
+                                </Button>
+                              )}
                               <AlertDialog>
                                 {member.user_id != user.id && user.is_admin && (
                                   <AlertDialogTrigger asChild>
@@ -420,6 +450,15 @@ export default function TeamPage() {
                                         Promote to Admin
                                       </DropdownMenuItem>
                                     )}
+                                  {member.user_id != user.id && user.is_admin && (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        setMemberAsClubhouseManager(member.user_id)
+                                      }
+                                    >
+                                      Set as Clubhouse Manager
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuItem
                                     onClick={(e) => handleClickRemove(e)}
                                     className="bg-[#EF4444] text-white hover:bg-[#f05454]"
