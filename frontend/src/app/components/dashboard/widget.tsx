@@ -27,6 +27,8 @@ import CategoryTag from "./category-tag";
 import { recordWidgetInteraction } from "@/api/widget";
 import { prettyNumber } from "@based/pretty-number";
 import { callGetWidgetCollaborators } from "@/app/hooks/use-query-widgets";
+import { addRecentWidget } from "@/lib/widgetStore";
+
 
 interface WidgetProps extends WidgetType {
   isDev: boolean;
@@ -73,8 +75,12 @@ export default function Widget({
         const token = await generateToken(parseInt(userId), publicId);
         url.searchParams.set("alpb_token", token);
       }
+
+      // record interaction + update "recent" list
       recordWidgetInteraction(id, parseInt(userId), "launch");
-      router.push(url.toString());
+      addRecentWidget(id); 
+
+      window.open(url.toString(), '_blank');
     } else {
       console.error("Redirect link is missing or invalid.");
     }
@@ -103,7 +109,7 @@ export default function Widget({
   };
 
   return (
-    <Card className="w-[300px] flex flex-col min-h-[400px]">
+    <Card className="w-[1/4] flex flex-col min-h-[400px]">
       {/* Image Section */}
       <div className="flex justify-center w-full mb-3">
         <div className="h-[150px] py-4 bg-gray-50 w-full flex justify-center items-center rounded-t-xl">

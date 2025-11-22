@@ -191,6 +191,14 @@ export function updateStoreWidget({
   incrementWidgetsVersion();
 }
 
+export const $recentWidgetIds = atom<number[]>([]); 
+
+export function addRecentWidget(id: number) {
+  const current = $recentWidgetIds.get();
+  const next = [id, ...current.filter((x) => x !== id)].slice(0, 4);
+  $recentWidgetIds.set(next);
+}
+
 // Sets the widget query in the $widgetQuery store and increments the filters version
 export function setWidgetQuery(query: string) {
   $widgetQuery.set(query);

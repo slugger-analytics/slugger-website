@@ -32,6 +32,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: true,
     },
     {
+      title: "Test",
+      url: "/clairetest",
+      icon: Home,
+      isActive: true,
+    },
+    {
       title: "Pending Developers",
       url: "/pending-developers",
       icon: Home,

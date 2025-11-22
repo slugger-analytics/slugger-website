@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useMemo, useState } from "react";
 import Widget from "./widget";
 import { WidgetType } from "@/data/types";
@@ -12,6 +14,7 @@ import {
   $sortBy,
   $sortDirection,
   $timeFrame,
+  $recentWidgetIds, // from widgetStore.ts
 } from "@/lib/widgetStore";
 import { $user } from "@/lib/userStore";
 import { useStore } from "@nanostores/react";
@@ -19,6 +22,7 @@ import { useStore } from "@nanostores/react";
 export default function Widgets() {
   const [loading, setLoading] = useState(true);
   const [isDev, setIsDev] = useState(false);
+  const [hasLoadedRecents, setHasLoadedRecents] = useState(false); // 👈 NEW
 
   const { widgets } = useQueryWidgets();
 
@@ -32,11 +36,9 @@ export default function Widgets() {
   const sortBy = useStore($sortBy);
   const sortDirection = useStore($sortDirection);
   const timeFrame = useStore($timeFrame);
+  const recentWidgetIds = useStore($recentWidgetIds);
 
-  /**
-   * Sets the user role (whether the user is a "Widget Developer").
-   * Based on the user's role, it adjusts the `isDev` state to control widget visibility.
-   */
+  // --- role / isDev setup ---
   const setUserRole = async () => {
     try {
       if (user.role === "widget developer") {
@@ -45,7 +47,7 @@ export default function Widgets() {
         setIsDev(false);
       }
     } catch (error) {
-      console.error("Error fetching widgets:", error);
+      console.error("Error setting user role:", error);
     } finally {
       setLoading(false);
     }
@@ -55,13 +57,43 @@ export default function Widgets() {
     setUserRole();
   }, [user.id, user.role]);
 
-  /**
-   * Filters the widgets based on:
-   * - Search query: widget name or description must match the query.
-   * - Favorites filter: only favorite widgets will be shown if the "favorites" filter is active.
-   * - Developer filter: if the user is a widget developer, only widgets created by the user will be shown.
-   * @returns {WidgetType[]} - Filtered list of widgets based on the active filters.
-   */
+  // --- Load recent widgets for this user from localStorage ---
+  useEffect(() => {
+    if (!user?.id) return;
+    if (typeof window === "undefined") return;
+
+    try {
+      const key = `recentWidgets_${user.id}`;
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          $recentWidgetIds.set(parsed);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load recent widgets from localStorage", e);
+    } finally {
+      // mark that we've attempted the load (even if nothing was there)
+      setHasLoadedRecents(true);
+    }
+  }, [user?.id]);
+
+  // --- Persist recent widgets to localStorage whenever they change ---
+  useEffect(() => {
+    if (!user?.id) return;
+    if (typeof window === "undefined") return;
+    if (!hasLoadedRecents) return; // 👈 DO NOT SAVE UNTIL INITIAL LOAD IS DONE
+
+    try {
+      const key = `recentWidgets_${user.id}`;
+      window.localStorage.setItem(key, JSON.stringify(recentWidgetIds));
+    } catch (e) {
+      console.error("Failed to save recent widgets to localStorage", e);
+    }
+  }, [recentWidgetIds, user?.id, hasLoadedRecents]);
+
+  // --- Full filtered & sorted widget list ---
   const filteredWidgets = useMemo(() => {
     return widgets
       .filter((widget: WidgetType) => {
@@ -69,7 +101,7 @@ export default function Widgets() {
         const lowerDescription = widget.description?.toLowerCase();
         const lowerQuery = widgetQuery.toLowerCase();
 
-        // Check if widget name or description matches the search query
+        // Search
         if (
           !(
             lowerName.includes(lowerQuery) ||
@@ -79,12 +111,12 @@ export default function Widgets() {
           return false;
         }
 
-        // If "favorites" filter is enabled, only show widgets in the favorites list
+        // Favorites filter
         if (filters.has("favorites") && !favWidgetIds.has(widget.id)) {
           return false;
         }
 
-        // If "categories" filter is enabled, only show widgets in the active category list
+        // Categories filter
         if (
           activeCategoryIds.size > 0 &&
           !widget.categories.some((category) =>
@@ -94,7 +126,6 @@ export default function Widgets() {
           return false;
         }
 
-        // Show all widgets that match the search and filtering criteria
         return true;
       })
       .sort((a: WidgetType, b: WidgetType) => {
@@ -138,24 +169,67 @@ export default function Widgets() {
     sortBy,
     sortDirection,
     timeFrame,
+    activeCategoryIds,
   ]);
 
   if (loading) {
     return <p>Loading widgets...</p>;
   }
 
+  if (!filteredWidgets.length) {
+    return (
+      <p className="px-4 text-sm text-muted-foreground">No widgets found.</p>
+    );
+  }
+
+  // --- Build Recent from "4 most recently clicked" that also match filters ---
+  const recentFromStore = recentWidgetIds
+    .map((id) => filteredWidgets.find((w) => w.id === id))
+    .filter((w): w is WidgetType => Boolean(w));
+
+  const recentWidgets = recentFromStore.slice(0, 4);
+  const recentIdsSet = new Set(recentWidgets.map((w) => w.id));
+
+  // All = everything else
+  const allWidgets = filteredWidgets.filter((w) => !recentIdsSet.has(w.id));
+
   return (
-    <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4">
-      {filteredWidgets.map((widget: WidgetType) => (
-        <Widget
-          key={widget.id}
-          {...widget}
-          isDev={isDev}
-          visibility={widget.visibility ?? "Private"}
-          isFavorite={favWidgetIds.has(widget.id)}
-          categories={widget.categories}
-        />
-      ))}
+    <div className="flex flex-col w-full gap-10">
+      {/* Recent section */}
+      {recentWidgets.length > 0 && (
+        <section>
+          <h2 className="px-4 mb-4 text-lg font-semibold">Recent</h2>
+          <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            {recentWidgets.map((widget: WidgetType) => (
+              <Widget
+                key={widget.id}
+                {...widget}
+                isDev={isDev}
+                visibility={widget.visibility ?? "Private"}
+                isFavorite={favWidgetIds.has(widget.id)}
+                categories={widget.categories}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* All section – 4 across at xl */}
+      <section>
+        <h2 className="px-4 mb-4 text-lg font-semibold">All</h2>
+        <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {allWidgets.map((widget: WidgetType) => (
+            <Widget
+              key={widget.id}
+              {...widget}
+              isDev={isDev}
+              visibility={widget.visibility ?? "Private"}
+              isFavorite={favWidgetIds.has(widget.id)}
+              categories={widget.categories}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
