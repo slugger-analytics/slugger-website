@@ -23,6 +23,19 @@ router.get("/", async (req, res) => {
         g.verified,
         g.date,
         g.daily_game_number,
+
+        -- New fields from Pointstreak
+        g.pointstreak_game_id,
+        g.home_score,
+        g.visiting_score,
+        g.game_status,
+        g.innings_played,
+        g.regulation_innings,
+        g.gametime,
+        g.field,
+        g.timezone,
+        g.last_updated,
+
         ht.team_name AS home_team_name,
         vt.team_name AS visiting_team_name,
         bp.ballpark_name AS ballpark_name
@@ -33,6 +46,7 @@ router.get("/", async (req, res) => {
       ORDER BY g.date DESC NULLS LAST
       LIMIT $1
     `;
+
 
     const result = await pool.query(query, [limit]);
 
