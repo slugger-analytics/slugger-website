@@ -35,8 +35,12 @@ const allowedOrigins = [
   "https://alpb-analytics.com",
   "https://www.alpb-analytics.com",
   "https://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
-  "http://localhost:3000"
+  "http://localhost:3000",
+  "http://127.0.0.1:3000"
 ];
+
+// In development, allow any localhost/127.0.0.1 origin (for IDE browser previews)
+const isLocalDevelopment = process.env.LOCAL_DEV === 'true' || process.env.NODE_ENV !== 'production';
 
 // Add FRONTEND_URL from environment if set
 if (process.env.FRONTEND_URL) {
@@ -45,7 +49,22 @@ if (process.env.FRONTEND_URL) {
 
 app.use(cors({
   credentials: true,
-  origin: allowedOrigins
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    // In local development, allow any localhost/127.0.0.1 origin
+    if (isLocalDevelopment && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+      return callback(null, true);
+    }
+    
+    // Check against allowed origins list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    callback(new Error('Not allowed by CORS'));
+  }
 }))
 
 /**

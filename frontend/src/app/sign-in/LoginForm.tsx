@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import SubmitButton from "../components/input/SubmitButton";
 import { loginUser } from "../../api/auth";
@@ -20,7 +19,7 @@ import Link from "next/link";
 
 const LoginForm = () => {
   const router = useRouter();
-  const { setIdToken, setAccessToken, setLoading } = useAuth();
+  const { setIdToken, setAccessToken, setLoading, storeTokens } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -33,9 +32,25 @@ const LoginForm = () => {
       setLoading(true);
       const result = (await loginUser(email, password)) as LoginType;
       // TODO set user info here!!!
+      console.log("[LoginForm] Login successful, storing tokens...");
+      console.log("[LoginForm] authData:", {
+        accessToken: result.authData.accessToken?.substring(0, 50) + "...",
+        idToken: result.authData.idToken?.substring(0, 50) + "...",
+        expiresIn: result.authData.expiresIn,
+      });
+      
       setUser(result.user);
       setAccessToken(result.authData.accessToken); // Set the access token in the context
       setIdToken(result.authData.idToken); // Set the ID token in the context
+      
+      // Store tokens with expiry for widget integration (include user info)
+      storeTokens(result.authData, result.user);
+      
+      // Verify storage
+      console.log("[LoginForm] Tokens stored. Checking localStorage...");
+      const stored = localStorage.getItem("slugger_auth_tokens");
+      console.log("[LoginForm] localStorage result:", stored ? "STORED" : "NOT STORED");
+      console.log("[LoginForm] Current origin:", window.location.origin);
 
       // Handle successful login and redirect based on user role
       if (result.user.role === "admin") {
