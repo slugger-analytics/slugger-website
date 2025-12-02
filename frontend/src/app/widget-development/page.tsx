@@ -12,7 +12,20 @@ import { fetchAllDevelopersWithWidgets } from "@/api/developer";
 import { DeveloperWithWidgets } from "@/data/types";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
+import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { deleteUser } from "@/api/user";
+import { useToast } from "@/hooks/use-toast";
 
 export default function WidgetDevelopmentPage() {
   const [developers, setDevelopers] = useState<DeveloperWithWidgets[]>([]);
@@ -20,6 +33,8 @@ export default function WidgetDevelopmentPage() {
   const [error, setError] = useState<string | null>(null);
   // Track current widget index for each developer
   const [widgetIndices, setWidgetIndices] = useState<Record<number, number>>({});
+  const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const { toast } = useToast();
 
   // Fetch all developers with their widgets
   useEffect(() => {
@@ -59,6 +74,30 @@ export default function WidgetDevelopmentPage() {
     }));
   };
 
+  const handleDeleteDeveloper = async (userId: number, email: string) => {
+    setDeletingUserId(userId);
+    try {
+      await deleteUser(userId);
+
+      toast({
+        title: "Developer deleted",
+        description: `${email} has been permanently deleted.`,
+        variant: "success",
+      });
+
+      // Remove the developer from the list
+      setDevelopers((prev) => prev.filter((dev) => dev.user_id !== userId));
+    } catch (error: any) {
+      toast({
+        title: "Deletion failed",
+        description: error.message || "There was a problem deleting the developer.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
   return (
     <ProtectedRoute role="admin">
       <SidebarProvider>
@@ -93,10 +132,44 @@ export default function WidgetDevelopmentPage() {
                       className="p-6 bg-white rounded-lg shadow-md border border-gray-200 flex flex-col"
                     >
                       <div className="mb-4 pb-4 border-b border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800">
-                          {developer.first_name} {developer.last_name}
-                        </h2>
-                        <p className="text-gray-600 text-sm mt-1">{developer.email}</p>
+                        <div className="flex justify-between items-start">
+                          <div className="flex-grow">
+                            <h2 className="text-xl font-bold text-gray-800">
+                              {developer.first_name} {developer.last_name}
+                            </h2>
+                            <p className="text-gray-600 text-sm mt-1">{developer.email}</p>
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                disabled={deletingUserId === developer.user_id}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Developer Account?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {developer.first_name} {developer.last_name} ({developer.email})?
+                                  This action cannot be undone and will permanently delete their account and all associated data.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteDeveloper(developer.user_id, developer.email)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete Developer
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
 
                       {hasWidgets && currentWidget ? (
