@@ -31,7 +31,6 @@ import {
   demoteTeamMember,
   removeTeamMember,
   getTeam,
-  setClubhouseManager,
   updateMemberRole,
 } from "@/api/teams";
 import { createTeamAdminRequest } from "@/api/teamAdmin";
@@ -181,24 +180,6 @@ export default function TeamPage() {
       console.error("Error demoting member:", error);
       toast({
         title: "Error demoting team member",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const setMemberAsClubhouseManager = async (memberId: string) => {
-    if (!user.teamId) return;
-    try {
-      await setClubhouseManager(user.teamId, parseInt(memberId));
-      toast({
-        title: "Member set as clubhouse manager",
-        variant: "success",
-      });
-      fetchTeamMembers();
-    } catch (error) {
-      console.error("Error setting clubhouse manager:", error);
-      toast({
-        title: "Error setting clubhouse manager",
         variant: "destructive",
       });
     }
