@@ -9,6 +9,7 @@ import {
   demoteTeamMember,
   updateMemberTeam,
   setClubhouseManager,
+  updateMemberRole,
 } from "../services/teamService.js";
 import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas.js";
 import jwt from 'jsonwebtoken';
@@ -178,6 +179,41 @@ router.post(
       res.status(500).json({
         success: false,
         message: `Error setting clubhouse manager: ${error.message}`,
+      });
+    }
+  },
+);
+
+// update a team member's role
+router.post(
+  "/:teamId/members/:memberId/role",
+  requireTeamAdmin,
+  validationMiddleware({ paramsSchema: getTeamMemberSchema }),
+  async (req, res) => {
+    try {
+      const teamId = req.params.teamId;
+      const memberId = parseInt(req.params.memberId);
+      const { role } = req.body;
+
+      if (!role) {
+        return res.status(400).json({
+          success: false,
+          message: "Role is required",
+        });
+      }
+
+      await getTeam(teamId); // ensure team exists
+      await getTeamMember(teamId, memberId); // ensure team member exists
+      const updatedMember = await updateMemberRole(teamId, memberId, role);
+      res.status(200).json({
+        success: true,
+        message: `Team member role updated successfully`,
+        data: updatedMember,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: `Error updating member role: ${error.message}`,
       });
     }
   },

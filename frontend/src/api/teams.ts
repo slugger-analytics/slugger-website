@@ -149,3 +149,33 @@ export async function setClubhouseManager(
     throw error;
   }
 }
+
+export async function updateMemberRole(
+  teamId: string,
+  memberId: number,
+  role: string,
+): Promise<TeamMember> {
+  try {
+    const response = await fetch(
+      `${API_URL}/api/teams/${teamId}/members/${memberId}/role`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ role }),
+      },
+    );
+    const data = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.message);
+    }
+
+    return data.data;
+  } catch (error) {
+    console.error("Error updating member role:", error);
+    throw error;
+  }
+}
