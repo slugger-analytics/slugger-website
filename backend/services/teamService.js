@@ -124,24 +124,6 @@ export async function updateMemberTeam(newTeamId, memberId) {
   }
 }
 
-export async function setClubhouseManager(teamId, memberId) {
-  try {
-    const result = await pool.query(
-      `
-            UPDATE users
-            SET team_role = 'Clubhouse Manager'
-            WHERE team_id = $1 AND user_id = $2
-            RETURNING *`,
-      [teamId, memberId],
-    );
-    const updatedMember = result.rows[0];
-    return updatedMember;
-  } catch (error) {
-    throw new Error(
-      error.message ?? `Error setting clubhouse manager for member with id ${memberId}`,
-    );
-  }
-}
 
 export async function updateMemberRole(teamId, memberId, role) {
   try {

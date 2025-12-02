@@ -125,31 +125,6 @@ export async function removeTeamMember(
   }
 }
 
-export async function setClubhouseManager(
-  teamId: string,
-  memberId: number,
-): Promise<TeamMember> {
-  try {
-    const response = await fetch(
-      `${API_URL}/api/teams/${teamId}/members/${memberId}/set-clubhouse-manager`,
-      {
-        method: "POST",
-        credentials: "include",
-      },
-    );
-    const data = await response.json();
-
-    if (!data.success) {
-      throw new Error(data.message);
-    }
-
-    return data.data;
-  } catch (error) {
-    console.error("Error setting clubhouse manager:", error);
-    throw error;
-  }
-}
-
 export async function updateMemberRole(
   teamId: string,
   memberId: number,

@@ -8,7 +8,6 @@ import {
   promoteTeamMember,
   demoteTeamMember,
   updateMemberTeam,
-  setClubhouseManager,
   updateMemberRole,
 } from "../services/teamService.js";
 import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas.js";
@@ -158,31 +157,6 @@ router.post(
   },
 );
 
-// set a team member as clubhouse manager
-router.post(
-  "/:teamId/members/:memberId/set-clubhouse-manager",
-  requireTeamAdmin,
-  validationMiddleware({ paramsSchema: getTeamMemberSchema }),
-  async (req, res) => {
-    try {
-      const teamId = req.params.teamId;
-      const memberId = parseInt(req.params.memberId);
-      await getTeam(teamId); // ensure team exists
-      await getTeamMember(teamId, memberId); // ensure team member exists
-      const updatedMember = await setClubhouseManager(teamId, memberId);
-      res.status(200).json({
-        success: true,
-        message: `Team member set as clubhouse manager successfully`,
-        data: updatedMember,
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: `Error setting clubhouse manager: ${error.message}`,
-      });
-    }
-  },
-);
 
 // update a team member's role
 router.post(
