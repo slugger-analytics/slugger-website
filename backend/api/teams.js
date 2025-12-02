@@ -114,8 +114,20 @@ router.post(
     try {
       const teamId = req.params.teamId;
       const memberId = parseInt(req.params.memberId);
-      await getTeam(teamId); // ensure team exists
-      await getTeamMember(teamId, memberId); // ensure team member exists
+      const team = await getTeam(teamId); // ensure team exists
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      const member = await getTeamMember(teamId, memberId); // ensure team member exists
+      if (!member) {
+        return res.status(404).json({
+          success: false,
+          message: "Team member not found"
+        });
+      }
       const promotedMember = await promoteTeamMember(teamId, memberId);
       res.status(200).json({
         success: true,
@@ -140,8 +152,20 @@ router.post(
     try {
       const teamId = req.params.teamId;
       const memberId = parseInt(req.params.memberId);
-      await getTeam(teamId); // ensure team exists
-      await getTeamMember(teamId, memberId); // ensure team member exists
+      const team = await getTeam(teamId); // ensure team exists
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      const member = await getTeamMember(teamId, memberId); // ensure team member exists
+      if (!member) {
+        return res.status(404).json({
+          success: false,
+          message: "Team member not found"
+        });
+      }
       const demotedMember = await demoteTeamMember(teamId, memberId);
       res.status(200).json({
         success: true,
@@ -176,8 +200,20 @@ router.post(
         });
       }
 
-      await getTeam(teamId); // ensure team exists
-      await getTeamMember(teamId, memberId); // ensure team member exists
+      const team = await getTeam(teamId); // ensure team exists
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
+      const member = await getTeamMember(teamId, memberId); // ensure team member exists
+      if (!member) {
+        return res.status(404).json({
+          success: false,
+          message: "Team member not found"
+        });
+      }
       const updatedMember = await updateMemberRole(teamId, memberId, role);
       res.status(200).json({
         success: true,
@@ -203,7 +239,13 @@ router.patch(
       const origTeamId = req.params.teamId;
       const memberId = parseInt(req.params.memberId);
       const { teamId: newTeamId } = req.body;
-      await getTeam(origTeamId); // ensure team exists
+      const team = await getTeam(origTeamId); // ensure team exists
+      if (!team) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found"
+        });
+      }
       await getTeamMember(origTeamId, memberId); // ensure team member exists
       const updatedMember = await updateMemberTeam(newTeamId, memberId);
       res.status(200).json({
