@@ -89,9 +89,9 @@ export async function approveAdminRequest(requestId) {
     // Update user's is_admin status
     const updateResult = await client.query(`
       UPDATE users
-      SET is_admin = true
+      SET is_admin = true, team_role = 'Team Admin'
       WHERE user_id = $1 AND team_id = $2
-      RETURNING user_id, email, first_name, last_name, is_admin
+      RETURNING user_id, email, first_name, last_name, is_admin, team_role
     `, [request.user_id, request.team_id]);
 
     if (updateResult.rowCount === 0) {

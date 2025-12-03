@@ -6,7 +6,7 @@ export async function getTeams() {
     const teams = result.rows;
     return teams;
   } catch (error) {
-    throw new error(error.message ?? `Error getting team`);
+    throw new Error(error.message ?? `Error getting team`);
   }
 }
 
@@ -62,7 +62,7 @@ export async function getTeamMember(teamId, memberId) {
     const member = result.rows[0];
     return member;
   } catch (error) {
-    throw new error(
+    throw new Error(
       error.message ?? `Error getting team member with id ${memberId}`,
     );
   }
@@ -81,7 +81,7 @@ export async function promoteTeamMember(teamId, memberId) {
     const updatedMember = result.rows[0];
     return updatedMember;
   } catch (error) {
-    throw new error(
+    throw new Error(
       error.message ?? `Error promoting team member with id ${memberId}`,
     );
   }
@@ -100,7 +100,7 @@ export async function demoteTeamMember(teamId, memberId) {
     const updatedMember = result.rows[0];
     return updatedMember;
   } catch (error) {
-    throw new error(
+    throw new Error(
       error.message ?? `Error demoting team member with id ${memberId}`,
     );
   }
@@ -120,6 +120,47 @@ export async function updateMemberTeam(newTeamId, memberId) {
     const updatedMember = result.rows[0];
     return updatedMember;
   } catch (error) {
-    throw new error(error.message ?? `Error updating member's team`);
+    throw new Error(error.message ?? `Error updating member's team`);
+  }
+}
+
+
+export async function updateMemberRole(teamId, memberId, role) {
+  try {
+    let isAdmin = false;
+    let teamRole = null;
+
+    // Set is_admin and team_role based on the role
+    switch (role) {
+      case 'Team Admin':
+        isAdmin = true;
+        teamRole = 'Team Admin';
+        break;
+      case 'Clubhouse Manager':
+        isAdmin = false;
+        teamRole = 'Clubhouse Manager';
+        break;
+      case 'Member':
+        isAdmin = false;
+        teamRole = null;
+        break;
+      default:
+        throw new Error(`Invalid role: ${role}`);
+    }
+
+    const result = await pool.query(
+      `
+            UPDATE users
+            SET is_admin = $1, team_role = $2
+            WHERE team_id = $3 AND user_id = $4
+            RETURNING *`,
+      [isAdmin, teamRole, teamId, memberId],
+    );
+    const updatedMember = result.rows[0];
+    return updatedMember;
+  } catch (error) {
+    throw new Error(
+      error.message ?? `Error updating role for member with id ${memberId}`,
+    );
   }
 }

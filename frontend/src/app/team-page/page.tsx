@@ -10,6 +10,13 @@ import ProtectedRoute from "../components/ProtectedRoutes";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import {
   UserPlus,
   Link as LinkIcon,
   Clipboard as ClipboardIcon,
@@ -24,6 +31,7 @@ import {
   demoteTeamMember,
   removeTeamMember,
   getTeam,
+  updateMemberRole,
 } from "@/api/teams";
 import { createTeamAdminRequest } from "@/api/teamAdmin";
 import {
@@ -177,6 +185,50 @@ export default function TeamPage() {
     }
   };
 
+  const handleRoleChange = async (memberId: string, newRole: string) => {
+    if (!user.teamId) return;
+    try {
+      const updatedMember = await updateMemberRole(
+        user.teamId,
+        parseInt(memberId),
+        newRole,
+      );
+
+      // Update admin count if role changed to/from Team Admin
+      if (newRole === "Team Admin") {
+        setNumAdmins((n) => n + 1);
+      } else if (updatedMember.is_admin === false) {
+        // Check if the member was previously an admin
+        const member = members.find((m) => m.user_id === memberId);
+        if (member?.is_admin) {
+          setNumAdmins((n) => n - 1);
+        }
+      }
+
+      toast({
+        title: "Role updated successfully",
+        variant: "success",
+      });
+      fetchTeamMembers();
+    } catch (error) {
+      console.error("Error updating role:", error);
+      toast({
+        title: "Error updating role",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getMemberRole = (member: TeamMember): string => {
+    if (member.is_admin) {
+      return "Team Admin";
+    } else if (member.team_role === "Clubhouse Manager") {
+      return "Clubhouse Manager";
+    } else {
+      return "Member";
+    }
+  };
+
   const removeMember = async (
     teamId: string,
     memberId: string,
@@ -310,32 +362,29 @@ export default function TeamPage() {
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
-                            {/* Buttons for larger screens */}
+                            {/* Role selector for larger screens */}
                             <div className="hidden md:flex gap-2">
-                              {member.user_id != user.id &&
-                                user.is_admin &&
-                                member.is_admin && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => demoteMember(member.user_id)}
-                                  >
-                                    Demote to Member
-                                  </Button>
-                                )}
-                              {member.user_id != user.id &&
-                                user.is_admin &&
-                                !member.is_admin && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() =>
-                                      promoteMember(member.user_id)
-                                    }
-                                  >
-                                    Promote to Admin
-                                  </Button>
-                                )}
+                              {member.user_id != user.id && user.is_admin && (
+                                <Select
+                                  value={getMemberRole(member)}
+                                  onValueChange={(value) =>
+                                    handleRoleChange(member.user_id, value)
+                                  }
+                                >
+                                  <SelectTrigger className="w-[180px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Member">Member</SelectItem>
+                                    <SelectItem value="Clubhouse Manager">
+                                      Clubhouse Manager
+                                    </SelectItem>
+                                    <SelectItem value="Team Admin">
+                                      Team Admin
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
                               <AlertDialog>
                                 {member.user_id != user.id && user.is_admin && (
                                   <AlertDialogTrigger asChild>
@@ -398,28 +447,34 @@ export default function TeamPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  {member.user_id != user.id &&
-                                    user.is_admin &&
-                                    member.is_admin && (
+                                  {member.user_id != user.id && user.is_admin && (
+                                    <>
                                       <DropdownMenuItem
                                         onClick={() =>
-                                          demoteMember(member.user_id)
+                                          handleRoleChange(member.user_id, "Member")
                                         }
                                       >
-                                        Demote to Member
+                                        Set as Member
                                       </DropdownMenuItem>
-                                    )}
-                                  {member.user_id != user.id &&
-                                    user.is_admin &&
-                                    !member.is_admin && (
                                       <DropdownMenuItem
                                         onClick={() =>
-                                          promoteMember(member.user_id)
+                                          handleRoleChange(
+                                            member.user_id,
+                                            "Clubhouse Manager",
+                                          )
                                         }
                                       >
-                                        Promote to Admin
+                                        Set as Clubhouse Manager
                                       </DropdownMenuItem>
-                                    )}
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleRoleChange(member.user_id, "Team Admin")
+                                        }
+                                      >
+                                        Set as Team Admin
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
                                   <DropdownMenuItem
                                     onClick={(e) => handleClickRemove(e)}
                                     className="bg-[#EF4444] text-white hover:bg-[#f05454]"
