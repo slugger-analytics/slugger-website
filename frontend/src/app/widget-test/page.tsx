@@ -18,7 +18,7 @@ import { Input } from "@/app/components/ui/input";
 export default function WidgetTestPage() {
   const { isAuthenticated, getWidgetTokens } = useAuth();
   const storeTokens = useStore($authTokens);
-  const [widgetUrl, setWidgetUrl] = useState("http://localhost:3000/test-widget");
+  const [widgetUrl, setWidgetUrl] = useState("https://jwt-testing.netlify.app/");
   const [isWidgetReady, setIsWidgetReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   

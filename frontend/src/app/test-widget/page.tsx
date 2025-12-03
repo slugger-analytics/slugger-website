@@ -25,6 +25,7 @@ const ALLOWED_ORIGINS = [
   "http://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
   "https://alpb-analytics.com",
   "https://www.alpb-analytics.com",
+  "https://jwt-testing.netlify.app",
 ];
 
 /**
