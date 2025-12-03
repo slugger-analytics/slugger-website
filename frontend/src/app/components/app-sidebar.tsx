@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Home, BookOpenCheck, BookText, Bug } from "lucide-react";
-
+import { Home, BookOpenCheck, BookText, Bug, LayoutGridIcon } from "lucide-react";
 import { NavUser } from "@/app/components/nav-user";
 import { NavMain } from "@/app/components/nav-main";
 import {
@@ -21,6 +20,7 @@ import { $user } from "@/lib/userStore";
 import { Users } from "lucide-react";
 // This is sample data.
 
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useStore($user);
   const [roleDisplay, setRoleDisplay] = React.useState("");
@@ -32,9 +32,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: true,
     },
     {
-      title: "Test",
-      url: "/clairetest",
-      icon: Home,
+      title: "Widgets",
+      url: "/widget-page",
+      icon: LayoutGridIcon,
       isActive: true,
     },
     {

@@ -105,8 +105,6 @@ app.use(
 
 app.use("/api/widgets", widgets);
 
-app.use("/test", test);
-
 app.use("/api/users", users);
 
 app.use("/api/teams", teams);
