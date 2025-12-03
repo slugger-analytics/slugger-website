@@ -1,10 +1,17 @@
 import pkg from "aws-sdk";
 const { APIGateway } = pkg;
-const apiGateway = new APIGateway({
-  region: "us-east-2",
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-});
+
+// Configure API Gateway - uses default credential provider chain which checks:
+const apiGatewayConfig = {
+  region: process.env.AWS_REGION || "us-east-2"
+};
+
+if (process.env.AWS_ACCESS_KEY && process.env.AWS_SECRET_ACCESS_KEY) {
+  apiGatewayConfig.accessKeyId = process.env.AWS_ACCESS_KEY;
+  apiGatewayConfig.secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
+}
+
+const apiGateway = new APIGateway(apiGatewayConfig);
 import pool from "../db.js";
 import { logWithFunctionName } from "../utils/logging.js";
 
