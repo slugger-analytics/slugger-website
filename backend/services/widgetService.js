@@ -170,7 +170,7 @@ export async function removeRequest(requestId) {
   }
 }
 
-export async function generateApiKeyForUser(user_id, email) {
+export async function generateApiKeyForUser(user_id, email, client = null) {
   const params = {
     name: `ApiKey-${user_id}`,
     description: `API key for ${email}`,
@@ -189,7 +189,7 @@ export async function generateApiKeyForUser(user_id, email) {
       throw new Error("Failed to generate API key: no ID returned");
     }
     await associateApiKeyWithUsagePlan(apiKey.id, process.env.USAGE_PLAN_ID);
-    await saveApiKeyToDatabase(user_id, apiKey.id);
+    await saveApiKeyToDatabase(user_id, apiKey.id, client);
     return apiKey.value;
   } catch (err) {
     DEBUG && logWithFunctionName(err);
@@ -211,13 +211,14 @@ export async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
   }
 }
 
-export async function saveApiKeyToDatabase(user_id, apiKey) {
+export async function saveApiKeyToDatabase(user_id, apiKey, client = null) {
   const query = `
         UPDATE users
         SET api_key = $1
         WHERE user_id = $2;
     `;
-  await pool.query(query, [apiKey, user_id]);
+  const db = client || pool;
+  await db.query(query, [apiKey, user_id]);
 }
 
 export async function getRequestData(request_id) {

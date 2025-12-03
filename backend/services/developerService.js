@@ -74,8 +74,8 @@ export async function approveDeveloper(requestId) {
       role: 'widget developer'
     }, client);
 
-    // Generate API key
-    const apiKey = await generateApiKeyForUser(newUser.user_id, developer.email);
+    // Generate API key (pass transaction client so API key save is part of transaction)
+    const apiKey = await generateApiKeyForUser(newUser.user_id, developer.email, client);
 
     // Send API key email
     await sendApiKeyEmail(developer.email, apiKey);
