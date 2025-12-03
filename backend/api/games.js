@@ -19,6 +19,8 @@ router.get("/", async (req, res) => {
         g.game_id,
         g.home_team_id,
         g.visiting_team_id,
+        g.home_team_name,
+        g.visiting_team_name,
         g.ballpark_id,
         g.verified,
         g.date,
@@ -34,15 +36,8 @@ router.get("/", async (req, res) => {
         g.gametime,
         g.field,
         g.timezone,
-        g.last_updated,
-
-        ht.team_name AS home_team_name,
-        vt.team_name AS visiting_team_name,
-        bp.ballpark_name AS ballpark_name
+        g.last_updated
       FROM game g
-      LEFT JOIN team ht ON g.home_team_id = ht.team_id
-      LEFT JOIN team vt ON g.visiting_team_id = vt.team_id
-      LEFT JOIN ballpark bp ON g.ballpark_id = bp.ballpark_id
       ORDER BY g.date DESC NULLS LAST
       LIMIT $1
     `;
