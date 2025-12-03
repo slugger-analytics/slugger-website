@@ -91,7 +91,7 @@ export function encryptToken(payload) {
   return iv.toString('hex') + ':' + encrypted;
 }
 
-export async function createUser(userData) {
+export async function createUser(userData, client = null) {
   const {
     cognitoUserId,
     email,
@@ -130,7 +130,9 @@ export async function createUser(userData) {
     []      // empty fav_widgets_ids array
   ];
 
-  const result = await pool.query(query, values);
+  // Use the provided client if available, otherwise use the pool
+  const db = client || pool;
+  const result = await db.query(query, values);
   return result.rows[0];
 }
 
