@@ -9,6 +9,7 @@ import ViewToggle from "./view-toggle";
 import Widgets from "./widgets";
 import RegisterWidget from "./register-widget";
 
+
 export default function DashboardContent() {
   const { widgets } = useQueryWidgets();
   const user = useStore($user);
@@ -19,7 +20,8 @@ export default function DashboardContent() {
   return (
     <div className="max-w-full">
       {hasWidgets && (
-        <div className="flex flex-col items-center w-full mt-10">
+        <div className="w-full mt-10 flex flex-col items-center">
+          <h2 className="text-2xl font-semibold mb-6">Widgets</h2>
           <div className="flex justify-center w-full gap-2 px-4 md:px-10">
             <Search />
             <FilterDropdown />
