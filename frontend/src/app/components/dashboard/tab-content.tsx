@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useStore } from "@nanostores/react";
-import { $tabs, $activeTabId, Tab, WidgetTab } from "@/lib/tabStore";
+import { $tabs, $activeTabId, WidgetTab } from "@/lib/tabStore";
 import DashboardContent from "./dashboard-content";
 import WidgetIframe from "./widget-iframe";
 
