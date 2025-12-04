@@ -248,7 +248,7 @@ function TabItem({
                         }}
                         className={cn(
                             "flex-shrink-0 p-0.5 rounded-sm transition-opacity",
-                            "opacity-0 group-hover:opacity-100 hover:bg-black/20 hover:text-grey",
+                            "opacity-0 group-hover:opacity-100 hover:bg-black/20 hover:text-gray-500",
                             isActive && "opacity-100"
                         )}
                         aria-label={`Close ${(tab as WidgetTab).name} tab`}
