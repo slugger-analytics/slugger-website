@@ -131,7 +131,6 @@ export default function TabBar() {
                     <TabItem
                         key={tab.id}
                         tab={tab}
-                        index={index}
                         isActive={tab.id === activeTabId}
                         isDragging={tab.id === draggedTabId}
                         isDragOver={index === dragOverIndex}
@@ -168,7 +167,6 @@ export default function TabBar() {
  */
 interface TabItemProps {
     tab: Tab;
-    index: number;
     isActive: boolean;
     isDragging: boolean;
     isDragOver: boolean;
@@ -183,7 +181,6 @@ interface TabItemProps {
 
 function TabItem({
     tab,
-    index,
     isActive,
     isDragging,
     isDragOver,
@@ -240,18 +237,26 @@ function TabItem({
                     <span className="text-sm font-medium truncate" title={(tab as WidgetTab).name}>
                         {(tab as WidgetTab).name}
                     </span>
-                    {/* Close button for widget tabs */}
+                    {/* Close button for widget tabs - keyboard accessible */}
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
                             onClose();
                         }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onClose();
+                            }
+                        }}
                         className={cn(
-                            "flex-shrink-0 p-0.5 rounded-sm transition-opacity",
+                            "flex-shrink-0 p-0.5 rounded-sm transition-opacity focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-primary",
                             "opacity-0 group-hover:opacity-100 hover:bg-black/20 hover:text-gray-500",
                             isActive && "opacity-100"
                         )}
                         aria-label={`Close ${(tab as WidgetTab).name} tab`}
+                        tabIndex={0}
                     >
                         <Cross2Icon className="h-3 w-3" />
                     </button>

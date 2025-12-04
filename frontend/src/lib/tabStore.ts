@@ -71,11 +71,11 @@ export const $activeTabId = atom<string>("home");
  */
 export function openWidgetTab(widget: WidgetType): void {
     const tabs = $tabs.get();
-    const existingTabId = `widget-${widget.id}`;
+    const targetTabId = `widget-${widget.id}`;
 
     // Check if widget already has an open tab
     const existingTab = tabs.find(
-        (tab) => tab.type === "widget" && tab.id === existingTabId
+        (tab) => tab.type === "widget" && tab.id === targetTabId
     );
 
     if (existingTab) {
@@ -86,7 +86,7 @@ export function openWidgetTab(widget: WidgetType): void {
 
     // Create new widget tab
     const newTab: WidgetTab = {
-        id: existingTabId,
+        id: targetTabId,
         type: "widget",
         widgetId: widget.id,
         name: widget.name,

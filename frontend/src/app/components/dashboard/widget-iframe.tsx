@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useStore } from "@nanostores/react";
 import { ExclamationTriangleIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,17 @@ import { recordWidgetInteraction } from "@/api/widget";
 interface WidgetIframeProps {
     tab: WidgetTab;
     isVisible: boolean;
+}
+
+/**
+ * Validates that a user ID string is a valid numeric string.
+ * Returns the parsed number if valid, or null if invalid.
+ */
+function parseUserId(userId: string | undefined): number | null {
+    if (!userId || !/^\d+$/.test(userId)) {
+        return null;
+    }
+    return parseInt(userId, 10);
 }
 
 /**
@@ -29,6 +40,8 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
     const [iframeUrl, setIframeUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // Track if interaction has been recorded to prevent duplicate recordings on retry
+    const interactionRecordedRef = useRef(false);
 
     /**
      * Builds the iframe URL, injecting token for restricted widgets
@@ -42,16 +55,22 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
 
         try {
             const url = new URL(tab.url, window.location.origin);
+            const userIdNum = parseUserId(user.id);
 
             // Inject token for restricted access widgets
-            if (tab.restrictedAccess && user.id) {
-                const token = await generateToken(parseInt(user.id), tab.publicId);
+            if (tab.restrictedAccess && userIdNum !== null) {
+                const token = await generateToken(userIdNum, tab.publicId);
                 url.searchParams.set("alpb_token", token);
             }
 
-            // Record widget launch interaction
-            if (user.id) {
-                recordWidgetInteraction(tab.widgetId, parseInt(user.id), "launch");
+            // Record widget launch interaction (only once per tab lifecycle)
+            if (userIdNum !== null && !interactionRecordedRef.current) {
+                interactionRecordedRef.current = true;
+                recordWidgetInteraction(tab.widgetId, userIdNum, "launch")
+                    .catch((err) => {
+                        // Non-critical operation - log but don't fail the widget load
+                        console.error("Failed to record widget interaction:", err);
+                    });
             }
 
             setIframeUrl(url.toString());
