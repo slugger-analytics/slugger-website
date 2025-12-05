@@ -172,3 +172,33 @@ export const editUser = async (id: number, data: updateUserType) => {
     throw error;
   }
 };
+
+/**
+ * Deletes a user account.
+ *
+ * @param {number} [userId] - Optional. The ID of the user to delete. If not provided, deletes the current user's account.
+ * @returns {Promise<Object>} - The response from the API if deletion is successful.
+ * @throws {Error} - Throws an error if the API call fails or the response is not successful.
+ */
+export const deleteUser = async (userId?: number) => {
+  try {
+    const url = userId
+      ? `${API_URL}/api/users?userId=${userId}`
+      : `${API_URL}/api/users`;
+
+    const response = await fetch(url, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    const res = await response.json();
+
+    if (!res.success) {
+      throw new Error(res.message);
+    }
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
+  }
+};

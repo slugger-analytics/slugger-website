@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Home, BookOpenCheck, BookText, Bug, LayoutGridIcon } from "lucide-react";
+import { Home, BookOpenCheck, BookText, Bug, Code, LayoutGridIcon } from "lucide-react";
+
 import { NavUser } from "@/app/components/nav-user";
 import { NavMain } from "@/app/components/nav-main";
 import {
@@ -53,6 +54,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Team Admins",
       url: "/team-admins",
       icon: Users,
+      isActive: false,
+    },
+    {
+      title: "Widget Development",
+      url: "/widget-development",
+      icon: Code,
       isActive: false,
     },
     {

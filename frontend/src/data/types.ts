@@ -261,3 +261,24 @@ export interface PendingTeamAdmin {
   last_name: string;
   team_name: string;
 }
+
+export interface WidgetTeam {
+  team_id: string;
+  team_name: string;
+}
+
+export interface DeveloperWidget {
+  widget_id: number;
+  widget_name: string;
+  visibility: string;
+  status: string;
+  teams: WidgetTeam[] | null;
+}
+
+export interface DeveloperWithWidgets {
+  user_id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  widgets: DeveloperWidget[] | null;
+}

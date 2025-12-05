@@ -50,3 +50,14 @@ export const declineDeveloper = async (requestId: string) => {
   }
   return data;
 };
+
+export const fetchAllDevelopersWithWidgets = async () => {
+  const response = await fetch(`${API_URL}/api/developers`, {
+    credentials: "include",
+  });
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message);
+  }
+  return data.data;
+};

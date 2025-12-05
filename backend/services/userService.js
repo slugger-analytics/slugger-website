@@ -3,18 +3,15 @@
  * Handles adding, removing, and retrieving favorite widget IDs stored in a PostgreSQL database.
  */
 
-import pkg from "aws-sdk"; // Import AWS SDK
-const { CognitoIdentityServiceProvider } = pkg;
 import crypto from "crypto";
 import pool from "../db.js";
 import dotenv from "dotenv";
 import { createPendingDeveloper } from "./developerService.js";
+import cognito from "../cognito.js";
 
 dotenv.config();
 
 const TOKEN_SECRET = process.env.TOKEN_SECRET;
-
-const cognito = new CognitoIdentityServiceProvider({ region: "us-east-2" });
 
 export async function favoriteWidget(userId, widgetId) {
   const checkQuery = `
@@ -238,6 +235,75 @@ export async function updateUser({
   } catch (error) {
     console.error("Error updating user:", error);
     throw new Error("Failed to update user");
+  }
+}
+
+export async function getUserRole(userId) {
+  const query = `
+    SELECT role
+    FROM users
+    WHERE user_id = $1
+  `;
+
+  try {
+    const result = await pool.query(query, [userId]);
+
+    if (result.rowCount === 0) {
+      return null;
+    }
+
+    return result.rows[0].role;
+  } catch (error) {
+    console.error('Error fetching user role:', error);
+    throw new Error('Failed to fetch user role');
+  }
+}
+
+export async function deleteUser(userId) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Get user information before deletion
+    const userResult = await client.query(
+      'SELECT email, cognito_user_id FROM users WHERE user_id = $1',
+      [userId]
+    );
+
+    if (userResult.rowCount === 0) {
+      throw new Error('User not found');
+    }
+
+    const { email, cognito_user_id } = userResult.rows[0];
+
+    // Delete user from database
+    await client.query('DELETE FROM users WHERE user_id = $1', [userId]);
+
+    // Delete user from Cognito
+    try {
+      await cognito.adminDeleteUser({
+        UserPoolId: process.env.COGNITO_USER_POOL_ID,
+        Username: email.toLowerCase()
+      }).promise();
+    } catch (cognitoError) {
+      // Log the error but don't fail the transaction if user doesn't exist in Cognito
+      if (cognitoError.code !== 'UserNotFoundException') {
+        throw new Error(`Failed to delete user from Cognito: ${cognitoError.message}`);
+      }
+      console.warn(`User ${email} not found in Cognito during deletion`);
+    }
+
+    await client.query('COMMIT');
+    return {
+      success: true,
+      message: 'User deleted successfully',
+      email
+    };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
   }
 }
 
