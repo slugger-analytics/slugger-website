@@ -8,6 +8,7 @@ import SortDropdown from "./sort-dropdown";
 import ViewToggle from "./view-toggle";
 import Widgets from "./widgets";
 import RegisterWidget from "./register-widget";
+import RecentGameResults from "./recent-game-results";
 
 export default function DashboardContent() {
   const { widgets } = useQueryWidgets();
@@ -17,7 +18,10 @@ export default function DashboardContent() {
     <div className="max-w-full pb-8">
       {widgets.length > 0 && (
         <>
+          
           <div className="w-full mt-10 flex flex-col items-center">
+            <h2 className="text-2xl font-semibold mb-6">Scoreboard</h2>
+            <RecentGameResults />
             <h2 className="text-2xl font-semibold mb-6">Widgets</h2>
             <div className="flex justify-center w-full">
               <Search />
