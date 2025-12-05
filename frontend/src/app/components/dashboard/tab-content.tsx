@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { useStore } from "@nanostores/react";
-import { $tabs, $activeTabId, WidgetTab } from "@/lib/tabStore";
+import { $activeTabId, $widgetTabsCache, WidgetTab } from "@/lib/tabStore";
 import DashboardContent from "./dashboard-content";
 import WidgetIframe from "./widget-iframe";
 
@@ -20,14 +20,21 @@ import WidgetIframe from "./widget-iframe";
  * - Navigating away from dashboard and returning (Requirement 8.3, 8.5)
  * - Reordering tabs via drag-and-drop (Requirement 8.4)
  * 
- * Requirements: 5.2, 5.3, 8.5
+ * IMPORTANT: Iframes are rendered from $widgetTabsCache (stable insertion order),
+ * NOT from $tabs (which changes order during drag-and-drop). This prevents
+ * iframe reloads when tabs are reordered because the DOM order stays constant.
+ * 
+ * Requirements: 5.2, 5.3, 8.4, 8.5
  */
 export default function TabContent() {
-    const tabs = useStore($tabs);
     const activeTabId = useStore($activeTabId);
+    const widgetTabsCache = useStore($widgetTabsCache);
 
-    // Get all widget tabs - ALL will be rendered (not just active)
-    const widgetTabs = tabs.filter((tab): tab is WidgetTab => tab.type === "widget");
+    // Convert cache Map to array - maintains stable insertion order
+    // This order never changes during tab reordering, only when tabs are opened/closed
+    const cachedWidgetTabs = useMemo(() => {
+        return Array.from(widgetTabsCache.values());
+    }, [widgetTabsCache]);
 
     // Check if Home tab is active
     const isHomeActive = activeTabId === "home";
@@ -44,12 +51,12 @@ export default function TabContent() {
             </div>
 
             {/* 
-             * Widget iframes - ALL are ALWAYS rendered in DOM
+             * Widget iframes - ALL are ALWAYS rendered in DOM in STABLE order
+             * Rendered from $widgetTabsCache which maintains insertion order
+             * Tab reordering does NOT affect this array, preventing iframe reloads
              * Visibility controlled via CSS display property
-             * Stable keys (tab.id) ensure React doesn't remount iframes
-             * This preserves iframe state across tab switches and navigation
              */}
-            {widgetTabs.map((tab) => (
+            {cachedWidgetTabs.map((tab) => (
                 <div
                     key={tab.id}
                     style={{ display: activeTabId === tab.id ? "block" : "none" }}

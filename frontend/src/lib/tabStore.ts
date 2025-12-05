@@ -68,6 +68,15 @@ export const $activeTabId = atom<string>("home");
  */
 export const $iframeLoadedMap = atom<Record<string, boolean>>({});
 
+/**
+ * Stores widget tabs in creation order (stable order for iframe rendering).
+ * Key: tabId, Value: WidgetTab
+ * This map preserves insertion order and is NOT affected by tab reordering.
+ * Iframes are rendered from this map to prevent reloads during drag-and-drop.
+ * Requirements: 8.4
+ */
+export const $widgetTabsCache = atom<Map<string, WidgetTab>>(new Map());
+
 
 // ============================================================================
 // Tab Store Actions
@@ -107,6 +116,14 @@ export function openWidgetTab(widget: WidgetType): void {
     $tabs.set([...tabs, newTab]);
     $activeTabId.set(newTab.id);
 
+    // Add to widget tabs cache (stable order for iframe rendering)
+    const cache = $widgetTabsCache.get();
+    if (!cache.has(targetTabId)) {
+        const newCache = new Map(cache);
+        newCache.set(targetTabId, newTab);
+        $widgetTabsCache.set(newCache);
+    }
+
     // Persist state
     persistTabState();
 }
@@ -142,6 +159,14 @@ export function closeTab(tabId: string): void {
         const newMap = { ...currentMap };
         delete newMap[tabId];
         $iframeLoadedMap.set(newMap);
+    }
+
+    // Remove from widget tabs cache
+    const cache = $widgetTabsCache.get();
+    if (cache.has(tabId)) {
+        const newCache = new Map(cache);
+        newCache.delete(tabId);
+        $widgetTabsCache.set(newCache);
     }
 
     // If closing active tab, activate the tab to its left
@@ -288,6 +313,15 @@ export function initializeTabStore(): void {
             if (isValidTabState(state)) {
                 $tabs.set(state.tabs);
                 $activeTabId.set(state.activeTabId);
+
+                // Rebuild widget tabs cache from restored tabs
+                const cache = new Map<string, WidgetTab>();
+                for (const tab of state.tabs) {
+                    if (tab.type === "widget") {
+                        cache.set(tab.id, tab as WidgetTab);
+                    }
+                }
+                $widgetTabsCache.set(cache);
                 return;
             }
         }
@@ -300,6 +334,7 @@ export function initializeTabStore(): void {
     // Start with fresh state
     $tabs.set([HOME_TAB]);
     $activeTabId.set("home");
+    $widgetTabsCache.set(new Map());
 }
 
 /**
@@ -315,6 +350,10 @@ export function clearPersistedTabState(): void {
     } catch (error) {
         console.warn("Failed to clear persisted tab state:", error);
     }
+
+    // Also clear the in-memory caches
+    $widgetTabsCache.set(new Map());
+    $iframeLoadedMap.set({});
 }
 
 /**
