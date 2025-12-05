@@ -33,12 +33,12 @@ export default function TabContent() {
     const isHomeActive = activeTabId === "home";
 
     return (
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-auto">
             {/* Home content - widget gallery */}
             {/* Use CSS display to show/hide, keeping component mounted */}
             <div
                 style={{ display: isHomeActive ? "block" : "none" }}
-                className="h-full overflow-auto"
+                className="min-h-full"
             >
                 <DashboardContent />
             </div>

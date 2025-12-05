@@ -63,7 +63,7 @@ export default function PersistentDashboardContainer() {
                     {isLoading ? (
                         <DashboardLoading />
                     ) : (
-                        <div className="flex flex-col h-[calc(100vh-2rem)]">
+                        <div className="flex flex-col h-full">
                             {/* Tab bar at top of content area */}
                             <TabBar />
                             {/* Tab content area - shows Home (widget gallery) or widget iframes */}

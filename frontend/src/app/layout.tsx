@@ -26,8 +26,8 @@ export default function RootLayout({
 }) {
   return (
     <AuthProvider>
-      <html lang="en">
-        <body suppressHydrationWarning={true}>
+      <html lang="en" className="h-full">
+        <body suppressHydrationWarning={true} className="h-full">
           {/* 
            * PersistentDashboardContainer stays mounted across all routes
            * to preserve widget iframe state during navigation.
@@ -35,7 +35,7 @@ export default function RootLayout({
            * Requirements: 8.1
            */}
           <PersistentDashboardContainer />
-          <main>{children}</main>
+          <main className="h-full">{children}</main>
           <Toaster />
         </body>
       </html>

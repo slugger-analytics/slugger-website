@@ -8,12 +8,13 @@ import {
   ReactNode,
   Dispatch,
   SetStateAction,
+  useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
 import { clearStores } from "@/lib/utils";
 import { $user } from "@/lib/userStore";
-import { logoutUser } from "@/api/auth";
+import { logoutUser, validateSession } from "@/api/auth";
 
 // The AuthContextType interface defines the shape of the context object
 interface AuthContextType {
@@ -48,14 +49,50 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const user = useStore($user);
   const router = useRouter();
+  const sessionChecked = useRef(false);
 
-  // Check for token on initial load
+  // Check for existing session on initial load (handles page refresh)
   useEffect(() => {
-    // If idToken and userRole are present, set the user as authenticated
+    const checkExistingSession = async () => {
+      // Only run once
+      if (sessionChecked.current) return;
+
+      // Wait for user store to hydrate from localStorage
+      // If no user data after hydration, user is not logged in
+      if (!user.role || !user.id) {
+        setLoading(false);
+        return;
+      }
+
+      sessionChecked.current = true;
+
+      try {
+        // User data exists in persistent store, validate the server session
+        const sessionValid = await validateSession();
+        if (sessionValid) {
+          setIsAuthenticated(true);
+        } else {
+          // Session expired - clear stores
+          clearStores();
+        }
+      } catch (error) {
+        console.error("Error checking existing session:", error);
+        // On error, clear stores to be safe
+        clearStores();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkExistingSession();
+  }, [user.role, user.id]); // Re-run when user store hydrates
+
+  // Also set authenticated when idToken is set (after fresh login)
+  useEffect(() => {
     if (idToken && user.role) {
       setIsAuthenticated(true);
+      setLoading(false);
     }
-    setLoading(false);
   }, [idToken, user.role]);
 
   const logout = async () => {
