@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useStore } from "@nanostores/react";
 import { ExclamationTriangleIcon, ReloadIcon } from "@radix-ui/react-icons";
 import { cn } from "@/lib/utils";
-import { WidgetTab } from "@/lib/tabStore";
+import { WidgetTab, markIframeLoaded, isIframeLoaded } from "@/lib/tabStore";
 import { $user } from "@/lib/userStore";
 import { generateToken } from "@/api/user";
 import { recordWidgetInteraction } from "@/api/widget";
@@ -15,10 +15,10 @@ interface WidgetIframeProps {
 }
 
 /**
- * Validates that a user ID string is a valid numeric string.
- * Returns the parsed number if valid, or null if invalid.
+ * Parses a user ID string to a number, returning null if invalid.
+ * User IDs should always be numeric strings from the database.
  */
-function parseUserId(userId: string | undefined): number | null {
+function parseUserId(userId: string): number | null {
     if (!userId || !/^\d+$/.test(userId)) {
         return null;
     }
@@ -33,20 +33,40 @@ function parseUserId(userId: string | undefined): number | null {
  * - Visibility toggle to preserve iframe state (hidden vs unmounted)
  * - Loading and error states
  * 
- * Requirements: 2.4, 5.4
+ * CRITICAL: The iframe src is set ONLY ONCE on initial render.
+ * Subsequent re-renders do NOT modify the src attribute.
+ * This prevents iframe reloads when:
+ * - Switching between tabs
+ * - Navigating away and returning to dashboard
+ * - Reordering tabs via drag-and-drop
+ * 
+ * Requirements: 2.4, 5.4, 8.3, 8.4
  */
 export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
     const user = useStore($user);
     const [iframeUrl, setIframeUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Track if iframe has been initialized (src set once)
+    const iframeInitializedRef = useRef(false);
     // Track if interaction has been recorded to prevent duplicate recordings on retry
     const interactionRecordedRef = useRef(false);
+    // Ref to the iframe element for direct DOM manipulation if needed
+    const iframeRef = useRef<HTMLIFrameElement>(null);
+    // Store the initial URL to prevent changes
+    const initialUrlRef = useRef<string | null>(null);
 
     /**
-     * Builds the iframe URL, injecting token for restricted widgets
+     * Builds the iframe URL, injecting token for restricted widgets.
+     * This should only be called once per tab lifecycle.
      */
     const buildIframeUrl = useCallback(async () => {
+        // If already initialized, don't rebuild URL
+        if (iframeInitializedRef.current || initialUrlRef.current) {
+            return;
+        }
+
         if (!tab.url) {
             setError("Widget URL is missing");
             setIsLoading(false);
@@ -66,14 +86,19 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
             // Record widget launch interaction (only once per tab lifecycle)
             if (userIdNum !== null && !interactionRecordedRef.current) {
                 interactionRecordedRef.current = true;
-                recordWidgetInteraction(tab.widgetId, userIdNum, "launch")
-                    .catch((err) => {
-                        // Non-critical operation - log but don't fail the widget load
-                        console.error("Failed to record widget interaction:", err);
-                    });
+                // Fire-and-forget with error logging - interaction recording is non-critical
+                recordWidgetInteraction(tab.widgetId, userIdNum, "launch").catch((err) => {
+                    console.error("Failed to record widget interaction:", err);
+                });
             }
 
-            setIframeUrl(url.toString());
+            const finalUrl = url.toString();
+
+            // Store the initial URL and mark as initialized
+            initialUrlRef.current = finalUrl;
+            iframeInitializedRef.current = true;
+
+            setIframeUrl(finalUrl);
             setError(null);
         } catch (err) {
             console.error("Failed to build iframe URL:", err);
@@ -83,15 +108,18 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
         }
     }, [tab.url, tab.restrictedAccess, tab.publicId, tab.widgetId, user.id]);
 
-    // Build URL on mount or when tab changes
+    // Build URL on mount - only once
     useEffect(() => {
-        // Only build URL once per tab
-        if (!iframeUrl && !error) {
+        // Only build URL if not already initialized
+        if (!iframeInitializedRef.current && !initialUrlRef.current && !error) {
             buildIframeUrl();
         }
-    }, [buildIframeUrl, iframeUrl, error]);
+    }, [buildIframeUrl, error]);
 
     const handleRetry = () => {
+        // Reset initialization state for retry
+        iframeInitializedRef.current = false;
+        initialUrlRef.current = null;
         setIsLoading(true);
         setError(null);
         setIframeUrl(null);
@@ -100,6 +128,8 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
 
     const handleIframeLoad = () => {
         setIsLoading(false);
+        // Mark this iframe as loaded in the store
+        markIframeLoaded(tab.id);
     };
 
     const handleIframeError = () => {
@@ -130,6 +160,9 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
         );
     }
 
+    // Use the stored initial URL to prevent any src changes after first render
+    const displayUrl = initialUrlRef.current || iframeUrl;
+
     return (
         <div
             className={cn(
@@ -147,16 +180,22 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
                 </div>
             )}
 
-            {/* Iframe - always rendered to preserve state */}
-            {iframeUrl && (
+            {/* 
+             * Iframe - rendered once with stable src
+             * The src attribute is set only on initial render and never changed
+             * This preserves iframe state across tab switches and navigation
+             */}
+            {displayUrl && (
                 <iframe
-                    src={iframeUrl}
+                    ref={iframeRef}
+                    src={displayUrl}
                     title={tab.name}
                     className="w-full h-full border-0"
                     onLoad={handleIframeLoad}
                     onError={handleIframeError}
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
                     allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone"
+                    data-tab-id={tab.id}
                 />
             )}
         </div>

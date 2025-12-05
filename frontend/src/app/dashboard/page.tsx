@@ -1,45 +1,31 @@
 "use client";
-import { useEffect } from "react";
-import { AppSidebar } from "@/app/components/app-sidebar";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/app/components/ui/sidebar";
+
 import ProtectedRoute from "../components/ProtectedRoutes";
-import useQueryWidgets from "../hooks/use-query-widgets";
-import { useAuth } from "../contexts/AuthContext";
-import DashboardLoading from "../components/dashboard/dashboard-loading";
-import TabBar from "../components/dashboard/tab-bar";
-import TabContent from "../components/dashboard/tab-content";
-import { initializeTabStore } from "@/lib/tabStore";
 
+/**
+ * Dashboard Page
+ * 
+ * This page serves as a route marker for the dashboard.
+ * The actual dashboard content (TabBar, TabContent, widget iframes) is rendered
+ * by PersistentDashboardContainer in the root layout, which:
+ * - Stays mounted across all routes to preserve iframe state
+ * - Shows/hides based on current route via CSS display property
+ * - Detects this route via usePathname() hook
+ * 
+ * This architecture ensures widget iframes are never unmounted when navigating
+ * between pages, preserving their internal state.
+ * 
+ * Requirements: 8.2
+ */
 export default function Page() {
-  const { loading } = useAuth();
-  const { widgetsLoading } = useQueryWidgets();
-
-  // Initialize tab store on mount to restore persisted state
-  useEffect(() => {
-    initializeTabStore();
-  }, []);
-
   return (
     <ProtectedRoute>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          {loading || widgetsLoading ? (
-            <DashboardLoading />
-          ) : (
-            <div className="flex flex-col h-[calc(100vh-2rem)]">
-              {/* Tab bar at top of content area */}
-              <TabBar />
-              {/* Tab content area - shows Home (widget gallery) or widget iframes */}
-              <TabContent />
-            </div>
-          )}
-        </SidebarInset>
-      </SidebarProvider>
+      {/* 
+       * Dashboard content is rendered by PersistentDashboardContainer.
+       * This empty div serves as a placeholder for the route.
+       * The persistent container overlays this when on /dashboard route.
+       */}
+      <div className="h-screen" aria-hidden="true" />
     </ProtectedRoute>
   );
 }
