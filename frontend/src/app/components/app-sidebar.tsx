@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Home, BookOpenCheck, BookText, Bug, Code } from "lucide-react";
+import { Home, BookOpenCheck, BookText, Bug, Code, LayoutGridIcon } from "lucide-react";
 
 import { NavUser } from "@/app/components/nav-user";
 import { NavMain } from "@/app/components/nav-main";
@@ -27,8 +27,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [navMain, setNavMain] = React.useState([
     {
       title: "Home",
-      url: "/dashboard",
+      url: "/homepage",
       icon: Home,
+      isActive: true,
+    },
+    {
+      title: "Widgets",
+      url: "/dashboard",
+      icon: LayoutGridIcon,
       isActive: true,
     },
     {

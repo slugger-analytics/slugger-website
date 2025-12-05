@@ -13,6 +13,7 @@ dotenv.config(); // Load environment variables from a `.env` file
 
 // Importing API route handlers
 import widgets from "./api/widgets.js";
+import homepage from "./api/homepage.js";
 import users from "./api/users.js";
 import teams from "./api/teams.js";
 import categories from "./api/widget-categories.js";
@@ -104,6 +105,8 @@ app.use(
 // ---------------------------------------------------
 
 app.use("/api/widgets", widgets);
+
+app.use("/api/homepage", homepage);
 
 app.use("/api/users", users);
 
