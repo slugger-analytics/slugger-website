@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { AppSidebar } from "@/app/components/app-sidebar";
 import {
   SidebarInset,
@@ -10,12 +11,22 @@ import useQueryWidgets from "../hooks/use-query-widgets";
 import { useStore } from "@nanostores/react";
 import { useAuth } from "../contexts/AuthContext";
 import DashboardLoading from "../components/dashboard/dashboard-loading";
+import TabBar from "../components/dashboard/tab-bar";
+import TabContent from "../components/dashboard/tab-content";
+import { initializeTabStore } from "@/lib/tabStore";
 import DashboardContent from "../components/dashboard/dashboard-content";
 //import RecentGames from "../components/dashboard/recent-game-results";
 import { $favWidgetIds } from "@/lib/widgetStore";
 import { $user } from "@/lib/userStore";
 
 export default function DashboardPage() {
+  const { loading } = useAuth();
+
+  // Initialize tab store on mount to restore persisted state
+  useEffect(() => {
+    initializeTabStore();
+  }, []);
+
   const user = useStore($user);
   const favWidgetIds = useStore($favWidgetIds) as Set<number>;
 
@@ -35,6 +46,16 @@ export default function DashboardPage() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
+          {loading || widgetsLoading ? (
+            <DashboardLoading />
+          ) : (
+            <div className="flex flex-col h-[calc(100vh-2rem)]">
+              {/* Tab bar at top of content area */}
+              <TabBar />
+              {/* Tab content area - shows Home (widget gallery) or widget iframes */}
+              <TabContent />
+            </div>
+          )}
           {" "}
           {/* Ensures the route is protected and only accessible to authenticated users */}
           <SidebarTrigger />

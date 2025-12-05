@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "../ui/button";
 import Image from "next/image";
 import {
@@ -8,7 +8,6 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from "@radix-ui/react-icons";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -22,13 +21,10 @@ import { useStore } from "@nanostores/react";
 import { $favWidgetIds, setTargetWidget } from "@/lib/widgetStore";
 import { $user } from "@/lib/userStore";
 import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
-import { generateToken } from "@/api/user";
 import CategoryTag from "./category-tag";
-import { recordWidgetInteraction } from "@/api/widget";
 import { prettyNumber } from "@based/pretty-number";
 import { callGetWidgetCollaborators } from "@/app/hooks/use-query-widgets";
-import { addRecentWidget } from "@/lib/widgetStore";
-
+import { openWidgetTab } from "@/lib/tabStore";
 
 interface WidgetProps extends WidgetType {
   isDev: boolean;
@@ -53,9 +49,6 @@ export default function Widget({
   const [isExpanded, setIsExpanded] = useState(false);
   const { toggleFavWidget } = useMutationWidgets();
   const favWidgets = useStore($favWidgetIds);
-  const { id: userId } = useStore($user);
-
-  const router = useRouter();
 
   // Character limit for truncated description
   const CHAR_LIMIT = 111;
@@ -67,20 +60,24 @@ export default function Widget({
       ? `${description.slice(0, CHAR_LIMIT)}...`
       : description;
 
-  const redirect = async () => {
+  /**
+   * Opens the widget in a new tab instead of redirecting.
+   * Token injection and interaction recording are handled by the WidgetIframe component.
+   * Requirements: 2.1
+   */
+  const handleLaunch = () => {
     if (redirectLink) {
-      const url = new URL(redirectLink, window.location.origin);
-
-      if (restrictedAccess) {
-        const token = await generateToken(parseInt(userId), publicId);
-        url.searchParams.set("alpb_token", token);
-      }
-
-      // record interaction + update "recent" list
-      recordWidgetInteraction(id, parseInt(userId), "launch");
-      addRecentWidget(id); 
-
-      window.open(url.toString(), '_blank');
+      openWidgetTab({
+        id,
+        name,
+        description,
+        imageUrl,
+        redirectLink,
+        publicId,
+        restrictedAccess,
+        categories,
+        metrics,
+      });
     } else {
       console.error("Redirect link is missing or invalid.");
     }
@@ -176,8 +173,8 @@ export default function Widget({
           )}
         </div>
         <div className="flex">
-          {/* Launch Button */}
-          <Button size="sm" className="ml-3" onClick={redirect}>
+          {/* Launch Button - Opens widget in a new tab (Requirement 2.1) */}
+          <Button size="sm" className="ml-3" onClick={handleLaunch}>
             Launch
             <div className="text-xs text-gray-500 w-5">
               {prettyNumber(metrics.allTimeLaunches, "number-short")}
