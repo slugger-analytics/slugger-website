@@ -2,7 +2,9 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useStore } from "@nanostores/react";
-import { HomeIcon, Cross2Icon, ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import { Cross2Icon, ChevronLeftIcon, ChevronRightIcon } from "@radix-ui/react-icons";
+import { LayoutGridIcon } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import {
     $tabs,
@@ -232,8 +234,8 @@ function TabItem({
             {/* Tab icon/name */}
             {isHomeTab ? (
                 <>
-                    <HomeIcon className="h-4 w-4 flex-shrink-0" />
-                    <span className="text-sm font-medium">Home</span>
+                    <LayoutGridIcon className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-sm font-medium">All Widgets</span>
                 </>
             ) : (
                 <>

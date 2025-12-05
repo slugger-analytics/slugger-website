@@ -17,7 +17,7 @@ import useQueryWidgets from "@/app/hooks/use-query-widgets";
 /**
  * PersistentDashboardContainer Component
  * 
- * A layout-level component that keeps the dashboard mounted across route changes.
+ * A layout-level component that keeps the widgets/dashboard page mounted across route changes.
  * This preserves widget iframe state when navigating between pages.
  * 
  * Key behaviors:
@@ -33,7 +33,7 @@ export default function PersistentDashboardContainer() {
     const { loading: authLoading, isAuthenticated } = useAuth();
     const { widgetsLoading } = useQueryWidgets();
 
-    // Determine if dashboard should be visible based on current route
+    // Determine if widgets/dashboard page should be visible based on current route
     const isDashboardRoute = pathname === "/dashboard";
     const isVisible = isDashboardRoute && isAuthenticated;
 
