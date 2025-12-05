@@ -60,6 +60,14 @@ const SESSION_STORAGE_KEY = "widget-tab-state";
 export const $tabs = atom<Tab[]>([HOME_TAB]);
 export const $activeTabId = atom<string>("home");
 
+/**
+ * Tracks which iframes have been loaded.
+ * Key: tabId, Value: true if iframe has loaded
+ * Used to prevent unnecessary reloads when switching tabs.
+ * Requirements: 8.3
+ */
+export const $iframeLoadedMap = atom<Record<string, boolean>>({});
+
 
 // ============================================================================
 // Tab Store Actions
@@ -128,6 +136,14 @@ export function closeTab(tabId: string): void {
     const newTabs = tabs.filter((tab) => tab.id !== tabId);
     $tabs.set(newTabs);
 
+    // Clear iframe loaded status for the closed tab
+    const currentMap = $iframeLoadedMap.get();
+    if (currentMap[tabId]) {
+        const newMap = { ...currentMap };
+        delete newMap[tabId];
+        $iframeLoadedMap.set(newMap);
+    }
+
     // If closing active tab, activate the tab to its left
     if (isClosingActiveTab) {
         const newActiveIndex = Math.max(0, tabIndex - 1);
@@ -190,6 +206,42 @@ export function reorderTabs(fromIndex: number, toIndex: number): void {
 
     // Persist state
     persistTabState();
+}
+
+// ============================================================================
+// Iframe Loaded Tracking
+// ============================================================================
+
+/**
+ * Marks an iframe as loaded for a given tab.
+ * Used to track which iframes have been initialized to prevent reloads.
+ * Requirements: 8.3
+ */
+export function markIframeLoaded(tabId: string): void {
+    const currentMap = $iframeLoadedMap.get();
+    if (!currentMap[tabId]) {
+        $iframeLoadedMap.set({ ...currentMap, [tabId]: true });
+    }
+}
+
+/**
+ * Checks if an iframe has been loaded for a given tab.
+ * Requirements: 8.3
+ */
+export function isIframeLoaded(tabId: string): boolean {
+    return $iframeLoadedMap.get()[tabId] === true;
+}
+
+/**
+ * Clears the iframe loaded status for a tab (called when tab is closed).
+ */
+export function clearIframeLoaded(tabId: string): void {
+    const currentMap = $iframeLoadedMap.get();
+    if (currentMap[tabId]) {
+        const newMap = { ...currentMap };
+        delete newMap[tabId];
+        $iframeLoadedMap.set(newMap);
+    }
 }
 
 
