@@ -1,9 +1,19 @@
 import pkg from "aws-sdk";
 const { CognitoIdentityServiceProvider } = pkg;
 
-// Configure Cognito - uses IAM role in production, explicit credentials in local dev
+// Enable loading from AWS config file if AWS_CONFIG_FILE is set
+// This allows credentials to be loaded from ~/.aws/config
+if (process.env.AWS_CONFIG_FILE && !process.env.AWS_SDK_LOAD_CONFIG) {
+  process.env.AWS_SDK_LOAD_CONFIG = '1';
+}
+
+// Configure Cognito - uses default credential provider chain which checks:
+// 1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, or AWS_ACCESS_KEY/AWS_SECRET_ACCESS_KEY)
+// 2. Shared credentials file (~/.aws/credentials)
+// 3. Shared config file (~/.aws/config) if AWS_SDK_LOAD_CONFIG=1
+// 4. IAM role (for ECS/EC2 in production)
 const cognitoConfig = {
-  region: "us-east-2"
+  region: process.env.AWS_REGION || "us-east-2"
 };
 
 // Only add explicit credentials if provided (for local development)

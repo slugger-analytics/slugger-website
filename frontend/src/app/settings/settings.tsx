@@ -13,18 +13,32 @@ import {
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/userStore";
 import useMutationUser from "../hooks/use-mutation-user";
 import { useAuth } from "../contexts/AuthContext";
+import { deleteUser } from "@/api/user";
+import { Trash2 } from "lucide-react";
 
 export default function Settings() {
   const router = useRouter();
   const { toast } = useToast();
   const user = useStore($user);
   const { updateUser } = useMutationUser();
-  const { loading } = useAuth();
+  const { loading, logout } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [formData, setFormData] = useState({
     first: user?.first || "",
@@ -66,6 +80,32 @@ export default function Settings() {
 
   const handleResetPassword = () => {
     router.push("/reset-password");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteUser();
+
+      toast({
+        title: "Account deleted",
+        description: "Your account has been permanently deleted.",
+        variant: "success",
+      });
+
+      // Logout and redirect to home page
+      await logout();
+      router.push("/");
+    } catch (error: any) {
+      toast({
+        title: "Deletion failed",
+        description: error.message || "There was a problem deleting your account.",
+        variant: "destructive",
+      });
+      setIsDeleting(false);
+    }
   };
 
   if (!user) {
@@ -159,6 +199,43 @@ export default function Settings() {
             </Button>
           </CardFooter>
         </form>
+
+        <CardContent className="border-t pt-6">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-medium text-red-600">Danger Zone</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Once you delete your account, there is no going back. Please be certain.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isDeleting}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? "Deleting..." : "Delete Account"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete your
+                    account and remove all your data from our servers.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAccount}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Delete Account
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );

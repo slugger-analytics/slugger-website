@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import { PrismLight as SyntaxHighlighter } from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/cjs/styles/prism";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { ComponentProps } from "react";
 
 type CodeProps = ComponentProps<typeof SyntaxHighlighter> & {

@@ -124,3 +124,46 @@ export async function getPendingDevelopers() {
   `);
   return result.rows;
 }
+
+export async function getAllDevelopersWithWidgets() {
+  const client = await pool.connect();
+  try {
+    // Fetch all widget developers with their widgets
+    const result = await client.query(`
+      SELECT
+        u.user_id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        json_agg(
+          json_build_object(
+            'widget_id', w.widget_id,
+            'widget_name', w.widget_name,
+            'visibility', w.visibility,
+            'status', w.status,
+            'teams', (
+              SELECT json_agg(
+                json_build_object(
+                  'team_id', t.team_id,
+                  'team_name', t.team_name
+                )
+              )
+              FROM widget_team_access wta
+              JOIN team t ON wta.team_id = t.team_id
+              WHERE wta.widget_id = w.widget_id
+            )
+          ) ORDER BY w.created_at DESC
+        ) FILTER (WHERE w.widget_id IS NOT NULL) as widgets
+      FROM users u
+      LEFT JOIN user_widget uw ON u.user_id = uw.user_id
+      LEFT JOIN widgets w ON uw.widget_id = w.widget_id
+      WHERE u.role = 'widget developer'
+      GROUP BY u.user_id, u.email, u.first_name, u.last_name
+      ORDER BY u.created_at DESC
+    `);
+
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}

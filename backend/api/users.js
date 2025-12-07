@@ -10,6 +10,8 @@ import {
   createUser,
   signUpUserWithCognito,
   updateUser,
+  deleteUser,
+  getUserRole,
 } from "../services/userService.js";
 import { getUserData } from "../services/widgetService.js";
 import { validationMiddleware } from "../middleware/validation-middleware.js";
@@ -590,6 +592,106 @@ router.patch('/', requireAuth, async (req, res) => {
     });
   }
 })
+
+/**
+ * DELETE /users
+ * Delete a user account.
+ *
+ * Rules:
+ * - All authenticated users can delete their own account (no userId parameter)
+ * - Site admins can delete other users' accounts by providing userId parameter
+ * - Non-admins cannot delete other users' accounts
+ * - Site admins cannot delete other site admin accounts
+ * - Site admins can delete their own account if no userId parameter is provided
+ */
+router.delete('/', requireAuth, async (req, res) => {
+  try {
+    const currentUserId = req.session?.user?.user_id;
+    const currentUserRole = req.session?.user?.role;
+    const isSiteAdmin = currentUserRole === 'admin';
+
+    // Get the target user ID from query parameter (optional)
+    const targetUserId = req.query.userId ? parseInt(req.query.userId) : currentUserId;
+
+    // If user is not an admin and trying to delete someone else's account, deny
+    if (!isSiteAdmin && targetUserId !== currentUserId) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to delete other users'
+      });
+    }
+
+    // If admin is trying to delete another user, check if target is also an admin
+    if (isSiteAdmin && targetUserId !== currentUserId) {
+      const targetUserRole = await getUserRole(targetUserId);
+
+      if (targetUserRole === null) {
+        return res.status(404).json({
+          success: false,
+          message: 'Target user not found'
+        });
+      }
+
+      // Site admins cannot delete other site admin accounts
+      if (targetUserRole === 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Site admins cannot delete other site admin accounts'
+        });
+      }
+    }
+
+    // Proceed with deletion
+    const result = await deleteUser(targetUserId);
+
+    // If user deleted their own account, destroy the session before sending response
+    if (targetUserId === currentUserId) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error after account deletion:', err);
+          return res.status(500).json({
+            success: false,
+            message: `Internal error: Failed to destroy session: ${err.message}`
+          });
+        }
+
+        // Clear the session cookie
+        res.clearCookie('connect.sid', {
+          path: '/',
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'none'
+        });
+
+        // Send response after session is destroyed and cookie is cleared
+        res.status(200).json({
+          success: true,
+          message: result.message,
+          data: {
+            email: result.email,
+            deletedSelf: true
+          }
+        });
+      });
+    } else {
+      // Admin deleting another user - no session cleanup needed, send response immediately
+      res.status(200).json({
+        success: true,
+        message: result.message,
+        data: {
+          email: result.email,
+          deletedSelf: false
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`
+    });
+  }
+});
 
 
 export default router;

@@ -1,6 +1,7 @@
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/toaster";
+import PersistentDashboardContainer from "./components/layout/persistent-dashboard-container";
 
 export const metadata = {
   title: "SLUGGER",
@@ -25,9 +26,16 @@ export default function RootLayout({
 }) {
   return (
     <AuthProvider>
-      <html lang="en">
-        <body suppressHydrationWarning={true}>
-          <main>{children}</main>
+      <html lang="en" className="h-full">
+        <body suppressHydrationWarning={true} className="h-full">
+          {/* 
+           * PersistentDashboardContainer stays mounted across all routes
+           * to preserve widget iframe state during navigation.
+           * It shows/hides based on current route via CSS display property.
+           * Requirements: 8.1
+           */}
+          <PersistentDashboardContainer />
+          <main className="h-full">{children}</main>
           <Toaster />
         </body>
       </html>

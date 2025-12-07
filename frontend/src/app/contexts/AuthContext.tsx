@@ -8,19 +8,19 @@ import {
   ReactNode,
   Dispatch,
   SetStateAction,
+  useRef,
 } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
 import { clearStores } from "@/lib/utils";
 import { $user } from "@/lib/userStore";
-import { logoutUser } from "@/api/auth";
+import { logoutUser, validateSession } from "@/api/auth";
 import {
   $authTokens,
-  setAuthTokens as storeAuthTokens,
+  setAuthTokens,
   clearAuthTokens,
   getTokensForWidget,
   hasValidTokens,
-  AuthTokens,
   AuthUser,
 } from "@/lib/auth-store";
 
@@ -71,6 +71,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+
 // The AuthProvider component provides the authentication context to its children
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // State to track the ID token
@@ -81,28 +82,72 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   // State to track authentication (deferred to avoid SSR mismatch)
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+
   // Use auth-store for authentication state
   const tokens = useStore($authTokens);
   const user = useStore($user);
   const router = useRouter();
-  
-  // Check for token on initial load and client-side
+  const sessionChecked = useRef(false);
+
+  // Check for existing session on initial load (handles page refresh)
   useEffect(() => {
-    // Check if tokens are valid (client-side only)
-    const isValid = hasValidTokens();
-    setIsAuthenticated(isValid);
-    
-    // If tokens are valid, extract and set idToken for compatibility
-    if (tokens && isValid) {
-      setIdToken(tokens.idToken);
-      setAccessToken(tokens.accessToken);
-    } else {
-      setIdToken("");
-      setAccessToken("");
+    const checkExistingSession = async () => {
+      // Only run once
+      if (sessionChecked.current) return;
+
+      // Check if tokens are valid in auth-store first
+      const hasTokens = hasValidTokens();
+
+      // If no user data after hydration and no valid tokens, user is not logged in
+      if (!user.role || !user.id) {
+        if (hasTokens && tokens) {
+          // Tokens exist but user store not hydrated - set from tokens
+          setIdToken(tokens.idToken);
+          setAccessToken(tokens.accessToken);
+          setIsAuthenticated(true);
+        }
+        setLoading(false);
+        return;
+      }
+
+      sessionChecked.current = true;
+
+      try {
+        // User data exists in persistent store, validate the server session
+        const sessionValid = await validateSession();
+
+        if (sessionValid) {
+          setIsAuthenticated(true);
+          // Sync tokens from auth-store if available
+          if (tokens && hasTokens) {
+            setIdToken(tokens.idToken);
+            setAccessToken(tokens.accessToken);
+          }
+        } else {
+          // Session expired - clear stores
+          clearAuthTokens();
+          clearStores();
+        }
+      } catch (error) {
+        console.error("Error checking existing session:", error);
+        // On error, clear stores to be safe
+        clearAuthTokens();
+        clearStores();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkExistingSession();
+  }, [user.role, user.id, tokens]);
+
+  // Also set authenticated when idToken is set (after fresh login)
+  useEffect(() => {
+    if (idToken && user.role) {
+      setIsAuthenticated(true);
+      setLoading(false);
     }
-    setLoading(false);
-  }, [tokens]);
+  }, [idToken, user.role]);
 
   // Store tokens with expiry for widget integration
   const storeTokens = (
@@ -123,11 +168,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       is_admin?: boolean;
     }
   ) => {
-    storeAuthTokens(tokens, user);
+    setAuthTokens(tokens, user);
   };
 
-  // Get tokens for widget PostMessage (excludes refreshToken)
-  const getWidgetTokens = () => {
+  // Get tokens for widget PostMessage (excludes refreshToken for security)
+  const getWidgetTokens = (): {
+    accessToken: string;
+    idToken: string;
+    expiresAt: number;
+    user?: AuthUser;
+  } | null => {
     return getTokensForWidget();
   };
 

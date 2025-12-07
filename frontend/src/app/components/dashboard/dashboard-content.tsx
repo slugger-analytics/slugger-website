@@ -14,10 +14,11 @@ export default function DashboardContent() {
   const user = useStore($user);
   const { loading } = useAuth();
   return (
-    <div className="max-w-full">
+    <div className="max-w-full pb-8">
       {widgets.length > 0 && (
         <>
-          <div className="flex flex-col items-center w-full mt-10">
+          <div className="w-full mt-10 flex flex-col items-center">
+            <h2 className="text-2xl font-semibold mb-6">Widgets</h2>
             <div className="flex justify-center w-full">
               <Search />
               <FilterDropdown />

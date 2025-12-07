@@ -2,11 +2,6 @@
   "name": "slugger-website",
   "version": "1.0.0",
   "private": true,
-  "overrides": {
-    "@esbuild-kit/core-utils": {
-      "esbuild": "^0.25.0"
-    }
-  },
   "workspaces": [
     "frontend",
     "backend"

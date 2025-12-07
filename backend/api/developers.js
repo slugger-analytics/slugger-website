@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { approveDeveloper, declineDeveloper, getPendingDevelopers } from "../services/developerService.js";
+import { approveDeveloper, declineDeveloper, getPendingDevelopers, getAllDevelopersWithWidgets } from "../services/developerService.js";
 import { requireSiteAdmin } from "../middleware/permission-guards.js";
 
 const router = Router();
@@ -51,6 +51,22 @@ router.get("/pending", requireSiteAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: `Error fetching pending developers: ${error.message}`
+    });
+  }
+});
+
+router.get("/", requireSiteAdmin, async (req, res) => {
+  try {
+    const result = await getAllDevelopersWithWidgets();
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: `Error fetching developers: ${error.message}`
     });
   }
 });

@@ -54,9 +54,9 @@ const LoginForm = () => {
 
       // Handle successful login and redirect based on user role
       if (result.user.role === "admin") {
-        router.push("/pending-developers"); // Redirect to pending widgets page for admin role
+        router.push("/pending-developers"); // Redirect to pending developers page for admin role
       } else {
-        router.push("/dashboard"); // Redirect to dashboard for other roles
+        router.push("/homepage"); // Redirect to homepage for other roles
       }
     } catch (error) {
       toast({
