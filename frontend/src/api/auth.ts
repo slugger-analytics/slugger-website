@@ -99,6 +99,41 @@ export const loginUser = async (email: string, password: string) => {
   }
 };
 
+/**
+ * Refreshes access tokens using the refresh token.
+ * 
+ * @param {string} refreshToken - The refresh token from the initial login.
+ * @returns {Promise<Object>} - New access token, id token, and expiry.
+ * @throws {Error} - Throws an error if refresh fails (user needs to re-login).
+ */
+export const refreshTokens = async (refreshToken: string): Promise<{
+  accessToken: string;
+  idToken: string;
+  expiresIn: number;
+}> => {
+  try {
+    const response = await fetch(`${API_URL}/api/users/refresh-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    const res = await response.json();
+
+    if (!res.success) {
+      throw new Error(res.message || "Token refresh failed");
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("Error refreshing tokens:", error);
+    throw error;
+  }
+};
+
 export const logoutUser = async (): Promise<boolean> => {
   try {
     const response = await fetch(`${API_URL}/api/users/logout`, {

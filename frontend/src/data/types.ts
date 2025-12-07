@@ -82,6 +82,7 @@ export interface AuthDataType {
   accessToken: string;
   idToken: string;
   refreshToken: string;
+  expiresIn: number; // Token expiry in seconds (typically 3600)
 }
 
 export interface LoginType {

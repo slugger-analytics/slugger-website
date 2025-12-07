@@ -154,7 +154,8 @@ router.post("/sign-in", async (req, res) => {
         authData: {
           accessToken: AccessToken,
           idToken: IdToken,
-          refreshToken: RefreshToken
+          refreshToken: RefreshToken,
+          expiresIn: authResult.AuthenticationResult.ExpiresIn // Token expiry in seconds (typically 3600)
         },
         user: {
           email: user.email,
@@ -198,6 +199,59 @@ router.post("/sign-in", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
+    });
+  }
+});
+
+/**
+ * POST /refresh-token
+ * Refresh access tokens using refresh token
+ */
+router.post('/refresh-token', async (req, res) => {
+  const { refreshToken } = req.body;
+  
+  if (!refreshToken) {
+    return res.status(400).json({
+      success: false,
+      message: "Refresh token is required"
+    });
+  }
+
+  const params = {
+    AuthFlow: "REFRESH_TOKEN_AUTH",
+    ClientId: process.env.COGNITO_APP_CLIENT_ID,
+    AuthParameters: {
+      REFRESH_TOKEN: refreshToken
+    }
+  };
+
+  try {
+    const authResult = await cognito.initiateAuth(params).promise();
+    const { AccessToken, IdToken, ExpiresIn } = authResult.AuthenticationResult;
+    
+    // Note: Cognito doesn't return a new refresh token on refresh
+    res.status(200).json({
+      success: true,
+      message: "Token refreshed successfully",
+      data: {
+        accessToken: AccessToken,
+        idToken: IdToken,
+        expiresIn: ExpiresIn
+      }
+    });
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    
+    if (error.code === 'NotAuthorizedException') {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token is invalid or expired. Please login again."
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: "Failed to refresh token"
     });
   }
 });

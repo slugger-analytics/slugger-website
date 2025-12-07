@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { clearUserStore } from "./userStore";
 import { clearWidgetStore } from "./widgetStore";
+import { clearAuthTokens } from "./auth-store";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -60,4 +61,5 @@ export const validatePassword = (
 export const clearStores = () => {
   clearUserStore();
   clearWidgetStore();
+  clearAuthTokens();
 };

@@ -15,6 +15,14 @@ import { useStore } from "@nanostores/react";
 import { clearStores } from "@/lib/utils";
 import { $user } from "@/lib/userStore";
 import { logoutUser, validateSession } from "@/api/auth";
+import {
+  $authTokens,
+  setAuthTokens,
+  clearAuthTokens,
+  getTokensForWidget,
+  hasValidTokens,
+  AuthUser,
+} from "@/lib/auth-store";
 
 // The AuthContextType interface defines the shape of the context object
 interface AuthContextType {
@@ -33,20 +41,50 @@ interface AuthContextType {
   // Function to log the user out
   logout: () => void;
   setLoading: Dispatch<SetStateAction<boolean>>;
+  // Function to store tokens with expiry for widget integration
+  storeTokens: (
+    tokens: {
+      accessToken: string;
+      idToken: string;
+      refreshToken: string;
+      expiresIn: number;
+    },
+    user?: {
+      id: string;
+      email: string;
+      first: string;
+      last: string;
+      role: string;
+      teamId?: string;
+      teamRole?: string;
+      is_admin?: boolean;
+    }
+  ) => void;
+  // Function to get tokens for widget PostMessage
+  getWidgetTokens: () => {
+    accessToken: string;
+    idToken: string;
+    expiresAt: number;
+    user?: AuthUser;
+  } | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+
 // The AuthProvider component provides the authentication context to its children
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // State to track if the user is authenticated
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   // State to track the ID token
   const [idToken, setIdToken] = useState<string>("");
   // State to track the access token (currently not used)
   const [accessToken, setAccessToken] = useState<string>("");
   // State to track if the authentication state is loading
   const [loading, setLoading] = useState(true);
+  // State to track authentication (deferred to avoid SSR mismatch)
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Use auth-store for authentication state
+  const tokens = useStore($authTokens);
   const user = useStore($user);
   const router = useRouter();
   const sessionChecked = useRef(false);
@@ -57,9 +95,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Only run once
       if (sessionChecked.current) return;
 
-      // Wait for user store to hydrate from localStorage
-      // If no user data after hydration, user is not logged in
+      // Check if tokens are valid in auth-store first
+      const hasTokens = hasValidTokens();
+
+      // If no user data after hydration and no valid tokens, user is not logged in
       if (!user.role || !user.id) {
+        if (hasTokens && tokens) {
+          // Tokens exist but user store not hydrated - set from tokens
+          setIdToken(tokens.idToken);
+          setAccessToken(tokens.accessToken);
+          setIsAuthenticated(true);
+        }
         setLoading(false);
         return;
       }
@@ -69,15 +115,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         // User data exists in persistent store, validate the server session
         const sessionValid = await validateSession();
+
         if (sessionValid) {
           setIsAuthenticated(true);
+          // Sync tokens from auth-store if available
+          if (tokens && hasTokens) {
+            setIdToken(tokens.idToken);
+            setAccessToken(tokens.accessToken);
+          }
         } else {
           // Session expired - clear stores
+          clearAuthTokens();
           clearStores();
         }
       } catch (error) {
         console.error("Error checking existing session:", error);
         // On error, clear stores to be safe
+        clearAuthTokens();
         clearStores();
       } finally {
         setLoading(false);
@@ -85,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkExistingSession();
-  }, [user.role, user.id]); // Re-run when user store hydrates
+  }, [user.role, user.id, tokens]);
 
   // Also set authenticated when idToken is set (after fresh login)
   useEffect(() => {
@@ -95,13 +149,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [idToken, user.role]);
 
+  // Store tokens with expiry for widget integration
+  const storeTokens = (
+    tokens: {
+      accessToken: string;
+      idToken: string;
+      refreshToken: string;
+      expiresIn: number;
+    },
+    user?: {
+      id: string;
+      email: string;
+      first: string;
+      last: string;
+      role: string;
+      teamId?: string;
+      teamRole?: string;
+      is_admin?: boolean;
+    }
+  ) => {
+    setAuthTokens(tokens, user);
+  };
+
+  // Get tokens for widget PostMessage (excludes refreshToken for security)
+  const getWidgetTokens = (): {
+    accessToken: string;
+    idToken: string;
+    expiresAt: number;
+    user?: AuthUser;
+  } | null => {
+    return getTokensForWidget();
+  };
+
   const logout = async () => {
     try {
       setLoading(true);
       await logoutUser();
+      clearAuthTokens(); // Clear auth-store tokens
       clearStores();
       router.push("/"); // Redirect to home page on logout
-      setIsAuthenticated(false);
       setAccessToken("");
       setIdToken("");
     } catch (error) {
@@ -122,6 +208,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAccessToken,
         logout,
         setLoading,
+        storeTokens,
+        getWidgetTokens,
       }}
     >
       {children}

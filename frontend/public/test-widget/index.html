@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Widget - SLUGGER SDK Demo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: #333;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .status.waiting {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .status.success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .status.error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    .info-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .info-label {
+      font-weight: 500;
+      color: #666;
+      min-width: 120px;
+    }
+    .info-value {
+      color: #333;
+    }
+    .token-preview {
+      background: #f3f4f6;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    .log-container {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .log-entry {
+      margin-bottom: 4px;
+    }
+    .log-entry.info { color: #60a5fa; }
+    .log-entry.success { color: #34d399; }
+    .log-entry.error { color: #f87171; }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1 class="card-title">Test Widget - SLUGGER SDK Demo</h1>
+      <p style="color: #666; font-size: 14px;">
+        This widget demonstrates the PostMessage authentication protocol.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Authentication Status</h2>
+      <div class="info-row">
+        <span class="info-label">Status:</span>
+        <span id="auth-status" class="status waiting">Waiting for tokens...</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">User Email:</span>
+        <span id="user-email" class="info-value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">User ID:</span>
+        <span id="user-id" class="info-value">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Token Expires:</span>
+        <span id="token-expires" class="info-value">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Access Token Preview</h2>
+      <div id="token-preview" class="token-preview">
+        Waiting for token...
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">API Test</h2>
+      <button id="test-api-btn" disabled>Test API Call (/api/users/me)</button>
+      <div id="api-result" style="margin-top: 12px;"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Event Log</h2>
+      <div id="log-container" class="log-container">
+        <div class="log-entry info">[Init] Widget loaded, sending SLUGGER_WIDGET_READY...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let auth = null;
+    const ALLOWED_ORIGINS = [
+      'http://localhost:3000',
+      'http://slugger-alb-1518464736.us-east-2.elb.amazonaws.com',
+      'https://alpb-analytics.com',
+      'https://www.alpb-analytics.com'
+    ];
+    let shellOrigin = null;
+
+    // DOM elements
+    const authStatus = document.getElementById('auth-status');
+    const userEmail = document.getElementById('user-email');
+    const userId = document.getElementById('user-id');
+    const tokenExpires = document.getElementById('token-expires');
+    const tokenPreview = document.getElementById('token-preview');
+    const logContainer = document.getElementById('log-container');
+    const testApiBtn = document.getElementById('test-api-btn');
+    const apiResult = document.getElementById('api-result');
+
+    // Logging
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logContainer.appendChild(entry);
+      logContainer.scrollTop = logContainer.scrollHeight;
+      console.log(`[TestWidget] ${message}`);
+    }
+
+    // Decode JWT payload
+    function decodeJWT(token) {
+      try {
+        const payload = token.split('.')[1];
+        return JSON.parse(atob(payload));
+      } catch (e) {
+        log('Failed to decode JWT: ' + e.message, 'error');
+        return null;
+      }
+    }
+
+    // Handle auth message
+    function handleAuth(payload, origin) {
+      shellOrigin = origin;
+      
+      const decoded = decodeJWT(payload.idToken);
+      if (!decoded) {
+        authStatus.textContent = 'Error: Invalid token';
+        authStatus.className = 'status error';
+        return;
+      }
+
+      auth = {
+        accessToken: payload.accessToken,
+        idToken: payload.idToken,
+        expiresAt: payload.expiresAt,
+        user: {
+          id: decoded.sub,
+          email: decoded.email,
+          emailVerified: decoded.email_verified,
+          firstName: decoded.given_name,
+          lastName: decoded.family_name
+        }
+      };
+
+      // Update UI
+      authStatus.textContent = 'Authenticated';
+      authStatus.className = 'status success';
+      userEmail.textContent = auth.user.email;
+      userId.textContent = auth.user.id;
+      tokenExpires.textContent = new Date(auth.expiresAt).toLocaleString();
+      tokenPreview.textContent = auth.accessToken.substring(0, 100) + '...';
+      testApiBtn.disabled = false;
+
+      log(`Authenticated as ${auth.user.email}`, 'success');
+    }
+
+    // Message listener
+    window.addEventListener('message', (event) => {
+      // Validate origin
+      if (!ALLOWED_ORIGINS.includes(event.origin)) {
+        log(`Ignored message from unknown origin: ${event.origin}`, 'error');
+        return;
+      }
+
+      const { type, payload } = event.data || {};
+
+      if (type === 'SLUGGER_AUTH') {
+        log(`Received SLUGGER_AUTH from ${event.origin}`, 'success');
+        handleAuth(payload, event.origin);
+      }
+    });
+
+    // Send ready signal
+    function sendReady() {
+      window.parent.postMessage({
+        type: 'SLUGGER_WIDGET_READY',
+        widgetId: 'test-widget'
+      }, '*');
+      log('Sent SLUGGER_WIDGET_READY to parent', 'info');
+    }
+
+    // Test API call
+    testApiBtn.addEventListener('click', async () => {
+      if (!auth) {
+        apiResult.innerHTML = '<span style="color: #991b1b;">Not authenticated</span>';
+        return;
+      }
+
+      apiResult.innerHTML = '<span style="color: #666;">Loading...</span>';
+      log('Making API call to /api/users/me...', 'info');
+
+      try {
+        const response = await fetch(`${shellOrigin}/api/users/me`, {
+          headers: {
+            'Authorization': `Bearer ${auth.accessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          apiResult.innerHTML = `<pre style="background: #d1fae5; padding: 8px; border-radius: 4px; font-size: 12px;">${JSON.stringify(data, null, 2)}</pre>`;
+          log('API call successful', 'success');
+        } else {
+          apiResult.innerHTML = `<span style="color: #991b1b;">Error: ${data.message || response.statusText}</span>`;
+          log(`API call failed: ${data.message || response.statusText}`, 'error');
+        }
+      } catch (error) {
+        apiResult.innerHTML = `<span style="color: #991b1b;">Error: ${error.message}</span>`;
+        log(`API call error: ${error.message}`, 'error');
+      }
+    });
+
+    // Initialize
+    sendReady();
+  </script>
+</body>
+</html>

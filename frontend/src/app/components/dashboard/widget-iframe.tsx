@@ -8,6 +8,14 @@ import { WidgetTab, markIframeLoaded, isIframeLoaded } from "@/lib/tabStore";
 import { $user } from "@/lib/userStore";
 import { generateToken } from "@/api/user";
 import { recordWidgetInteraction } from "@/api/widget";
+import {
+    getTokensForWidget,
+    shouldRefreshTokens,
+    getTimeUntilExpiry,
+    getRefreshToken,
+    updateTokensAfterRefresh
+} from "@/lib/auth-store";
+import { refreshTokens } from "@/api/auth";
 
 interface WidgetIframeProps {
     tab: WidgetTab;
@@ -48,6 +56,10 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    // PostMessage state
+    const [widgetOrigin, setWidgetOrigin] = useState<string | null>(null);
+    const [isWidgetReady, setIsWidgetReady] = useState(false);
+
     // Track if iframe has been initialized (src set once)
     const iframeInitializedRef = useRef(false);
     // Track if interaction has been recorded to prevent duplicate recordings on retry
@@ -56,6 +68,45 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     // Store the initial URL to prevent changes
     const initialUrlRef = useRef<string | null>(null);
+
+    /**
+     * Sends authentication tokens to the widget via PostMessage.
+     * Only sends if iframe is ready and origin is validated.
+     */
+    const sendTokensToWidget = useCallback(() => {
+        // Validate iframe contentWindow exists
+        if (!iframeRef.current?.contentWindow) {
+            console.warn(`[WidgetIframe] Cannot send tokens: iframe contentWindow not available`);
+            return;
+        }
+
+        // Validate widgetOrigin is set
+        if (!widgetOrigin) {
+            console.warn(`[WidgetIframe] Cannot send tokens: widgetOrigin not set`);
+            return;
+        }
+
+        // Get tokens from auth store
+        const tokens = getTokensForWidget();
+        if (!tokens) {
+            console.log(`[WidgetIframe] No tokens available to send to ${tab.name}`);
+            return;
+        }
+
+        // Send SLUGGER_AUTH message
+        const message = {
+            type: "SLUGGER_AUTH",
+            payload: {
+                accessToken: tokens.accessToken,
+                idToken: tokens.idToken,
+                expiresAt: tokens.expiresAt,
+                user: tokens.user,
+            },
+        };
+
+        console.log(`[WidgetIframe] Sending SLUGGER_AUTH to ${tab.name} at origin ${widgetOrigin}`);
+        iframeRef.current.contentWindow.postMessage(message, widgetOrigin);
+    }, [widgetOrigin, tab.name]);
 
     /**
      * Builds the iframe URL, injecting token for restricted widgets.
@@ -107,6 +158,141 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
             setIsLoading(false);
         }
     }, [tab.url, tab.restrictedAccess, tab.publicId, tab.widgetId, user.id]);
+
+    // Parse origin from widget URL for PostMessage validation
+    useEffect(() => {
+        if (tab.url) {
+            try {
+                const url = new URL(tab.url, window.location.origin);
+                const origin = url.origin;
+                setWidgetOrigin(origin);
+                console.log(`[WidgetIframe] Parsed origin for ${tab.name}:`, origin);
+            } catch (err) {
+                console.error(`[WidgetIframe] Failed to parse origin from URL: ${tab.url}`, err);
+                setWidgetOrigin(null);
+            }
+        }
+    }, [tab.url, tab.name]);
+
+    // Listen for PostMessage events from widget
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            // Validate message origin matches widget origin
+            if (!widgetOrigin || event.origin !== widgetOrigin) {
+                // Silently ignore messages from other origins
+                return;
+            }
+
+            const messageType = event.data?.type;
+
+            if (messageType === "SLUGGER_WIDGET_READY") {
+                console.log(`[WidgetIframe] Received SLUGGER_WIDGET_READY from ${tab.name}`);
+                setIsWidgetReady(true);
+                sendTokensToWidget();
+            } else if (messageType === "SLUGGER_TOKEN_REFRESH") {
+                console.log(`[WidgetIframe] Received SLUGGER_TOKEN_REFRESH from ${tab.name}`);
+
+                // Check if tokens need refresh
+                if (shouldRefreshTokens()) {
+                    console.log(`[WidgetIframe] Tokens need refresh, refreshing...`);
+                    const refreshToken = getRefreshToken();
+                    if (refreshToken) {
+                        refreshTokens(refreshToken)
+                            .then((newTokens) => {
+                                updateTokensAfterRefresh(newTokens);
+                                sendTokensToWidget();
+                            })
+                            .catch((err) => {
+                                console.error(`[WidgetIframe] Token refresh failed:`, err);
+                            });
+                    } else {
+                        console.warn(`[WidgetIframe] No refresh token available`);
+                    }
+                } else {
+                    // Tokens are still valid, just send them
+                    console.log(`[WidgetIframe] Tokens still valid, sending current tokens`);
+                    sendTokensToWidget();
+                }
+            }
+        };
+
+        window.addEventListener("message", handleMessage);
+
+        return () => {
+            window.removeEventListener("message", handleMessage);
+        };
+    }, [widgetOrigin, tab.name, sendTokensToWidget]);
+
+    // Send tokens when tab becomes visible
+    useEffect(() => {
+        if (isVisible && isWidgetReady) {
+            console.log(`[WidgetIframe] Tab ${tab.name} became visible, sending tokens`);
+            sendTokensToWidget();
+        }
+    }, [isVisible, isWidgetReady, tab.name, sendTokensToWidget]);
+
+    // Proactive token refresh - triggers 5 minutes before expiry
+    useEffect(() => {
+        const REFRESH_THRESHOLD = 5 * 60 * 1000; // 5 minutes in milliseconds
+        let refreshTimer: NodeJS.Timeout | null = null;
+
+        const scheduleRefresh = () => {
+            // Clear any existing timer
+            if (refreshTimer) {
+                clearTimeout(refreshTimer);
+                refreshTimer = null;
+            }
+
+            // Get time until expiry
+            const timeUntilExpiry = getTimeUntilExpiry();
+
+            if (timeUntilExpiry <= 0) {
+                console.log(`[WidgetIframe] Tokens already expired`);
+                return;
+            }
+
+            // Calculate when to trigger refresh (5 minutes before expiry)
+            const timeUntilRefresh = Math.max(0, timeUntilExpiry - REFRESH_THRESHOLD);
+
+            console.log(`[WidgetIframe] Scheduling token refresh in ${Math.round(timeUntilRefresh / 1000)}s`);
+
+            refreshTimer = setTimeout(() => {
+                console.log(`[WidgetIframe] Proactive token refresh triggered for ${tab.name}`);
+                const refreshToken = getRefreshToken();
+
+                if (refreshToken) {
+                    refreshTokens(refreshToken)
+                        .then((newTokens) => {
+                            console.log(`[WidgetIframe] Tokens refreshed successfully`);
+                            updateTokensAfterRefresh(newTokens);
+
+                            // Send updated tokens to widget if it's ready
+                            if (isWidgetReady) {
+                                sendTokensToWidget();
+                            }
+
+                            // Schedule next refresh
+                            scheduleRefresh();
+                        })
+                        .catch((err) => {
+                            console.error(`[WidgetIframe] Proactive token refresh failed:`, err);
+                        });
+                } else {
+                    console.warn(`[WidgetIframe] No refresh token available for proactive refresh`);
+                }
+            }, timeUntilRefresh);
+        };
+
+        // Schedule initial refresh
+        scheduleRefresh();
+
+        // Cleanup on unmount
+        return () => {
+            if (refreshTimer) {
+                clearTimeout(refreshTimer);
+            }
+        };
+    }, [tab.name, isWidgetReady, sendTokensToWidget]);
 
     // Build URL on mount - only once
     useEffect(() => {
