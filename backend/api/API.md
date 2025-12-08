@@ -17,6 +17,7 @@ This document lists all available API endpoints and their required permissions.
 | POST | `/developers/pending/:developerId/approve` | Site Admin | Approve a pending developer |
 | POST | `/developers/pending/:developerId/decline` | Site Admin | Decline a pending developer |
 | GET | `/developers/pending` | Site Admin | Get all pending developers |
+| GET | `/developers` | Site Admin | Get all developers with their widgets |
 
 ## League Data Endpoints (`/league`)
 
@@ -35,6 +36,7 @@ This document lists all available API endpoints and their required permissions.
 | GET | `/teams/:teamId/members/:memberId` | Team Membership | Get team member by ID |
 | POST | `/teams/:teamId/members/:memberId/promote` | Team Admin | Promote team member |
 | POST | `/teams/:teamId/members/:memberId/demote` | Team Admin | Demote team member |
+| POST | `/teams/:teamId/members/:memberId/role` | Team Admin | Update team member's role |
 | PATCH | `/teams/:teamId/members/:memberId` | Team Admin | Change member's team |
 | POST | `/teams/:teamId/invite` | Team Admin | Generate team invite link |
 | POST | `/teams/validate-invite` | None | Validate team invite token |
@@ -58,6 +60,7 @@ This document lists all available API endpoints and their required permissions.
 | GET | `/users` | Authentication | Get user data by ID |
 | POST | `/users/sign-up` | None | Register a new user |
 | POST | `/users/sign-in` | None | Authenticate user |
+| POST | `/users/refresh-token` | None | Refresh access tokens using refresh token |
 | POST | `/users/logout` | None | Logout user |
 | PATCH | `/users/add-favorite` | Authentication | Add widget to favorites |
 | PATCH | `/users/remove-favorite` | Authentication | Remove widget from favorites |
@@ -68,6 +71,7 @@ This document lists all available API endpoints and their required permissions.
 | POST | `/users/send-password-reset-email` | None | Send password reset email |
 | POST | `/users/reset-password` | None | Reset user password |
 | PATCH | `/users` | Authentication | Update user profile |
+| DELETE | `/users` | Authentication | Delete user account (self) or delete another user (Site Admin only) |
 
 ## Widget Category Endpoints (`/widget-categories`)
 
