@@ -33,9 +33,9 @@ export default function RecentGameResults() {
     if (error) return <div className="text-red-600">{error}</div>;
     if (!games || games.length === 0) return <div>No recent games available</div>;
 
-    // Render each game using the presentational component as horizontal tiles
+    // Render each game using the presentational component as vertical tiles
     return (
-        <div className="flex gap-3 overflow-x-auto py-2">
+        <div className="flex flex-col items-center gap-3 py-2 max-h-[400px] overflow-y-auto pr-4">
             {games.map((g: RecentGame, idx: number) => (
                 <RecentGameResult key={g.game_id ?? idx} game={g} />
             ))}

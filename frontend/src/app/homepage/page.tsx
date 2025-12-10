@@ -88,12 +88,12 @@ export default function HomePage() {
               </div>*/}
 
               {/* ---------- ANOTHER ROW OF PLACEHOLDERS ---------- */}
-              <div className="col-span-2 row-span-1 bg-white rounded-xl shadow p-4">
+              <div className="col-span-2 row-span-1 bg-white rounded-xl shadow p-4 flex flex-col">
                 <h2 className="text-xl font-semibold text-gray-900 mb-2 text-center">
                   Recent Games
                 </h2>
 
-                <div className="flex-1 flex items-center">
+                <div className="flex-1 flex justify-center overflow-hidden">
                   <RecentGameResults />
                 </div>
               </div>
