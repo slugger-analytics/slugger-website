@@ -17,24 +17,18 @@ export default function RecentGameResult({ game }: Props) {
 
   const home =
     game.home_team_name ||
-    game.home_team ||
-    game.home ||
     "Home";
 
   const away =
     game.visiting_team_name ||
-    game.visiting_team ||
-    game.away ||
     "Away";
 
   const homeScore =
-    game.home_score ??
     game.home_team_score ??
     null;
 
   const awayScore =
-    game.visiting_score ??
-    game.away_score ??
+    game.visiting_team_score ??
     null;
 
   const status = game.game_status || "";

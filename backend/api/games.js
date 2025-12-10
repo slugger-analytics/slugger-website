@@ -28,8 +28,8 @@ router.get("/", async (req, res) => {
 
         -- New fields from Pointstreak
         g.pointstreak_game_id,
-        g.home_score,
-        g.visiting_score,
+        g.home_team_score,
+        g.visiting_team_score,
         g.game_status,
         g.innings_played,
         g.regulation_innings,
