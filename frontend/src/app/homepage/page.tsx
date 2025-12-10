@@ -17,7 +17,7 @@ import { $favWidgetIds } from "@/lib/widgetStore";
 import { $user } from "@/lib/userStore";
 import StatLeaders from "../around-league/StatLeaders";
 import Standings from "../around-league/Standings";
-
+import RecentGameResults from "@/app/components/dashboard/recent-game-results";
 
 export default function HomePage() {
   const user = useStore($user);
@@ -59,15 +59,15 @@ export default function HomePage() {
               </div>
 
               {/* ---------- (TOP RIGHT) ---------- */}
-<div className="col-span-2 row-span-1 bg-white rounded-xl shadow p-2 flex flex-col">
-  <h1 className="text-2xl font-bold text-center mb-1">{`${year} Current Leaders`}</h1>
+              <div className="col-span-2 row-span-1 bg-white rounded-xl shadow p-2 flex flex-col">
+                <h1 className="text-2xl font-bold text-center mb-1">{`${year} Current Leaders`}</h1>
 
-  <div className="flex-1 overflow-y-auto flex justify-center">
-    <div className="w-fit text-center">
-      <Standings setYear={setYear} maxTeams={1} compact />
-    </div>
-  </div>
-</div>
+                <div className="flex-1 overflow-y-auto flex justify-center">
+                  <div className="w-fit text-center">
+                    <Standings setYear={setYear} maxTeams={1} compact />
+                  </div>
+                </div>
+              </div>
 
 
               {/* ---------- MIDDLE GRID: PLACEHOLDERS FOR YOUR 5 ITEMS ---------- 
@@ -89,15 +89,20 @@ export default function HomePage() {
 
               {/* ---------- ANOTHER ROW OF PLACEHOLDERS ---------- */}
               <div className="col-span-2 row-span-1 bg-white rounded-xl shadow p-4">
-                <h2 className="text-2xl font-semibold mb-4">Recent League Games</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-2 text-center">
+                  Recent Games
+                </h2>
+
+                <div className="flex-1 flex items-center">
+                  <RecentGameResults />
+                </div>
               </div>
 
               <div className="col-span-2 row-span-1 bg-white rounded-xl shadow p-4">
                 {/* ---------- FAVORITES (BOTTOM RIGHT) ---------- */}
-                <h2 className="text-2xl font-semibold text-gray-900 mb-3">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2 text-center">
                   Favorite Widgets
                 </h2>
-
                 {widgetsLoading ? (
                   <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
                     Loading favorites...

@@ -103,12 +103,24 @@ export function clearWidgetStore() {
   $categories.set([]);
 }
 
+export const $recentWidgetIds = atom<number[]>([]);
+
+export function addRecentWidget(id: number) {
+  const current = $recentWidgetIds.get();
+  const next = [id, ...current.filter((x) => x !== id)].slice(0, 4);
+  $recentWidgetIds.set(next);
+}
+
 export function setStandings(standings: LeagueStandingsData) {
   $standings.set(standings);
 }
 
 export function setLeagueLeaders(leaders: LeagueLeadersData) {
   $leagueLeaders.set(leaders);
+}
+
+export function clearRecentWidgets() {
+  $recentWidgetIds.set([]);
 }
 
 // Adds a new widget to the $widgets store and increments the widgets version
