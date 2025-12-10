@@ -12,6 +12,8 @@ import {
   $sortBy,
   $sortDirection,
   $timeFrame,
+  $recentWidgetIds,
+  clearRecentWidgets,
 } from "@/lib/widgetStore";
 import { $user } from "@/lib/userStore";
 import { useStore } from "@nanostores/react";
@@ -19,7 +21,7 @@ import { useStore } from "@nanostores/react";
 export default function Widgets() {
   const [loading, setLoading] = useState(true);
   const [isDev, setIsDev] = useState(false);
-
+  const [hasLoadedRecents, setHasLoadedRecents] = useState(false);
   const { widgets } = useQueryWidgets();
 
   const widgetsVersion = useStore($widgetsVersion);
@@ -32,6 +34,7 @@ export default function Widgets() {
   const sortBy = useStore($sortBy);
   const sortDirection = useStore($sortDirection);
   const timeFrame = useStore($timeFrame);
+  const recentWidgetIds = useStore($recentWidgetIds);
 
   /**
    * Sets the user role (whether the user is a "Widget Developer").
@@ -54,6 +57,41 @@ export default function Widgets() {
   useEffect(() => {
     setUserRole();
   }, [user.id, user.role]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    if (typeof window === "undefined") return;
+
+    try {
+      const key = `recentWidgets_${user.id}`;
+      const raw = window.localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          $recentWidgetIds.set(parsed);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load recent widgets from localStorage", e);
+    } finally {
+      // mark that we've attempted the load (even if nothing was there)
+      setHasLoadedRecents(true);
+    }
+  }, [user?.id]);
+
+  // --- Persist recent widgets to localStorage whenever they change ---
+  useEffect(() => {
+    if (!user?.id) return;
+    if (typeof window === "undefined") return;
+    if (!hasLoadedRecents) return; // 👈 DO NOT SAVE UNTIL INITIAL LOAD IS DONE
+
+    try {
+      const key = `recentWidgets_${user.id}`;
+      window.localStorage.setItem(key, JSON.stringify(recentWidgetIds));
+    } catch (e) {
+      console.error("Failed to save recent widgets to localStorage", e);
+    }
+  }, [recentWidgetIds, user?.id, hasLoadedRecents]);
 
   /**
    * Filters the widgets based on:
@@ -138,24 +176,76 @@ export default function Widgets() {
     sortBy,
     sortDirection,
     timeFrame,
+    activeCategoryIds,
   ]);
 
   if (loading) {
     return <p>Loading widgets...</p>;
   }
+  if (!filteredWidgets.length) {
+    return (
+      <p className="px-4 text-sm text-muted-foreground">No widgets found.</p>
+    );
+  }
+
+  // --- Build Recent from "4 most recently clicked" that also match filters ---
+  const recentFromStore = recentWidgetIds
+    .map((id) => filteredWidgets.find((w) => w.id === id))
+    .filter((w): w is WidgetType => Boolean(w));
+
+  const recentWidgets = recentFromStore.slice(0, 4);
+  const recentIdsSet = new Set(recentWidgets.map((w) => w.id));
+
+  // All = everything else
+  const allWidgets = filteredWidgets.filter((w) => !recentIdsSet.has(w.id));
+
 
   return (
-    <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4">
-      {filteredWidgets.map((widget: WidgetType) => (
-        <Widget
-          key={widget.id}
-          {...widget}
-          isDev={isDev}
-          visibility={widget.visibility ?? "Private"}
-          isFavorite={favWidgetIds.has(widget.id)}
-          categories={widget.categories}
-        />
-      ))}
+    <div className="flex flex-col w-full gap-10">
+      {/* Recent section */}
+      {recentWidgets.length > 0 && (
+        <section>
+          <div className="flex items-center justify-between px-4 mb-4">
+            <h2 className="text-lg font-semibold">Recent</h2>
+
+            <button
+              onClick={clearRecentWidgets}
+              className="text-sm text-gray-500 hover:text-gray-700 underline"
+            >
+              Clear Recent
+            </button>
+          </div>
+          <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            {recentWidgets.map((widget: WidgetType) => (
+              <Widget
+                key={widget.id}
+                {...widget}
+                isDev={isDev}
+                visibility={widget.visibility ?? "Private"}
+                isFavorite={favWidgetIds.has(widget.id)}
+                categories={widget.categories}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* All section – 4 across at xl */}
+      <section>
+        <h2 className="px-4 mb-4 text-lg font-semibold">All</h2>
+        <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {allWidgets.map((widget: WidgetType) => (
+            <Widget
+              key={widget.id}
+              {...widget}
+              isDev={isDev}
+              visibility={widget.visibility ?? "Private"}
+              isFavorite={favWidgetIds.has(widget.id)}
+              categories={widget.categories}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

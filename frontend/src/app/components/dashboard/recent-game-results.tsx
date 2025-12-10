@@ -42,3 +42,54 @@ export default function RecentGameResults() {
         </div>
     );
 }
+
+{/** mock data
+    "use client";
+
+import React from "react";
+import RecentGameResult from "./recent-game-result";
+
+// Temporary placeholder games
+const MOCK_GAMES = [
+  {
+    game_id: 1,
+    date: "2024-08-25",
+    home_score: 5,
+    visiting_score: 3,
+    home_team: "Barnstormers",
+    visiting_team: "Revolution",
+    game_status: "Final",
+    field: "Clipper Magazine Stadium",
+  },
+  {
+    game_id: 2,
+    date: "2024-08-24",
+    home_score: 2,
+    visiting_score: 4,
+    home_team: "Ducks",
+    visiting_team: "Blue Crabs",
+    game_status: "Final",
+    field: "Fairfield Properties Ballpark",
+  },
+  {
+    game_id: 3,
+    date: "2024-08-23",
+    home_score: 8,
+    visiting_score: 1,
+    home_team: "Dirty Birds",
+    visiting_team: "Honey Hunters",
+    game_status: "Final",
+    field: "GoMart Ballpark",
+  },
+];
+
+export default function RecentGameResults() {
+  return (
+    <div className="flex gap-3 overflow-x-auto py-2">
+      {MOCK_GAMES.map((g) => (
+        <RecentGameResult key={g.game_id} game={g} />
+      ))}
+    </div>
+  );
+}
+ */}

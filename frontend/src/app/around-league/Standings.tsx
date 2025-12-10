@@ -23,9 +23,11 @@ import {
 
 type AroundLeagueProps = {
   setYear: React.Dispatch<React.SetStateAction<string>>;
+  maxTeams?: number;
+  compact?: boolean;
 };
 
-const Standings = ({ setYear }: AroundLeagueProps) => {
+const Standings = ({ setYear, maxTeams, compact }: AroundLeagueProps) => {
   const { loadStandings } = useQueryLeague();
 
   const [standingsData, setStandingsData] = useState<Division[]>([]);
@@ -68,7 +70,12 @@ const Standings = ({ setYear }: AroundLeagueProps) => {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-sm border mb-8 w-[50%] max-w-[calc(100%-2rem)] min-w-[360px]">
+<div
+  className={`flex flex-col items-center justify-center rounded-lg ${
+    compact ? "p-0 mb-0 bg-transparent shadow-none border-none" : "p-6 bg-white shadow-sm border mb-8 w-[50%]"
+  }`}
+>
+  {!compact && (
       <Tabs
         defaultValue="OVERALL"
         className="w-[400px] flex justify-center mb-5"
@@ -88,6 +95,7 @@ const Standings = ({ setYear }: AroundLeagueProps) => {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+  )}
       <div>
         {standingsData.map((division) => (
           <div key={division.name} className="mb-5">
@@ -105,29 +113,32 @@ const Standings = ({ setYear }: AroundLeagueProps) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {division.team.map((team, index) => (
-                  <TableRow key={index} className="">
-                    <TableCell className="border border-gray-300 p-2">
-                      {team.teamname}
-                    </TableCell>
-                    <TableCell className="border border-gray-300 p-2">
-                      {team.wins}
-                    </TableCell>
-                    <TableCell className="border border-gray-300 p-2">
-                      {team.losses}
-                    </TableCell>
-                    <TableCell className="border border-gray-300 p-2">
-                      {team.pct}
-                    </TableCell>
-                    <TableCell className="border border-gray-300 p-2">
-                      {team.streak}
-                    </TableCell>
-                    <TableCell className="border border-gray-300 p-2">
-                      {team.last10}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {(maxTeams ? division.team.slice(0, maxTeams) : division.team).map(
+                  (team, index) => (
+                    <TableRow key={index} className="">
+                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
+                        {team.teamname}
+                      </TableCell>
+                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
+                        {team.wins}
+                      </TableCell>
+                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
+                        {team.losses}
+                      </TableCell>
+                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
+                        {team.pct}
+                      </TableCell>
+                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
+                        {team.streak}
+                      </TableCell>
+                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
+                        {team.last10}
+                      </TableCell>
+                    </TableRow>
+                  ),
+                )}
               </TableBody>
+
             </Table>
           </div>
         ))}

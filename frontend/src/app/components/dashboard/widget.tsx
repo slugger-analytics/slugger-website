@@ -25,6 +25,7 @@ import CategoryTag from "./category-tag";
 import { prettyNumber } from "@based/pretty-number";
 import { callGetWidgetCollaborators } from "@/app/hooks/use-query-widgets";
 import { openWidgetTab } from "@/lib/tabStore";
+import { addRecentWidget } from "@/lib/widgetStore";
 
 interface WidgetProps extends WidgetType {
   isDev: boolean;
@@ -66,6 +67,7 @@ export default function Widget({
    * Requirements: 2.1
    */
   const handleLaunch = () => {
+    addRecentWidget(id); 
     if (redirectLink) {
       openWidgetTab({
         id,
@@ -106,7 +108,7 @@ export default function Widget({
   };
 
   return (
-    <Card className="w-[300px] flex flex-col min-h-[400px]">
+    <Card className="w-[260px] flex flex-col min-h-[350px]">
       {/* Image Section */}
       <div className="flex justify-center w-full mb-3">
         <div className="h-[150px] py-4 bg-gray-50 w-full flex justify-center items-center rounded-t-xl">
