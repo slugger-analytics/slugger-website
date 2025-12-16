@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchRecentGames, RecentGame } from "@/api/games";
+import { fetchRecentScores, RecentScore } from "@/api/scores";
 import RecentGameResult from "./recent-game-result";
 
 export default function RecentGameResults() {
-    const [games, setGames] = useState<RecentGame[] | null>(null);
+    const [games, setGames] = useState<RecentScore[] | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -14,7 +14,7 @@ export default function RecentGameResults() {
 
         (async () => {
             try {
-                const data = await fetchRecentGames(3);
+                const data = await fetchRecentScores(3);
                 if (mounted) setGames(data);
             } catch (err: any) {
                 console.error(err);
@@ -36,7 +36,7 @@ export default function RecentGameResults() {
     // Render each game using the presentational component as vertical tiles
     return (
         <div className="flex flex-col items-center gap-3 py-2 max-h-[400px] overflow-y-auto pr-4">
-            {games.map((g: RecentGame, idx: number) => (
+            {games.map((g: RecentScore, idx: number) => (
                 <RecentGameResult key={g.game_id ?? idx} game={g} />
             ))}
         </div>

@@ -1,40 +1,22 @@
 "use client";
 
-import { RecentGame } from "@/api/games";
+import { RecentScore } from "@/api/scores";
 
 type Props = {
-  game: RecentGame;
+  game: RecentScore;
 };
 
-export default function RecentGameResult({ game }: Props) {
+export default function RecentScoreResult({ game }: Props) {
   // ---------- FIELD NORMALIZATION ----------
-  const rawDate =
-    game.date ||
-    game.game_date ||
-    game.gameDate ||
-    game.created_at ||
-    "";
-
-  const home =
-    game.home_team_name ||
-    "Home";
-
-  const away =
-    game.visiting_team_name ||
-    "Away";
-
-  const homeScore =
-    game.home_team_score ??
-    null;
-
-  const awayScore =
-    game.visiting_team_score ??
-    null;
-
+  const rawDate = game.date
+  const home = game.home_team_name
+  const away = game.visiting_team_name
+  const homeScore = game.home_team_score
+  const awayScore = game.visiting_team_score
   const status = game.game_status || "";
-  const inningsPlayed = game.innings_played || null;
-  const regulation = game.regulation_innings || null;
-  const fieldName = game.field || game.ballpark_name || "";
+  const inningsPlayed = game.innings_played
+  const regulation = game.regulation_innings
+  const fieldName = game.field
   const gametime = game.gametime || "";
   const timezone = game.timezone || "";
 
