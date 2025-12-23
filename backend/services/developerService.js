@@ -65,17 +65,17 @@ export async function approveDeveloper(requestId) {
       Username: developer.email
     }).promise();
 
-    // Create user in our database
+    // Create user in our database (using the transaction client)
     const newUser = await createUser({
       cognitoUserId: developer.cognito_user_id,
       email: developer.email,
       first: developer.first_name,
       last: developer.last_name,
       role: 'widget developer'
-    });
+    }, client);
 
-    // Generate API key
-    const apiKey = await generateApiKeyForUser(newUser.user_id, developer.email);
+    // Generate API key (pass transaction client so API key save is part of transaction)
+    const apiKey = await generateApiKeyForUser(newUser.user_id, developer.email, client);
 
     // Send API key email
     await sendApiKeyEmail(developer.email, apiKey);
