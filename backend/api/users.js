@@ -161,6 +161,16 @@ router.post("/sign-in", async (req, res) => {
       path: '/' // Available to all routes including /widgets/*
     });
 
+    // Set user name cookie for widgets to display user's name
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+    res.cookie('sluggerUserName', fullName, {
+      httpOnly: false, // Allow JavaScript access for display purposes
+      secure: useSecureCookies,
+      sameSite: useSecureCookies ? 'none' : 'lax',
+      maxAge: authResult.AuthenticationResult.ExpiresIn * 1000,
+      path: '/'
+    });
+
     res.status(200).json({
       success: true,
       message: "Login successful",
