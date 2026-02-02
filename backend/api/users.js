@@ -147,6 +147,20 @@ router.post("/sign-in", async (req, res) => {
 
     req.session.user = user; // IMPORTANT stores session in req body
 
+    // Set accessToken as HTTP cookie for widget authentication
+    // This enables widgets on the same domain to authenticate via cookies
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isLocalDev = process.env.LOCAL_DEV === 'true';
+    const useSecureCookies = isProduction && !isLocalDev;
+    
+    res.cookie('accessToken', AccessToken, {
+      httpOnly: true,
+      secure: useSecureCookies,
+      sameSite: useSecureCookies ? 'none' : 'lax',
+      maxAge: authResult.AuthenticationResult.ExpiresIn * 1000, // Convert seconds to milliseconds
+      path: '/' // Available to all routes including /widgets/*
+    });
+
     res.status(200).json({
       success: true,
       message: "Login successful",
@@ -228,6 +242,19 @@ router.post('/refresh-token', async (req, res) => {
   try {
     const authResult = await cognito.initiateAuth(params).promise();
     const { AccessToken, IdToken, ExpiresIn } = authResult.AuthenticationResult;
+    
+    // Update accessToken cookie with refreshed token
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isLocalDev = process.env.LOCAL_DEV === 'true';
+    const useSecureCookies = isProduction && !isLocalDev;
+    
+    res.cookie('accessToken', AccessToken, {
+      httpOnly: true,
+      secure: useSecureCookies,
+      sameSite: useSecureCookies ? 'none' : 'lax',
+      maxAge: ExpiresIn * 1000,
+      path: '/'
+    });
     
     // Note: Cognito doesn't return a new refresh token on refresh
     res.status(200).json({
