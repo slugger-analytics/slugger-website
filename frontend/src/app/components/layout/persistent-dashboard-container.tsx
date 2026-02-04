@@ -34,7 +34,7 @@ export default function PersistentDashboardContainer() {
     const { widgetsLoading } = useQueryWidgets();
 
     // Determine if widgets/dashboard page should be visible based on current route
-    const isDashboardRoute = pathname === "/dashboard";
+    const isDashboardRoute = pathname === "/widgets";
     const isVisible = isDashboardRoute && isAuthenticated;
 
     // Initialize tab store once when component mounts
