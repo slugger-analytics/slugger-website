@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/app/components/app-sidebar";
 import {
   SidebarInset,
@@ -12,17 +13,28 @@ import { useStore } from "@nanostores/react";
 import { useAuth } from "../contexts/AuthContext";
 import DashboardLoading from "../components/dashboard/dashboard-loading";
 import DashboardContent from "../components/dashboard/dashboard-content";
-import { $favWidgetIds } from "@/lib/widgetStore";
+import { $favWidgetIds, addRecentWidget } from "@/lib/widgetStore";
+import { openWidgetTab } from "@/lib/tabStore";
 import { $user } from "@/lib/userStore";
 import StatLeaders from "../around-league/StatLeaders";
 import Standings from "../around-league/Standings";
 import RecentGameResults from "@/app/components/dashboard/recent-game-results";
+import { AngleIcon } from "@radix-ui/react-icons";
 
 export default function HomePage() {
+  const router = useRouter();
   const user = useStore($user);
   const favWidgetIds = useStore($favWidgetIds) as Set<number>;
   const [year, setYear] = useState("");
   const { widgets, widgetsLoading } = useQueryWidgets();
+
+  const handleFavoriteWidgetClick = (widget: (typeof widgets)[number]) => {
+    addRecentWidget(widget.id);
+    if (widget.redirectLink) {
+      openWidgetTab(widget);
+      router.push("/dashboard");
+    }
+  };
 
   const displayName =
     (user.first || user.last
@@ -89,27 +101,54 @@ export default function HomePage() {
                     You don&apos;t have any favorites yet.
                   </div>
                 ) : (
-                  <div className="flex gap-4 overflow-x-auto pb-2">
+                  <div className="grid grid-cols-3 gap-4 overflow-y-auto pb-2 flex-1 min-h-0">
                     {favoriteWidgets.map((widget) => (
-                      <div
+                      <button
+                        type="button"
                         key={widget.id}
+                        onClick={() => handleFavoriteWidgetClick(widget)}
                         className="
+                          relative
                           bg-gray-50 rounded-lg shadow
                           border border-gray-200
-                          p-4 aspect-square w-40
-                          flex flex-col justify-between
+                          p-4 aspect-square min-w-0 w-full
+                          flex flex-col justify-between text-left
                           hover:bg-gray-100 cursor-pointer transition
+                          group
                         "
                       >
-                        <p className="font-semibold text-gray-900 text-sm line-clamp-2">
+                        <div className="flex justify-center w-full mb-2 flex-shrink-0">
+                          <div className="h-24 w-24 rounded-lg bg-gray-200 overflow-hidden flex items-center justify-center">
+                            {widget.imageUrl && widget.imageUrl !== "default" ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={widget.imageUrl}
+                                alt={widget.name}
+                                className="object-cover w-full h-full"
+                              />
+                            ) : (
+                              <AngleIcon className="size-10 fill-current text-gray-400" />
+                            )}
+                          </div>
+                        </div>
+                        <p className="font-semibold text-gray-900 text-sm line-clamp-2 text-center">
                           {widget.name}
                         </p>
-                        {widget.description && (
-                          <p className="text-xs text-gray-500 line-clamp-5 mt-1">
+                        {widget.description ? (
+                          <span
+                            className="
+                              absolute inset-0 rounded-lg top-[1px]
+                              bg-white/80 opacity-0 group-hover:opacity-100
+                              transition-opacity duration-200
+                              flex items-start justify-center p-3 pt-3
+                              text-xs text-gray-700 text-center overflow-y-auto
+                            "
+                            aria-hidden
+                          >
                             {widget.description}
-                          </p>
-                        )}
-                      </div>
+                          </span>
+                        ) : null}
+                      </button>
                     ))}
                   </div>
                 )}
