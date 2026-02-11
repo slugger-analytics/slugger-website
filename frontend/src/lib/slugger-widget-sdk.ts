@@ -85,6 +85,7 @@ export class SluggerWidgetSDK {
       allowedOrigins: [
         "http://localhost:3000",
         "http://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
+        "https://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
         "https://alpb-analytics.com",
         "https://www.alpb-analytics.com",
       ],

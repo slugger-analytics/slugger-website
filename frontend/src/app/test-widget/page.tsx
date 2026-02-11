@@ -23,6 +23,7 @@ const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
+  "https://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
   "https://alpb-analytics.com",
   "https://www.alpb-analytics.com",
   "https://jwt-testing.netlify.app",
