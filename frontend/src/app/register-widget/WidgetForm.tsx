@@ -108,7 +108,7 @@ export function WidgetForm() {
       };
 
       await registerWidget(widgetData, parseInt(user.id));
-      router.push("/widget"); // or wherever you want to redirect after success
+      router.push("/dashboard"); // or wherever you want to redirect after success
     } catch (error) {
       console.error(error);
       toast({
