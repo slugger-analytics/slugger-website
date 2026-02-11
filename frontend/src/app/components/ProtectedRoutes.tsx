@@ -43,7 +43,7 @@ const ProtectedRoute = ({ role, children }: ProtectedRouteProps) => {
 
     // Check role-based access if a specific role is required
     if (role && user.role && user.role.toLowerCase() !== role) {
-      router.push("/dashboard");
+      router.push("/widgets");
     }
   }, [isAuthenticated, user.role, loading, router, role]);
 

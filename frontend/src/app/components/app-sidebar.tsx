@@ -33,7 +33,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     },
     {
       title: "Widgets",
-      url: "/dashboard",
+      url: "/widgets",
       icon: LayoutGridIcon,
       isActive: true,
     },
