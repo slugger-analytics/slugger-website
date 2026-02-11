@@ -126,6 +126,10 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
 
         try {
             const url = new URL(tab.url, window.location.origin);
+            // Avoid mixed content: if the page is HTTPS, load widget over HTTPS
+            if (window.location.protocol === "https:" && url.protocol === "http:") {
+                url.protocol = "https:";
+            }
             const userIdNum = parseUserId(user.id);
 
             // Inject token for restricted access widgets
@@ -164,6 +168,9 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
         if (tab.url) {
             try {
                 const url = new URL(tab.url, window.location.origin);
+                if (window.location.protocol === "https:" && url.protocol === "http:") {
+                    url.protocol = "https:";
+                }
                 const origin = url.origin;
                 setWidgetOrigin(origin);
                 console.log(`[WidgetIframe] Parsed origin for ${tab.name}:`, origin);
