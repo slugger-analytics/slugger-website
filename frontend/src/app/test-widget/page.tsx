@@ -6,7 +6,6 @@ interface SluggerAuth {
   accessToken: string;
   idToken: string;
   expiresAt: number;
-  bootstrapToken: string | null; // short-lived 5-min JWT for GET /api/users/me
   user: {
     id: string;
     email: string;
@@ -84,70 +83,55 @@ export default function TestWidgetPage() {
         const userFromPayload = payload.user;
         
         setAuth({
-          accessToken:    payload.accessToken,
-          idToken:        payload.idToken,
-          expiresAt:      payload.expiresAt,
-          bootstrapToken: payload.bootstrapToken ?? null,
+          accessToken: payload.accessToken,
+          idToken: payload.idToken,
+          expiresAt: payload.expiresAt,
           user: {
-            id:            userFromPayload?.id || decoded.sub,
-            email:         userFromPayload?.email || decoded.email,
+            id: userFromPayload?.id || decoded.sub,
+            email: userFromPayload?.email || decoded.email,
             emailVerified: decoded.email_verified ?? false,
-            firstName:     userFromPayload?.firstName || decoded.given_name,
-            lastName:      userFromPayload?.lastName || decoded.family_name,
-            role:          userFromPayload?.role,
-            teamId:        userFromPayload?.teamId,
-            teamRole:      userFromPayload?.teamRole,
-            isAdmin:       userFromPayload?.isAdmin,
+            firstName: userFromPayload?.firstName || decoded.given_name,
+            lastName: userFromPayload?.lastName || decoded.family_name,
+            role: userFromPayload?.role,
+            teamId: userFromPayload?.teamId,
+            teamRole: userFromPayload?.teamRole,
+            isAdmin: userFromPayload?.isAdmin,
           },
         });
         setStatus("success");
-        const hasBootstrap = !!payload.bootstrapToken;
-        addLog(`Authenticated as ${userFromPayload?.email || decoded.email} | bootstrapToken: ${hasBootstrap ? "✓" : "✗"}`);
+        addLog(`Authenticated as ${userFromPayload?.email || decoded.email} (${userFromPayload?.role || 'unknown role'})`);
       }
     };
 
     window.addEventListener("message", handleMessage);
 
-    // Send ready signal to each known Slugger origin (avoid '*')
-    const sluggerOrigins = [
-      "http://localhost:3000",
-      "http://127.0.0.1:3000",
-      "https://alpb-analytics.com",
-      "https://www.alpb-analytics.com",
-      "https://slugger-alb-1518464736.us-east-2.elb.amazonaws.com",
-    ];
-    sluggerOrigins.forEach((origin) => {
-      window.parent.postMessage({ type: "SLUGGER_WIDGET_READY", widgetId: "test-widget" }, origin);
-    });
-    addLog("Sent SLUGGER_WIDGET_READY to known Slugger origins");
+    // Send ready signal to parent
+    window.parent.postMessage(
+      {
+        type: "SLUGGER_WIDGET_READY",
+        widgetId: "test-widget",
+      },
+      "*"
+    );
+    addLog("Sent SLUGGER_WIDGET_READY to parent");
 
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   const testApiCall = async () => {
-    if (!auth) {
+    if (!auth || !shellOrigin) {
       setApiResult("Not authenticated");
       return;
     }
-    if (!auth.bootstrapToken) {
-      setApiResult("No bootstrapToken received — cannot call /api/users/me.\nMake sure the Slugger shell sent bootstrapToken in SLUGGER_AUTH.");
-      return;
-    }
 
-    setApiResult("Loading…");
-    addLog("GET /api/users/me with bootstrapToken…");
-
-    // In a real widget this call happens on YOUR OWN BACKEND.
-    // Here we call Slugger directly from the browser to demo the protocol.
-    const sluggerBase = shellOrigin ?? "http://localhost:3001";
-    // The backend runs on port 3001 locally; strip :3000 and use :3001
-    const apiBase = sluggerBase.replace(":3000", ":3001");
+    setApiResult("Loading...");
+    addLog("Making API call to /api/users/me...");
 
     try {
-      const response = await fetch(`${apiBase}/api/users/me`, {
+      // Use the backend directly since we're on the same origin
+      const response = await fetch("http://localhost:3001/api/users/me", {
         headers: {
-          // ✅ Short-lived bootstrapToken — NOT the long-lived Cognito accessToken
-          Authorization: `Bearer ${auth.bootstrapToken}`,
+          Authorization: `Bearer ${auth.accessToken}`,
           "Content-Type": "application/json",
         },
       });
@@ -156,15 +140,15 @@ export default function TestWidgetPage() {
 
       if (response.ok) {
         setApiResult(JSON.stringify(data, null, 2));
-        addLog("/api/users/me → success ✓");
+        addLog("API call successful");
       } else {
-        setApiResult(`Error ${response.status}: ${data.message || response.statusText}`);
-        addLog(`/api/users/me → ${response.status} ${data.message}`);
+        setApiResult(`Error: ${data.message || response.statusText}`);
+        addLog(`API call failed: ${data.message || response.statusText}`);
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Unknown error";
-      setApiResult(`Network error: ${msg}`);
-      addLog(`/api/users/me → network error: ${msg}`);
+      setApiResult(`Error: ${msg}`);
+      addLog(`API call error: ${msg}`);
     }
   };
 
@@ -258,42 +242,25 @@ export default function TestWidgetPage() {
           </div>
         </div>
 
-        {/* Bootstrap Token */}
+        {/* Token Preview */}
         <div className="bg-white rounded-lg p-5 shadow-sm">
-          <h2 className="text-lg font-semibold mb-1">Bootstrap Token <span className="text-sm font-normal text-gray-500">(short-lived · 5 min)</span></h2>
-          <p className="text-xs text-gray-500 mb-3">
-            This is the token your backend should send to <code>GET /api/users/me</code>. It is <strong>not</strong> the long-lived Cognito accessToken.
-          </p>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="font-medium text-gray-600 w-16">Status:</span>
-            <span className={`px-2 py-0.5 rounded text-sm font-medium ${
-              !auth ? "bg-gray-100 text-gray-500"
-              : auth.bootstrapToken ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-            }`}>
-              {!auth ? "—" : auth.bootstrapToken ? "✓ received" : "✗ not provided"}
-            </span>
-          </div>
-          <div className="bg-gray-100 p-3 rounded font-mono text-xs break-all max-h-20 overflow-auto">
-            {auth?.bootstrapToken
-              ? `${auth.bootstrapToken.substring(0, 120)}…`
-              : "Waiting for SLUGGER_AUTH…"}
+          <h2 className="text-lg font-semibold mb-3">Access Token Preview</h2>
+          <div className="bg-gray-100 p-3 rounded font-mono text-xs break-all max-h-24 overflow-auto">
+            {auth?.accessToken
+              ? `${auth.accessToken.substring(0, 100)}...`
+              : "Waiting for token..."}
           </div>
         </div>
 
         {/* API Test */}
         <div className="bg-white rounded-lg p-5 shadow-sm">
-          <h2 className="text-lg font-semibold mb-1">API Test</h2>
-          <p className="text-xs text-gray-500 mb-3">
-            Calls <code>GET /api/users/me</code> using <code>bootstrapToken</code> as <code>Authorization: Bearer</code>.
-            This simulates what your own backend would do.
-          </p>
+          <h2 className="text-lg font-semibold mb-3">API Test</h2>
           <button
             onClick={testApiCall}
-            disabled={!auth?.bootstrapToken}
+            disabled={!auth}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Call /api/users/me with bootstrapToken
+            Test API Call (/api/users/me)
           </button>
           {apiResult && (
             <pre className="mt-3 bg-gray-100 p-3 rounded text-xs overflow-auto max-h-32">
