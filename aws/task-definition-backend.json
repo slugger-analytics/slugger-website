@@ -90,13 +90,10 @@
         {
           "name": "FRONTEND_URL",
           "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/frontend-url"
-<<<<<<< HEAD
         },
         {
           "name": "USAGE_PLAN_ID",
           "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/usage-plan-id"
-=======
->>>>>>> parent of 03a8e56 (updated aws info)
         }
       ],
       "logConfiguration": {
