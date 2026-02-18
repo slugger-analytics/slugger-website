@@ -59,8 +59,6 @@ useEffect(() => {
 }, []);
 ```
 
-> ⚠️ **Do not use `"*"`** as the second argument to `postMessage`. Using `"*"` means any website can receive the message you send.
-
 ### 1b. Listen for the token from Slugger
 
 ```js
@@ -291,29 +289,3 @@ app.use((req, res, next) => {
    - Change the Widget URL field to your local address (e.g. `http://localhost:4000`)
    - Watch the auth status and Event Log inside the iframe
 5. You can also open DevTools → Console and filter by `[WidgetFrame]` for detailed logs
-
----
-
-## FAQ
-
-**Q: I'm not using React. Can I use vanilla JS?**  
-Yes. Just use `window.addEventListener("message", ...)` and `window.parent.postMessage(...)` — the protocol is framework-agnostic.
-
-**Q: What is the difference between `bootstrapToken` and a Cognito `accessToken`?**  
-`bootstrapToken` is a short-lived JWT (5 minutes) issued specifically by Slugger for widget authentication. It has nothing to do with Cognito. Your backend only needs to call `/api/users/me` — no AWS setup required.
-
-**Q: Will my widget receive a message if the user is not logged in to Slugger?**  
-No. Slugger only sends `SLUGGER_AUTH` when a user is authenticated. Your widget should handle the case where no token ever arrives (e.g. show a "Please log in to Slugger first" message).
-
-**Q: Can I store `bootstrapToken` in `localStorage`?**  
-**No.** Send it to your backend immediately after receiving it. Do not store it anywhere on the frontend. It is single-use and expires after 5 minutes.
-
-**Q: How do I know my integration is working?**  
-After your widget calls `/api/bootstrap` and receives back a `user.email`, the integration is working. You can also contact the Slugger platform team for help debugging.
-
----
-
-## Contact
-
-Questions? Reach out to the Slugger platform team:  
-[Contact us](https://docs.google.com/forms/d/e/1FAIpQLScyL8zEK3hY5Qj-UVGXFTAA3G0pK88RNoIbWfJ0F6itVTlGpA/viewform)
