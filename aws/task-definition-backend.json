@@ -90,6 +90,10 @@
         {
           "name": "FRONTEND_URL",
           "valueFrom": "arn:aws:ssm:us-east-2:746669223415:parameter/slugger/frontend-url"
+        },
+        {
+          "name": "USAGE_PLAN_ID",
+          "valueFrom": "arn:aws:ssm:us-east-2:<ACCOUNT_ID>:parameter/slugger/usage-plan-id"
         }
       ],
       "logConfiguration": {

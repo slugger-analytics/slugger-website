@@ -110,12 +110,13 @@ graph TB
 
 **Routing Rules (Priority Order):**
 
-| Priority | Path Pattern | Target | Type |
-|----------|-------------|--------|------|
-| 1 | `/api/*` | `slugger-backend-tg` | ECS Fargate |
-| 100 | `/widgets/clubhouse/*` | `tg-widget-clubhouse` | Lambda |
-| 200 | `/widgets/flashcard/*` | `tg-widget-flashcard` | Lambda |
-| default | `/*` | `slugger-frontend-tg` | ECS Fargate |
+| Priority | Host Header | Path Pattern | Target | Type |
+|----------|-------------|-------------|--------|------|
+| 10 | `api.alpb-analytics.com` | `/api/*` | `slugger-backend-tg` | ECS Fargate |
+| 20 | `api.alpb-analytics.com` | N/A | Fixed response | N/A |
+| 30 | N/A | `/widgets/clubhouse/*` | `tg-widget-clubhouse` | Lambda |
+| 40 | N/A | `/widgets/flashcard/*` | `tg-widget-flashcard` | Lambda |
+| default | N/A | `/*` | `slugger-frontend-tg` | ECS Fargate |
 
 **Purpose:** Central entry point for all HTTP/HTTPS traffic, routing requests to appropriate backend services based on URL path patterns.
 
