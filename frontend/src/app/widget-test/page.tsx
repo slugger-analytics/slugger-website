@@ -18,7 +18,7 @@ import { Input } from "@/app/components/ui/input";
 export default function WidgetTestPage() {
   const { isAuthenticated, getWidgetTokens } = useAuth();
   const storeTokens = useStore($authTokens);
-  const [widgetUrl, setWidgetUrl] = useState("https://jwt-testing.netlify.app/");
+  const [widgetUrl, setWidgetUrl] = useState("http://localhost:3000/test-widget");
   const [isWidgetReady, setIsWidgetReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -159,6 +159,8 @@ export default function WidgetTestPage() {
                     idToken: widgetTokens.idToken.substring(0, 50) + "...",
                     expiresAt: widgetTokens.expiresAt,
                     expiresAtReadable: new Date(widgetTokens.expiresAt).toLocaleString(),
+                    bootstrapToken: "(5-min JWT · fetched from /api/users/widget-token at send time)",
+                    user: widgetTokens.user,
                   },
                 },
                 null,

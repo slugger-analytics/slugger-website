@@ -13,8 +13,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
 import { clearStores } from "@/lib/utils";
-import { $user } from "@/lib/userStore";
-import { logoutUser, validateSession } from "@/api/auth";
+import { $user, setUser } from "@/lib/userStore";
+import { logoutUser, validateSession, bootstrapUser } from "@/api/auth";
 import {
   $authTokens,
   setAuthTokens,
@@ -94,6 +94,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const checkExistingSession = async () => {
       // Only run once
       if (sessionChecked.current) return;
+
+      // ── Bootstrap path ────────────────────────────────────────────────────
+      // If the URL contains ?slugger_token=<CognitoAccessToken>, exchange it
+      // for a server session without requiring email/password.
+      const searchParams = new URLSearchParams(window.location.search);
+      const sluggerToken = searchParams.get("slugger_token");
+
+      if (sluggerToken) {
+        sessionChecked.current = true;
+        try {
+          const bootstrappedUser = await bootstrapUser(sluggerToken);
+
+          setUser({
+            id:       String(bootstrappedUser.id),
+            email:    bootstrappedUser.email,
+            first:    bootstrappedUser.first   ?? "",
+            last:     bootstrappedUser.last    ?? "",
+            role:     bootstrappedUser.role,
+            teamId:   bootstrappedUser.teamId  ? String(bootstrappedUser.teamId) : "",
+            is_admin: bootstrappedUser.is_admin ?? false,
+          });
+
+          setIsAuthenticated(true);
+
+          // Remove the token from the URL so it is never visible after load.
+          searchParams.delete("slugger_token");
+          const clean =
+            window.location.pathname +
+            (searchParams.toString() ? "?" + searchParams.toString() : "");
+          window.history.replaceState({}, "", clean);
+        } catch (error) {
+          console.error("Bootstrap failed:", error);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+      // ── End bootstrap path ────────────────────────────────────────────────
 
       // Check if tokens are valid in auth-store first
       const hasTokens = hasValidTokens();

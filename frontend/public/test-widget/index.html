@@ -139,15 +139,24 @@
     </div>
 
     <div class="card">
-      <h2 class="card-title">Access Token Preview</h2>
-      <div id="token-preview" class="token-preview">
-        Waiting for token...
+      <h2 class="card-title">Bootstrap Token (short-lived · 5 min)</h2>
+      <div class="info-row">
+        <span class="info-label">Status:</span>
+        <span id="bootstrap-status" class="status waiting">—</span>
+      </div>
+      <div id="bootstrap-preview" class="token-preview">
+        Waiting for SLUGGER_AUTH…
       </div>
     </div>
 
     <div class="card">
-      <h2 class="card-title">API Test</h2>
-      <button id="test-api-btn" disabled>Test API Call (/api/users/me)</button>
+      <h2 class="card-title">API Test — GET /api/users/me</h2>
+      <p style="color:#666;font-size:13px;margin-bottom:10px;">
+        Uses <code>bootstrapToken</code> (not the long-lived Cognito token) as
+        <code>Authorization: Bearer</code>. This is how your own backend would
+        call Slugger to verify the user's identity.
+      </p>
+      <button id="test-api-btn" disabled>Call /api/users/me with bootstrapToken</button>
       <div id="api-result" style="margin-top: 12px;"></div>
     </div>
 
@@ -172,14 +181,15 @@
     let shellOrigin = null;
 
     // DOM elements
-    const authStatus = document.getElementById('auth-status');
-    const userEmail = document.getElementById('user-email');
-    const userId = document.getElementById('user-id');
-    const tokenExpires = document.getElementById('token-expires');
-    const tokenPreview = document.getElementById('token-preview');
-    const logContainer = document.getElementById('log-container');
-    const testApiBtn = document.getElementById('test-api-btn');
-    const apiResult = document.getElementById('api-result');
+    const authStatus        = document.getElementById('auth-status');
+    const userEmail         = document.getElementById('user-email');
+    const userId            = document.getElementById('user-id');
+    const tokenExpires      = document.getElementById('token-expires');
+    const bootstrapStatus   = document.getElementById('bootstrap-status');
+    const bootstrapPreview  = document.getElementById('bootstrap-preview');
+    const logContainer      = document.getElementById('log-container');
+    const testApiBtn        = document.getElementById('test-api-btn');
+    const apiResult         = document.getElementById('api-result');
 
     // Logging
     function log(message, type = 'info') {
@@ -205,37 +215,63 @@
     // Handle auth message
     function handleAuth(payload, origin) {
       shellOrigin = origin;
-      
-      const decoded = decodeJWT(payload.idToken);
-      if (!decoded) {
-        authStatus.textContent = 'Error: Invalid token';
+
+      // ── User info ────────────────────────────────────────────────────────
+      // Prefer the pre-parsed `user` object sent by Slugger; fall back to
+      // decoding the idToken for older shell versions.
+      let userInfo = payload.user;
+      if (!userInfo && payload.idToken) {
+        const decoded = decodeJWT(payload.idToken);
+        if (decoded) {
+          userInfo = {
+            id:        decoded.sub,
+            email:     decoded.email,
+            firstName: decoded.given_name,
+            lastName:  decoded.family_name,
+          };
+        }
+      }
+
+      if (!userInfo) {
+        authStatus.textContent = 'Error: could not parse user';
         authStatus.className = 'status error';
+        log('handleAuth: no user info in payload', 'error');
         return;
       }
 
       auth = {
-        accessToken: payload.accessToken,
-        idToken: payload.idToken,
-        expiresAt: payload.expiresAt,
-        user: {
-          id: decoded.sub,
-          email: decoded.email,
-          emailVerified: decoded.email_verified,
-          firstName: decoded.given_name,
-          lastName: decoded.family_name
-        }
+        accessToken:    payload.accessToken,
+        idToken:        payload.idToken,
+        expiresAt:      payload.expiresAt,
+        // ↓ Short-lived 5-min JWT — use THIS to call Slugger's /api/users/me
+        bootstrapToken: payload.bootstrapToken || null,
+        user: userInfo,
       };
 
-      // Update UI
+      // ── Cognito auth status ──────────────────────────────────────────────
       authStatus.textContent = 'Authenticated';
-      authStatus.className = 'status success';
-      userEmail.textContent = auth.user.email;
-      userId.textContent = auth.user.id;
-      tokenExpires.textContent = new Date(auth.expiresAt).toLocaleString();
-      tokenPreview.textContent = auth.accessToken.substring(0, 100) + '...';
-      testApiBtn.disabled = false;
+      authStatus.className   = 'status success';
+      userEmail.textContent  = auth.user.email || auth.user.id;
+      userId.textContent     = auth.user.id;
+      tokenExpires.textContent = auth.expiresAt
+        ? new Date(auth.expiresAt).toLocaleString()
+        : '—';
 
-      log(`Authenticated as ${auth.user.email}`, 'success');
+      // ── Bootstrap token status ───────────────────────────────────────────
+      if (auth.bootstrapToken) {
+        bootstrapStatus.textContent = '✓ received (5 min)';
+        bootstrapStatus.className   = 'status success';
+        bootstrapPreview.textContent = auth.bootstrapToken.substring(0, 120) + '…';
+        testApiBtn.disabled = false;
+        log('bootstrapToken received — ready to call /api/users/me', 'success');
+      } else {
+        bootstrapStatus.textContent = '✗ not provided';
+        bootstrapStatus.className   = 'status error';
+        bootstrapPreview.textContent = 'Shell did not include bootstrapToken in SLUGGER_AUTH.';
+        log('No bootstrapToken in payload — API test disabled', 'error');
+      }
+
+      log(`Authenticated as ${auth.user.email || auth.user.id}`, 'success');
     }
 
     // Message listener
@@ -254,45 +290,55 @@
       }
     });
 
-    // Send ready signal
+    // Send ready signal.
+    // We don't know the parent origin yet (can't read it before receiving a
+    // message), so we broadcast to each known Slugger origin individually.
+    // Using '*' would work too but would let any page receive this ping.
     function sendReady() {
-      window.parent.postMessage({
-        type: 'SLUGGER_WIDGET_READY',
-        widgetId: 'test-widget'
-      }, '*');
-      log('Sent SLUGGER_WIDGET_READY to parent', 'info');
+      const msg = { type: 'SLUGGER_WIDGET_READY', widgetId: 'test-widget' };
+      ALLOWED_ORIGINS.forEach((origin) => {
+        try {
+          window.parent.postMessage(msg, origin);
+        } catch (_) {
+          // Cross-origin postMessage to unreachable target – safe to ignore
+        }
+      });
+      log('Sent SLUGGER_WIDGET_READY to all allowed origins', 'info');
     }
 
-    // Test API call
+    // Test API call — simulates what a widget's OWN BACKEND would do:
+    //   GET /api/users/me  with  Authorization: Bearer <bootstrapToken>
+    // We call it from the browser here purely for demonstration purposes.
     testApiBtn.addEventListener('click', async () => {
-      if (!auth) {
-        apiResult.innerHTML = '<span style="color: #991b1b;">Not authenticated</span>';
+      if (!auth?.bootstrapToken) {
+        apiResult.innerHTML = '<span style="color:#991b1b;">No bootstrapToken available</span>';
         return;
       }
 
-      apiResult.innerHTML = '<span style="color: #666;">Loading...</span>';
-      log('Making API call to /api/users/me...', 'info');
+      apiResult.innerHTML = '<span style="color:#666;">Calling /api/users/me…</span>';
+      log('GET /api/users/me with bootstrapToken…', 'info');
 
       try {
         const response = await fetch(`${shellOrigin}/api/users/me`, {
           headers: {
-            'Authorization': `Bearer ${auth.accessToken}`,
-            'Content-Type': 'application/json'
-          }
+            // ↓ Short-lived JWT — NOT the long-lived Cognito accessToken
+            'Authorization': `Bearer ${auth.bootstrapToken}`,
+            'Content-Type': 'application/json',
+          },
         });
 
         const data = await response.json();
-        
+
         if (response.ok) {
-          apiResult.innerHTML = `<pre style="background: #d1fae5; padding: 8px; border-radius: 4px; font-size: 12px;">${JSON.stringify(data, null, 2)}</pre>`;
-          log('API call successful', 'success');
+          apiResult.innerHTML = `<pre style="background:#d1fae5;padding:8px;border-radius:4px;font-size:12px;">${JSON.stringify(data, null, 2)}</pre>`;
+          log('/api/users/me → success', 'success');
         } else {
-          apiResult.innerHTML = `<span style="color: #991b1b;">Error: ${data.message || response.statusText}</span>`;
-          log(`API call failed: ${data.message || response.statusText}`, 'error');
+          apiResult.innerHTML = `<span style="color:#991b1b;">Error ${response.status}: ${data.message || response.statusText}</span>`;
+          log(`/api/users/me → ${response.status} ${data.message}`, 'error');
         }
       } catch (error) {
-        apiResult.innerHTML = `<span style="color: #991b1b;">Error: ${error.message}</span>`;
-        log(`API call error: ${error.message}`, 'error');
+        apiResult.innerHTML = `<span style="color:#991b1b;">Network error: ${error.message}</span>`;
+        log(`/api/users/me → network error: ${error.message}`, 'error');
       }
     });
 
