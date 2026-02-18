@@ -205,12 +205,19 @@ export async function associateApiKeyWithUsagePlan(apiKeyId, usagePlanId) {
 }
 
 export async function saveApiKeyToDatabase(user_id, apiKey) {
-  const query = `
-        UPDATE users
-        SET api_key = $1
-        WHERE user_id = $2;
-    `;
-  await pool.query(query, [apiKey, user_id]);
+  console.log('Saving API key to database for user_id:', user_id);
+  try {
+    const query = `
+          UPDATE users
+          SET api_key = $1
+          WHERE user_id = $2;
+      `;
+    await pool.query(query, [apiKey, user_id]);
+  } catch (error) {
+    console.error("Error saving API key to database:", error);
+    throw new Error("Failed to save API key to database");
+  }
+
 }
 
 export async function getRequestData(request_id) {
