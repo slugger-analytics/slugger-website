@@ -167,6 +167,56 @@ export const validateSession = async () => {
   }
 };
 
+/**
+ * Request a short-lived (5-minute) bootstrap JWT from the backend.
+ * WidgetFrame calls this after a widget signals SLUGGER_WIDGET_READY, then
+ * includes the token in SLUGGER_AUTH.bootstrapToken so the widget's own
+ * backend can call GET /api/users/me to verify the user's identity.
+ * The token is never written to the URL – it lives only in memory.
+ */
+export const requestWidgetToken = async (): Promise<string> => {
+  const response = await fetch(`${API_URL}/api/users/widget-token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+  const res = await response.json();
+  if (!res.success) {
+    throw new Error(res.message || "Failed to get widget token");
+  }
+  return res.data.token;
+};
+
+/**
+ * Exchange a Cognito AccessToken from ?slugger_token= for a server session.
+ * The backend validates the token with Cognito, UPSERTs the user in the DB,
+ * and sets the session cookie – no password required.
+ */
+export const bootstrapUser = async (
+  token: string
+): Promise<{
+  id: string;
+  email: string;
+  first: string;
+  last: string;
+  role: string;
+  teamId: string | null;
+  teamRole: string | null;
+  is_admin: boolean;
+}> => {
+  const response = await fetch(`${API_URL}/api/users/bootstrap`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ token }),
+  });
+  const res = await response.json();
+  if (!res.success) {
+    throw new Error(res.message || "Bootstrap failed");
+  }
+  return res.data.user;
+};
+
 export const sendPasswordResetEmail = async (email: string, otp: string) => {
   try {
     const response = await fetch(

@@ -72,6 +72,11 @@ This document lists all available API endpoints and their required permissions.
 | POST | `/users/reset-password` | None | Reset user password |
 | PATCH | `/users` | Authentication | Update user profile |
 | DELETE | `/users` | Authentication | Delete user account (self) or delete another user (Site Admin only) |
+| POST | `/users/widget-token` | Authentication | Issue a 5-minute bootstrap JWT for widget iframe auth |
+| GET | `/users/me` | Bearer bootstrapToken | Validate a widget bootstrap token and return user profile |
+| POST | `/users/bootstrap` | None | Exchange a Cognito AccessToken (from `?slugger_token=`) for a server session |
+
+> For the full widget authentication integration guide (postMessage protocol, request/response shapes, code examples) see [`WIDGET-AUTH.md`](../../WIDGET-AUTH.md).
 
 ## Widget Category Endpoints (`/widget-categories`)
 

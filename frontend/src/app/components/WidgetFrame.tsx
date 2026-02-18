@@ -10,7 +10,7 @@ import {
   updateTokensAfterRefresh,
   getTimeUntilExpiry
 } from "@/lib/auth-store";
-import { refreshTokens } from "@/api/auth";
+import { refreshTokens, requestWidgetToken } from "@/api/auth";
 
 interface WidgetFrameProps {
   /** URL of the widget to embed */
@@ -93,14 +93,28 @@ export function WidgetFrame({
     }
   }, [src, onError]);
 
-  // Send tokens to widget
-  const sendTokens = useCallback(() => {
+  // Send tokens to widget.
+  // Also requests a fresh 5-minute bootstrap JWT from the backend so the
+  // widget's own backend can call GET /api/users/me to verify the user's
+  // identity – without the token ever appearing in the URL.
+  const sendTokens = useCallback(async () => {
     if (!iframeRef.current?.contentWindow || !widgetOrigin) return;
 
     const widgetTokens = getTokensForWidget();
     if (!widgetTokens) {
       console.warn("[WidgetFrame] No valid tokens available to send");
       return;
+    }
+
+    // Request a short-lived (5 min) bootstrap token from Slugger's backend.
+    // This is separate from the long-lived Cognito accessToken so widgets
+    // never hold a credential that lasts longer than one interaction.
+    let bootstrapToken: string | undefined;
+    try {
+      bootstrapToken = await requestWidgetToken();
+    } catch (err) {
+      // Non-fatal: widget still works with the Cognito tokens for display purposes.
+      console.warn("[WidgetFrame] Could not get bootstrap token:", err);
     }
 
     try {
@@ -111,13 +125,18 @@ export function WidgetFrame({
             accessToken: widgetTokens.accessToken,
             idToken: widgetTokens.idToken,
             expiresAt: widgetTokens.expiresAt,
-            // Include user info for widget developers
             user: widgetTokens.user,
+            // Short-lived token for widget backend → GET /api/users/me
+            bootstrapToken,
           },
         },
         widgetOrigin
       );
-      console.log("[WidgetFrame] Sent SLUGGER_AUTH to widget:", widgetId, "with user:", widgetTokens.user?.email);
+      console.log(
+        "[WidgetFrame] Sent SLUGGER_AUTH to widget:", widgetId,
+        "| user:", widgetTokens.user?.email,
+        "| bootstrapToken:", bootstrapToken ? "✓" : "✗"
+      );
     } catch (error) {
       console.error("[WidgetFrame] Failed to send tokens:", error);
       onError?.("Failed to send auth tokens to widget");
