@@ -164,6 +164,7 @@ export async function removeRequest(requestId) {
 }
 
 export async function generateApiKeyForUser(user_id, email) {
+  console.log(`Generating API key for user_id: ${user_id}, email: ${email}`);
   const params = {
     name: `ApiKey-${user_id}`,
     description: `API key for ${email}`,
@@ -176,13 +177,19 @@ export async function generateApiKeyForUser(user_id, email) {
   DEBUG && logWithFunctionName(params);
 
   try {
+    console.log('Creating API key with params:', params);
     const apiKey = await apiGateway.createApiKey(params).promise();
+    console.log('API key created:', apiKey);
     DEBUG && logWithFunctionName(apiKey);
     if (!apiKey.id) {
       throw new Error("Failed to generate API key: no ID returned");
     }
+    console.log(`Associating API key ${apiKey.id} with usage plan ${process.env.USAGE_PLAN_ID}`);
     await associateApiKeyWithUsagePlan(apiKey.id, process.env.USAGE_PLAN_ID);
+    console.log(`API key ${apiKey.id} associated with usage plan ${process.env.USAGE_PLAN_ID}`);
+    console.log(`Saving API key to database for user_id: ${user_id}`);
     await saveApiKeyToDatabase(user_id, apiKey.id);
+    console.log(`API key saved to database for user_id: ${user_id}`);
     return apiKey.value;
   } catch (err) {
     DEBUG && logWithFunctionName(err);

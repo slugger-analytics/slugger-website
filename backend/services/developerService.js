@@ -75,6 +75,7 @@ export async function approveDeveloper(requestId) {
     });
 
     // Generate API key
+    console.log(`Generating API key for new developer with user_id: ${newUser.user_id} and email: ${developer.email}`);
     const apiKey = await generateApiKeyForUser(newUser.user_id, developer.email);
 
     // Send API key email
