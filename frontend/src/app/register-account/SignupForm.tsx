@@ -246,8 +246,9 @@ export function SignupForm() {
                         Widget Developer
                       </SelectItem>
                       <SelectItem value="league">League</SelectItem>
-                      <SelectItem value="master">Master</SelectItem>
+                      {/*<SelectItem value="master">Master</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
+                      */}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
