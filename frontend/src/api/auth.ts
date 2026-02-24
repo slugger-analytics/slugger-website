@@ -169,10 +169,6 @@ export const validateSession = async () => {
 
 /**
  * Request a short-lived (5-minute) bootstrap JWT from the backend.
- * WidgetFrame calls this after a widget signals SLUGGER_WIDGET_READY, then
- * includes the token in SLUGGER_AUTH.bootstrapToken so the widget's own
- * backend can call GET /api/users/me to verify the user's identity.
- * The token is never written to the URL – it lives only in memory.
  */
 export const requestWidgetToken = async (): Promise<string> => {
   const response = await fetch(`${API_URL}/api/users/widget-token`, {
@@ -189,8 +185,6 @@ export const requestWidgetToken = async (): Promise<string> => {
 
 /**
  * Exchange a Cognito AccessToken from ?slugger_token= for a server session.
- * The backend validates the token with Cognito, UPSERTs the user in the DB,
- * and sets the session cookie – no password required.
  */
 export const bootstrapUser = async (
   token: string

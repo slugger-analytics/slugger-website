@@ -409,7 +409,6 @@ router.get("/favorite-widgets", requireAuth, async (req, res) => {
  */
 router.post('/widget-token', requireAuth, (req, res) => {
   const u = req.session.user;
-  // TOKEN_SECRET is 32 bytes – perfect for HMAC-SHA256
   const secret = process.env.TOKEN_SECRET;
   if (!secret) {
     return res.status(500).json({ success: false, message: 'Server misconfiguration: TOKEN_SECRET not set' });
@@ -498,7 +497,6 @@ router.post('/bootstrap', async (req, res) => {
   }
 
   try {
-    // Validate the Cognito AccessToken and extract the user's profile.
     const cognitoUser = await cognito.getUser({ AccessToken: token }).promise();
 
     const attrs = cognitoUser.UserAttributes;
@@ -513,8 +511,6 @@ router.post('/bootstrap', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Cognito profile is missing email' });
     }
 
-    // UPSERT: insert new user with default role, or update name/cognito_id for
-    // existing users while preserving their role, team, and admin status.
     const upsertQuery = `
       INSERT INTO users
         (cognito_user_id, email, first_name, last_name, role, is_admin, fav_widgets_ids, created_at)
@@ -529,13 +525,12 @@ router.post('/bootstrap', async (req, res) => {
     const result = await pool.query(upsertQuery, [cognitoUserId, email, firstName, lastName]);
     const user = result.rows[0];
 
-    // Establish a server-side session exactly like the normal sign-in flow.
     req.session.user = user;
 
     const isProduction     = process.env.NODE_ENV === 'production';
     const isLocalDev       = process.env.LOCAL_DEV === 'true';
     const useSecureCookies = isProduction && !isLocalDev;
-    const cookieTTL        = 60 * 60 * 1000; // 1 h – matches Cognito's default token TTL
+    const cookieTTL        = 60 * 60 * 1000; 
     const cookieOpts = {
       httpOnly: true,
       secure: useSecureCookies,

@@ -95,7 +95,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Only run once
       if (sessionChecked.current) return;
 
-      // ── Bootstrap path ────────────────────────────────────────────────────
       // If the URL contains ?slugger_token=<CognitoAccessToken>, exchange it
       // for a server session without requiring email/password.
       const searchParams = new URLSearchParams(window.location.search);
@@ -131,7 +130,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         return;
       }
-      // ── End bootstrap path ────────────────────────────────────────────────
 
       // Check if tokens are valid in auth-store first
       const hasTokens = hasValidTokens();

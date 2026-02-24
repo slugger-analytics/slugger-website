@@ -107,8 +107,6 @@ export function WidgetFrame({
     }
 
     // Request a short-lived (5 min) bootstrap token from Slugger's backend.
-    // This is separate from the long-lived Cognito accessToken so widgets
-    // never hold a credential that lasts longer than one interaction.
     let bootstrapToken: string | undefined;
     try {
       bootstrapToken = await requestWidgetToken();

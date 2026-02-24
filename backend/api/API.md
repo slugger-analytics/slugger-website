@@ -76,8 +76,6 @@ This document lists all available API endpoints and their required permissions.
 | GET | `/users/me` | Bearer bootstrapToken | Validate a widget bootstrap token and return user profile |
 | POST | `/users/bootstrap` | None | Exchange a Cognito AccessToken (from `?slugger_token=`) for a server session |
 
-> For the full widget authentication integration guide (postMessage protocol, request/response shapes, code examples) see [`WIDGET-AUTH.md`](../../WIDGET-AUTH.md).
-
 ## Widget Category Endpoints (`/widget-categories`)
 
 | Method | Endpoint | Permission Required | Description |
