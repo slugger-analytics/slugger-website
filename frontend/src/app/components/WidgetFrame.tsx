@@ -10,7 +10,7 @@ import {
   updateTokensAfterRefresh,
   getTimeUntilExpiry
 } from "@/lib/auth-store";
-import { refreshTokens } from "@/api/auth";
+import { refreshTokens, requestWidgetToken } from "@/api/auth";
 
 interface WidgetFrameProps {
   /** URL of the widget to embed */
@@ -94,7 +94,7 @@ export function WidgetFrame({
   }, [src, onError]);
 
   // Send tokens to widget
-  const sendTokens = useCallback(() => {
+  const sendTokens = useCallback(async () => {
     if (!iframeRef.current?.contentWindow || !widgetOrigin) return;
 
     const widgetTokens = getTokensForWidget();
