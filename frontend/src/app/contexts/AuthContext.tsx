@@ -13,8 +13,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
 import { clearStores } from "@/lib/utils";
-import { $user, setUser } from "@/lib/userStore";
-import { logoutUser, validateSession, bootstrapUser } from "@/api/auth";
+import { $user } from "@/lib/userStore";
+import { logoutUser, validateSession } from "@/api/auth";
 import {
   $authTokens,
   setAuthTokens,

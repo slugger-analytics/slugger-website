@@ -111,14 +111,14 @@ export default function HomePage() {
                           relative
                           bg-gray-50 rounded-lg shadow
                           border border-gray-200
-                          p-4 aspect-square min-w-0 w-full
-                          flex flex-col justify-between text-left
+                          p-3 min-w-0 w-full
+                          flex flex-col text-left
                           hover:bg-gray-100 cursor-pointer transition
                           group
                         "
                       >
-                        <div className="flex justify-center w-full mb-2 flex-shrink-0">
-                          <div className="h-24 w-24 rounded-lg bg-gray-200 overflow-hidden flex items-center justify-center">
+                        <div className="w-full mb-2 flex-shrink-0">
+                          <div className="w-full aspect-square rounded-lg bg-gray-200 overflow-hidden flex items-center justify-center">
                             {widget.imageUrl && widget.imageUrl !== "default" ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
@@ -131,7 +131,7 @@ export default function HomePage() {
                             )}
                           </div>
                         </div>
-                        <p className="font-semibold text-gray-900 text-sm line-clamp-2 text-center">
+                        <p className="font-semibold text-gray-900 text-xs line-clamp-2 text-center mt-1">
                           {widget.name}
                         </p>
                         {widget.description ? (

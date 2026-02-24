@@ -104,9 +104,9 @@ DB_NAME=slugger_local
 NEXT_PUBLIC_API_URL=http://localhost:3001
 
 # .env - Production DB Access (when needed)
-DB_HOST=alpb-1.cluster-ro-cx866cecsebt.us-east-2.rds.amazonaws.com
+DB_HOST=db host name
 DB_USERNAME=postgres
-DB_PASSWORD=QETUO123$%^
+DB_PASSWORD=password
 DB_NAME=postgres
 LOCAL_DEV=true  # ← Ensures cookies work with http://localhost
 NEXT_PUBLIC_API_URL=http://localhost:3001

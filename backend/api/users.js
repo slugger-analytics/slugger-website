@@ -1,6 +1,5 @@
 import { Router } from "express";
 import pkg from "aws-sdk";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import pool from "../db.js";
 import {

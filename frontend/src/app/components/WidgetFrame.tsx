@@ -10,7 +10,7 @@ import {
   updateTokensAfterRefresh,
   getTimeUntilExpiry
 } from "@/lib/auth-store";
-import { refreshTokens, requestWidgetToken } from "@/api/auth";
+import { refreshTokens } from "@/api/auth";
 
 interface WidgetFrameProps {
   /** URL of the widget to embed */
@@ -93,11 +93,8 @@ export function WidgetFrame({
     }
   }, [src, onError]);
 
-  // Send tokens to widget.
-  // Also requests a fresh 5-minute bootstrap JWT from the backend so the
-  // widget's own backend can call GET /api/users/me to verify the user's
-  // identity – without the token ever appearing in the URL.
-  const sendTokens = useCallback(async () => {
+  // Send tokens to widget
+  const sendTokens = useCallback(() => {
     if (!iframeRef.current?.contentWindow || !widgetOrigin) return;
 
     const widgetTokens = getTokensForWidget();
@@ -123,18 +120,13 @@ export function WidgetFrame({
             accessToken: widgetTokens.accessToken,
             idToken: widgetTokens.idToken,
             expiresAt: widgetTokens.expiresAt,
+            // Include user info for widget developers
             user: widgetTokens.user,
-            // Short-lived token for widget backend → GET /api/users/me
-            bootstrapToken,
           },
         },
         widgetOrigin
       );
-      console.log(
-        "[WidgetFrame] Sent SLUGGER_AUTH to widget:", widgetId,
-        "| user:", widgetTokens.user?.email,
-        "| bootstrapToken:", bootstrapToken ? "✓" : "✗"
-      );
+      console.log("[WidgetFrame] Sent SLUGGER_AUTH to widget:", widgetId, "with user:", widgetTokens.user?.email);
     } catch (error) {
       console.error("[WidgetFrame] Failed to send tokens:", error);
       onError?.("Failed to send auth tokens to widget");
