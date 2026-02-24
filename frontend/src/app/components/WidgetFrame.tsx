@@ -10,7 +10,7 @@ import {
   updateTokensAfterRefresh,
   getTimeUntilExpiry
 } from "@/lib/auth-store";
-import { refreshTokens } from "@/api/auth";
+import { refreshTokens, requestWidgetToken } from "@/api/auth";
 
 interface WidgetFrameProps {
   /** URL of the widget to embed */
@@ -94,13 +94,22 @@ export function WidgetFrame({
   }, [src, onError]);
 
   // Send tokens to widget
-  const sendTokens = useCallback(() => {
+  const sendTokens = useCallback(async () => {
     if (!iframeRef.current?.contentWindow || !widgetOrigin) return;
 
     const widgetTokens = getTokensForWidget();
     if (!widgetTokens) {
       console.warn("[WidgetFrame] No valid tokens available to send");
       return;
+    }
+
+    // Request a short-lived (5 min) bootstrap token from Slugger's backend.
+    let bootstrapToken: string | undefined;
+    try {
+      bootstrapToken = await requestWidgetToken();
+    } catch (err) {
+      // Non-fatal: widget still works with the Cognito tokens for display purposes.
+      console.warn("[WidgetFrame] Could not get bootstrap token:", err);
     }
 
     try {

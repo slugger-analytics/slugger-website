@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+
 const nextConfig = {
   // Explicitly enable PostCSS processing
   experimental: {
@@ -12,6 +13,29 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+
+  async headers() {
+    return [
+      {
+        // Apply security headers to every Slugger page/API route
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: `frame-ancestors 'self'`,
+          },
+
+          { key: 'X-Content-Type-Options',    value: 'nosniff' },
+          { key: 'Referrer-Policy',            value: 'strict-origin-when-cross-origin' },
+          { key: 'X-DNS-Prefetch-Control',     value: 'on' },
+        ],
+      },
+    ];
   },
 };
 
