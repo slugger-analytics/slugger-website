@@ -98,6 +98,7 @@ export default function TeamPage() {
         `${API_URL}/api/teams/${user.teamId}/invite`,
         {
           method: "POST",
+          credentials: "include",
         },
       );
       const data = await response.json();
