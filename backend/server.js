@@ -22,6 +22,7 @@ import league from "./api/league.js";
 import auth from "./api/auth.js";
 import teamAdmins from "./api/team-admins.js";
 import games from "./api/scores.js";
+import { refreshUserAdminStatus } from "./middleware/permission-guards.js";
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // Initialize the Express app
@@ -118,6 +119,9 @@ app.use(
     },
   }),
 );
+
+// Refresh user's admin status from database on each request
+app.use(refreshUserAdminStatus);
 
 // ---------------------------------------------------
 // API Routes

@@ -3,6 +3,33 @@
  * Provides middleware functions to check user roles and permissions
  */
 
+import pool from "../db.js";
+
+/**
+ * Middleware to refresh user's is_admin status from database
+ * Ensures session always has current is_admin value
+ */
+export const refreshUserAdminStatus = async (req, res, next) => {
+  if (!req.session?.user?.user_id) {
+    return next();
+  }
+
+  try {
+    const result = await pool.query(
+      'SELECT is_admin, team_role FROM users WHERE user_id = $1',
+      [req.session.user.user_id]
+    );
+
+    if (result.rows.length > 0) {
+      req.session.user.is_admin = result.rows[0].is_admin;
+      req.session.user.team_role = result.rows[0].team_role;
+    }
+  } catch (error) {
+    console.error('Error refreshing user admin status:', error);
+  }
+
+  next();
+};
 
 /**
  * Middleware to require admin privileges
