@@ -14,7 +14,7 @@ import { getTeamMemberSchema, getTeamSchema } from "../validators/schemas.js";
 import jwt from 'jsonwebtoken';
 import { getUserData } from "../services/widgetService.js";
 import pool from "../db.js";
-import { requireTeamAdmin } from "../middleware/permission-guards.js";
+import { requireTeamAdmin, refreshUserAdminStatus } from "../middleware/permission-guards.js";
 import { requireTeamMembership } from "../middleware/ownership-guards.js";
 
 const router = Router();
@@ -263,7 +263,7 @@ router.patch(
 );
 
 // invite a new member to a team
-router.post("/:teamId/invite", requireTeamAdmin, async (req, res) => {
+router.post("/:teamId/invite", refreshUserAdminStatus, requireTeamAdmin, async (req, res) => {
   try {
     const teamId = req.params.teamId;
     

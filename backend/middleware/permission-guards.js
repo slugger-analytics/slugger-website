@@ -62,6 +62,11 @@ export const requireSiteAdmin = (req, res, next) => {
  * Checks if the authenticated user has attribute is_admin = true
  */
 export const requireTeamAdmin = (req, res, next) => {
+  console.log("requireTeamAdmin check:", {
+    is_admin: req.session?.user?.is_admin,
+    user_id: req.session?.user?.user_id,
+    full_user: req.session?.user
+  });
   if (req.session?.user?.is_admin) {
     return next();
   }
