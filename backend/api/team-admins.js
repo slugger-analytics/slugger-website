@@ -88,6 +88,9 @@ router.post("/pending/:requestId/approve", requireSiteAdmin, async (req, res) =>
     if (req.session.user && req.session.user.user_id === result.user_id) {
       req.session.user.is_admin = true;
       req.session.user.team_role = 'Team Admin';
+      req.session.save((err) => {
+        if (err) console.error('Session save error:', err);
+      });
     }
 
     res.status(200).json({
@@ -205,6 +208,9 @@ router.delete("/:userId", requireSiteAdmin, async (req, res) => {
     if (req.session.user && req.session.user.user_id === result.user_id) {
       req.session.user.is_admin = false;
       req.session.user.team_role = null;
+      req.session.save((err) => {
+        if (err) console.error('Session save error:', err);
+      });
     }
 
     res.status(200).json({
