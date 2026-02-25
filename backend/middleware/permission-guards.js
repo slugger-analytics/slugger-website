@@ -21,8 +21,19 @@ export const refreshUserAdminStatus = async (req, res, next) => {
     );
 
     if (result.rows.length > 0) {
-      req.session.user.is_admin = result.rows[0].is_admin;
-      req.session.user.team_role = result.rows[0].team_role;
+      const dbIsAdmin = result.rows[0].is_admin;
+      const dbTeamRole = result.rows[0].team_role;
+      
+      // Only update if values have changed
+      if (req.session.user.is_admin !== dbIsAdmin || req.session.user.team_role !== dbTeamRole) {
+        req.session.user.is_admin = dbIsAdmin;
+        req.session.user.team_role = dbTeamRole;
+        
+        // Save the session to persist changes
+        req.session.save((err) => {
+          if (err) console.error('Error saving session after admin status refresh:', err);
+        });
+      }
     }
   } catch (error) {
     console.error('Error refreshing user admin status:', error);
