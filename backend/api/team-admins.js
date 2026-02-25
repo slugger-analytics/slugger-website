@@ -84,12 +84,6 @@ router.post("/pending/:requestId/approve", requireSiteAdmin, async (req, res) =>
 
     const result = await approveAdminRequest(requestId);
 
-    // Update session if this is the current user
-    if (req.session.user && req.session.user.user_id === result.user_id) {
-      req.session.user.is_admin = true;
-      req.session.user.team_role = 'Team Admin';
-    }
-
     res.status(200).json({
       success: true,
       message: "Team admin request approved",
@@ -200,12 +194,6 @@ router.delete("/:userId", requireSiteAdmin, async (req, res) => {
     }
 
     const result = await removeAdminPermissions(userId);
-
-    // Update session if this is the current user
-    if (req.session.user && req.session.user.user_id === result.user_id) {
-      req.session.user.is_admin = false;
-      req.session.user.team_role = null;
-    }
 
     res.status(200).json({
       success: true,
