@@ -398,6 +398,176 @@ router.get("/favorite-widgets", requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * POST /widget-token
+ * Issue a short-lived (5-minute) signed JWT for the currently logged-in user.
+ * WidgetFrame calls this endpoint, then passes the token to an embedded widget
+ * via postMessage (SLUGGER_AUTH.bootstrapToken).  The widget's own backend can
+ * then call GET /api/users/me with "Authorization: Bearer <token>" to verify
+ * the user's identity without ever touching the URL or a long-lived credential.
+ */
+router.post('/widget-token', requireAuth, (req, res) => {
+  const u = req.session.user;
+  const secret = process.env.TOKEN_SECRET;
+  if (!secret) {
+    return res.status(500).json({ success: false, message: 'Server misconfiguration: TOKEN_SECRET not set' });
+  }
+
+  const token = jwt.sign(
+    { userId: u.user_id, email: u.email, role: u.role, teamId: u.team_id },
+    secret,
+    { expiresIn: '5m', algorithm: 'HS256' }
+  );
+
+  return res.json({ success: true, data: { token } });
+});
+
+/**
+ * GET /me
+ * Validate a widget bootstrap token and return the user's profile.
+ * Called by a widget's OWN backend – not by the browser directly.
+ *
+ * Request:  Authorization: Bearer <widget-token>
+ * Response: { id, email, firstName, lastName, role, teamId }
+ *
+ * The token is the short-lived JWT issued by POST /widget-token.  It expires
+ * after 5 minutes, so replay attacks have a very small window.
+ */
+router.get('/me', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Authorization: Bearer <token> header required' });
+  }
+
+  const token = authHeader.slice(7);
+  const secret = process.env.TOKEN_SECRET;
+
+  try {
+    const payload = jwt.verify(token, secret, { algorithms: ['HS256'] });
+
+    // Fetch fresh data from DB in case role/team changed since token was issued
+    const result = await pool.query(
+      'SELECT user_id, email, first_name, last_name, role, team_id, team_role, is_admin FROM users WHERE user_id = $1',
+      [payload.userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const u = result.rows[0];
+    return res.json({
+      success: true,
+      data: {
+        id:        u.user_id,
+        email:     u.email,
+        firstName: u.first_name,
+        lastName:  u.last_name,
+        role:      u.role,
+        teamId:    u.team_id,
+        teamRole:  u.team_role,
+        isAdmin:   u.is_admin,
+      },
+    });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, message: 'Bootstrap token expired – request a new one' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, message: 'Invalid bootstrap token' });
+    }
+    console.error('/me error:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /bootstrap
+ * Exchange a Cognito AccessToken (passed as ?slugger_token= in the URL) for a
+ * server session. The token is validated by calling Cognito's GetUser; the
+ * returned profile is UPSERTed into the local users table so the caller gets a
+ * fully-fledged session without going through the normal email/password flow.
+ */
+router.post('/bootstrap', async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ success: false, message: 'token is required' });
+  }
+
+  try {
+    const cognitoUser = await cognito.getUser({ AccessToken: token }).promise();
+
+    const attrs = cognitoUser.UserAttributes;
+    const get = (name) => attrs.find((a) => a.Name === name)?.Value ?? '';
+
+    const email         = get('email').toLowerCase();
+    const firstName     = get('given_name');
+    const lastName      = get('family_name');
+    const cognitoUserId = cognitoUser.Username;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Cognito profile is missing email' });
+    }
+
+    const upsertQuery = `
+      INSERT INTO users
+        (cognito_user_id, email, first_name, last_name, role, is_admin, fav_widgets_ids, created_at)
+      VALUES ($1, $2, $3, $4, 'user', false, '{}', NOW())
+      ON CONFLICT (email) DO UPDATE
+        SET first_name      = EXCLUDED.first_name,
+            last_name       = EXCLUDED.last_name,
+            cognito_user_id = EXCLUDED.cognito_user_id
+      RETURNING *
+    `;
+
+    const result = await pool.query(upsertQuery, [cognitoUserId, email, firstName, lastName]);
+    const user = result.rows[0];
+
+    req.session.user = user;
+
+    const isProduction     = process.env.NODE_ENV === 'production';
+    const isLocalDev       = process.env.LOCAL_DEV === 'true';
+    const useSecureCookies = isProduction && !isLocalDev;
+    const cookieTTL        = 60 * 60 * 1000; 
+    const cookieOpts = {
+      httpOnly: true,
+      secure: useSecureCookies,
+      sameSite: useSecureCookies ? 'none' : 'lax',
+      maxAge: cookieTTL,
+      path: '/',
+    };
+
+    res.cookie('accessToken', token, cookieOpts);
+
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email;
+    res.cookie('sluggerUserName', fullName, { ...cookieOpts, httpOnly: false });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Bootstrap successful',
+      data: {
+        user: {
+          id:       user.user_id,
+          email:    user.email,
+          first:    user.first_name,
+          last:     user.last_name,
+          role:     user.role,
+          teamId:   user.team_id,
+          teamRole: user.team_role,
+          is_admin: user.is_admin,
+        },
+      },
+    });
+  } catch (error) {
+    if (error.code === 'NotAuthorizedException' || error.code === 'UserNotFoundException') {
+      return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    }
+    console.error('Bootstrap error:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 router.post("/validate-session", requireAuth, async (req, res) => {
   res.status(200).json({
     success: true,

@@ -167,6 +167,50 @@ export const validateSession = async () => {
   }
 };
 
+/**
+ * Request a short-lived (5-minute) bootstrap JWT from the backend.
+ */
+export const requestWidgetToken = async (): Promise<string> => {
+  const response = await fetch(`${API_URL}/api/users/widget-token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+  });
+  const res = await response.json();
+  if (!res.success) {
+    throw new Error(res.message || "Failed to get widget token");
+  }
+  return res.data.token;
+};
+
+/**
+ * Exchange a Cognito AccessToken from ?slugger_token= for a server session.
+ */
+export const bootstrapUser = async (
+  token: string
+): Promise<{
+  id: string;
+  email: string;
+  first: string;
+  last: string;
+  role: string;
+  teamId: string | null;
+  teamRole: string | null;
+  is_admin: boolean;
+}> => {
+  const response = await fetch(`${API_URL}/api/users/bootstrap`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ token }),
+  });
+  const res = await response.json();
+  if (!res.success) {
+    throw new Error(res.message || "Bootstrap failed");
+  }
+  return res.data.user;
+};
+
 export const sendPasswordResetEmail = async (email: string, otp: string) => {
   try {
     const response = await fetch(
