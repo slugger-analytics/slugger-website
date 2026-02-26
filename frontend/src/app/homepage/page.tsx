@@ -25,7 +25,7 @@ export default function HomePage() {
   const router = useRouter();
   const user = useStore($user);
   const favWidgetIds = useStore($favWidgetIds) as Set<number>;
-  const [year, setYear] = useState("");
+  const [year] = useState("");
   const { widgets, widgetsLoading } = useQueryWidgets();
 
   const handleFavoriteWidgetClick = (widget: (typeof widgets)[number]) => {
@@ -72,7 +72,7 @@ export default function HomePage() {
                 <h1 className="text-2xl font-bold text-center mb-1">{`${year} Current Leaders`}</h1>
                 <div className="flex-1 overflow-y-auto flex justify-center">
                   <div className="w-fit text-center">
-                    <Standings setYear={setYear} maxTeams={1} compact />
+                    <Standings season={year} maxTeams={1} compact />
                   </div>
                 </div>
               </div>
