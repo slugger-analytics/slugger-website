@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.686.0",
+    "@aws-sdk/client-lambda": "^3.967.0",
     "@aws-sdk/client-s3": "^3.686.0",
     "@lucia-auth/adapter-postgresql": "^3.1.2",
     "aws-sdk": "^2.1692.0",
@@ -32,7 +33,7 @@
     "eslint": "^9.15.0",
     "nodemon": "^3.1.7",
     "prettier": "3.4.2",
-    "tsx": "^4.19.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.6.3"
   },
   "scripts": {

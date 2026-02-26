@@ -7,8 +7,10 @@ dotenv.config({ path: "../.env" });
 
 const router = Router();
 
-const YEAR = process.env.SEASON_YEAR;
+const CURRENT_YEAR = process.env.SEASON_YEAR;
 const BUCKET_NAME = process.env.JSON_BUCKET_NAME;
+
+const FIRST_YEAR = 2021;
 
 // Configure S3 client - uses IAM role in production, explicit credentials in local dev
 const s3Config = {
@@ -31,15 +33,32 @@ if (process.env.AWS_ACCESS_KEY && process.env.AWS_SECRET_ACCESS_KEY &&
 
 const s3 = new S3Client(s3Config);
 
+/** Returns the list of seasons the UI can request, newest first. */
+router.get("/seasons", (req, res) => {
+    const currentYear = parseInt(CURRENT_YEAR, 10);
+    const seasons = [];
+
+    for (let y = currentYear; y >= FIRST_YEAR; y--) {
+        seasons.push({
+            year: String(y),
+            label: y === currentYear ? `${y} (Current)` : String(y),
+            isCurrent: y === currentYear,
+        });
+    }
+
+    res.status(200).json({
+        success: true,
+        message: "Fetched available seasons",
+        data: { seasons, currentYear: String(currentYear) },
+    });
+});
+
 router.get("/standings", async (req, res) => {
-    const key = `standings/${YEAR}-standings.json`;
+    const year = req.query.year || CURRENT_YEAR;
+    const key = `standings/${year}-standings.json`;
 
     try {
-        const command = new GetObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: key
-        });
-
+        const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key });
         const s3Response = await s3.send(command);
         const jsonText = await streamToString(s3Response.Body);
         const data = JSON.parse(jsonText);
@@ -47,26 +66,26 @@ router.get("/standings", async (req, res) => {
         res.status(200).json({
             success: true,
             message: "Fetched season standings successfully",
-            data
-        })
+            data,
+        });
     } catch (error) {
+        const notFound = error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404;
         console.error("Error fetching league standings data from S3:", error);
-        res.status(500).json({
+        res.status(notFound ? 404 : 500).json({
             success: false,
-            message: `Error fetching league standings data: ${error.message}`,
+            message: notFound
+                ? `No standings data available for the ${year} season.`
+                : `Error fetching league standings data: ${error.message}`,
         });
     }
 });
 
 router.get("/leaders", async (req, res) => {
-    const key = `league-leaders/${YEAR}-league-leaders.json`;
+    const year = req.query.year || CURRENT_YEAR;
+    const key = `league-leaders/${year}-league-leaders.json`;
 
     try {
-        const command = new GetObjectCommand({
-            Bucket: BUCKET_NAME,
-            Key: key
-        });
-
+        const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key });
         const s3Response = await s3.send(command);
         const jsonText = await streamToString(s3Response.Body);
         const data = JSON.parse(jsonText);
@@ -74,13 +93,16 @@ router.get("/leaders", async (req, res) => {
         res.status(200).json({
             success: true,
             message: "Fetched league leaders successfully",
-            data
-        })
+            data,
+        });
     } catch (error) {
+        const notFound = error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404;
         console.error("Error fetching league leaders data from S3:", error);
-        res.status(500).json({
+        res.status(notFound ? 404 : 500).json({
             success: false,
-            message: `Error fetching league leaders data: ${error.message}`,
+            message: notFound
+                ? `No stat leaders data available for the ${year} season.`
+                : `Error fetching league leaders data: ${error.message}`,
         });
     }
 });
