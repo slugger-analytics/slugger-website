@@ -1,7 +1,7 @@
 import { $leagueLeaders } from "@/lib/widgetStore";
 import { useStore } from "@nanostores/react";
 import React, { useState, useEffect } from "react";
-import { Download } from "lucide-react";
+import { Download, ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import useQueryLeague from "../hooks/use-query-league";
 import {
   Tabs,
@@ -13,10 +13,13 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableHeader,
   TableRow,
 } from "@/app/components/ui/table";
+
+type BattingSortKey = "rank" | "playername" | "teamname" | "avg" | "hr" | "rbi" | "sb";
+type PitchingSortKey = "rank" | "playername" | "teamname" | "era" | "wins" | "so" | "ip";
+type SortDir = "asc" | "desc";
 
 function downloadCsv(filename: string, rows: string[][]): void {
   const csv = rows
@@ -40,6 +43,8 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
   const { loadLeagueLeaders, leadersLoading, leadersError } = useQueryLeague();
   const [lastUpdated, setLastUpdated] = useState("");
   const [statView, setStatView] = useState("Batting");
+  const [battingSort, setBattingSort] = useState<{ key: BattingSortKey; dir: SortDir }>({ key: "rank", dir: "asc" });
+  const [pitchingSort, setPitchingSort] = useState<{ key: PitchingSortKey; dir: SortDir }>({ key: "rank", dir: "asc" });
   const allLeadersData = useStore($leagueLeaders);
 
   useEffect(() => {
@@ -70,6 +75,67 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
   const pitchers = teamFilter
     ? allPitchers.filter((p) => p.teamname?.fullname === teamFilter)
     : allPitchers;
+
+  const handleBattingSort = (key: BattingSortKey) => {
+    setBattingSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "playername" || key === "teamname" ? "asc" : "desc" },
+    );
+  };
+  const handlePitchingSort = (key: PitchingSortKey) => {
+    setPitchingSort((prev) =>
+      prev.key === key
+        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: key === "playername" || key === "teamname" ? "asc" : "desc" },
+    );
+  };
+
+  const sortedBatters = [...batters].sort((a, b) => {
+    const { key, dir } = battingSort;
+    const leagueRankA = allBatters.findIndex((x) => x.playerid === a.playerid);
+    const leagueRankB = allBatters.findIndex((x) => x.playerid === b.playerid);
+    let diff = 0;
+    switch (key) {
+      case "rank":      diff = leagueRankA - leagueRankB; break;
+      case "playername": diff = a.playername.localeCompare(b.playername); break;
+      case "teamname":  diff = (a.teamname?.fullname ?? "").localeCompare(b.teamname?.fullname ?? ""); break;
+      case "avg":       diff = parseFloat(a.avg) - parseFloat(b.avg); break;
+      case "hr":        diff = parseInt(a.hr)    - parseInt(b.hr);    break;
+      case "rbi":       diff = parseInt(a.rbi)   - parseInt(b.rbi);   break;
+      case "sb":        diff = parseInt(a.sb)    - parseInt(b.sb);    break;
+    }
+    return dir === "asc" ? diff : -diff;
+  });
+
+  const sortedPitchers = [...pitchers].sort((a, b) => {
+    const { key, dir } = pitchingSort;
+    const leagueRankA = allPitchers.findIndex((x) => x.playerid === a.playerid);
+    const leagueRankB = allPitchers.findIndex((x) => x.playerid === b.playerid);
+    let diff = 0;
+    switch (key) {
+      case "rank":      diff = leagueRankA - leagueRankB; break;
+      case "playername": diff = a.playername.localeCompare(b.playername); break;
+      case "teamname":  diff = (a.teamname?.fullname ?? "").localeCompare(b.teamname?.fullname ?? ""); break;
+      case "era":       diff = parseFloat(a.era)  - parseFloat(b.era);  break;
+      case "wins":      diff = parseInt(a.wins)   - parseInt(b.wins);   break;
+      case "so":        diff = parseInt(a.so)     - parseInt(b.so);     break;
+      case "ip":        diff = parseFloat(a.ip)   - parseFloat(b.ip);   break;
+    }
+    return dir === "asc" ? diff : -diff;
+  });
+
+  const battingSortIcon = (key: BattingSortKey) =>
+    key !== battingSort.key ? <ChevronsUpDown className="ml-1 opacity-30 shrink-0" size={13} /> :
+    battingSort.dir === "asc" ? <ChevronUp className="ml-1 shrink-0" size={13} /> :
+    <ChevronDown className="ml-1 shrink-0" size={13} />;
+
+  const pitchingSortIcon = (key: PitchingSortKey) =>
+    key !== pitchingSort.key ? <ChevronsUpDown className="ml-1 opacity-30 shrink-0" size={13} /> :
+    pitchingSort.dir === "asc" ? <ChevronUp className="ml-1 shrink-0" size={13} /> :
+    <ChevronDown className="ml-1 shrink-0" size={13} />;
+
+  const thClass = "border border-gray-300 p-2 cursor-pointer select-none hover:bg-alpbBlue/80 transition-colors";
 
   const handleExport = () => {
     const label = season ? `${season}-` : "";
@@ -143,8 +209,8 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
         </div>
         <p className="text-xs text-gray-500 w-full text-center">
           {teamFilter
-            ? `${teamFilter} players · ranked by league ${statView === "Batting" ? "Batting Average" : "ERA"}`
-            : `Ranked by ${statView === "Batting" ? "Batting Average" : "ERA"}`}
+            ? `${teamFilter} players · click any column to sort`
+            : `Click any column header to sort`}
         </p>
 
         <TabsContent value="batting">
@@ -153,23 +219,37 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
           ) : (
             <Table>
               <TableHeader className="bg-alpbBlue text-white">
-                <TableRow>
-                  <th className="p-2">#</th>
-                  <th className="border border-gray-300 p-2">Player</th>
-                  {!teamFilter && <th className="border border-gray-300 p-2">Team</th>}
-                  <th className="border border-gray-300 p-2">AVG</th>
-                  <th className="border border-gray-300 p-2">HR</th>
-                  <th className="border border-gray-300 p-2">RBI</th>
-                  <th className="border border-gray-300 p-2">SB</th>
+                <TableRow className="hover:bg-transparent">
+                  <th className={thClass} onClick={() => handleBattingSort("rank")}>
+                    <span className="inline-flex items-center"># {battingSortIcon("rank")}</span>
+                  </th>
+                  <th className={thClass} onClick={() => handleBattingSort("playername")}>
+                    <span className="inline-flex items-center">Player {battingSortIcon("playername")}</span>
+                  </th>
+                  {!teamFilter && (
+                    <th className={thClass} onClick={() => handleBattingSort("teamname")}>
+                      <span className="inline-flex items-center">Team {battingSortIcon("teamname")}</span>
+                    </th>
+                  )}
+                  <th className={thClass} onClick={() => handleBattingSort("avg")}>
+                    <span className="inline-flex items-center">AVG {battingSortIcon("avg")}</span>
+                  </th>
+                  <th className={thClass} onClick={() => handleBattingSort("hr")}>
+                    <span className="inline-flex items-center">HR {battingSortIcon("hr")}</span>
+                  </th>
+                  <th className={thClass} onClick={() => handleBattingSort("rbi")}>
+                    <span className="inline-flex items-center">RBI {battingSortIcon("rbi")}</span>
+                  </th>
+                  <th className={thClass} onClick={() => handleBattingSort("sb")}>
+                    <span className="inline-flex items-center">SB {battingSortIcon("sb")}</span>
+                  </th>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {batters.map((batter, index) => {
-                  const leagueRank = teamFilter
-                    ? allBatters.findIndex((b) => b.playerid === batter.playerid) + 1
-                    : index + 1;
+                {sortedBatters.map((batter, index) => {
+                  const leagueRank = allBatters.findIndex((b) => b.playerid === batter.playerid) + 1;
                   return (
-                    <TableRow key={index}>
+                    <TableRow key={batter.playerid} className="hover:bg-transparent">
                       <TableCell className="text-center">
                         {leagueRank}
                         {teamFilter && <span className="ml-1 text-xs text-gray-400">(lg)</span>}
@@ -194,23 +274,37 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
           ) : (
             <Table>
               <TableHeader className="bg-alpbBlue text-white">
-                <TableRow>
-                  <th className="p-2">#</th>
-                  <th className="border border-gray-300 p-2">Player</th>
-                  {!teamFilter && <th className="border border-gray-300 p-2">Team</th>}
-                  <th className="border border-gray-300 p-2">ERA</th>
-                  <th className="border border-gray-300 p-2">W</th>
-                  <th className="border border-gray-300 p-2">SO</th>
-                  <th className="border border-gray-300 p-2">IP</th>
+                <TableRow className="hover:bg-transparent">
+                  <th className={thClass} onClick={() => handlePitchingSort("rank")}>
+                    <span className="inline-flex items-center"># {pitchingSortIcon("rank")}</span>
+                  </th>
+                  <th className={thClass} onClick={() => handlePitchingSort("playername")}>
+                    <span className="inline-flex items-center">Player {pitchingSortIcon("playername")}</span>
+                  </th>
+                  {!teamFilter && (
+                    <th className={thClass} onClick={() => handlePitchingSort("teamname")}>
+                      <span className="inline-flex items-center">Team {pitchingSortIcon("teamname")}</span>
+                    </th>
+                  )}
+                  <th className={thClass} onClick={() => handlePitchingSort("era")}>
+                    <span className="inline-flex items-center">ERA {pitchingSortIcon("era")}</span>
+                  </th>
+                  <th className={thClass} onClick={() => handlePitchingSort("wins")}>
+                    <span className="inline-flex items-center">W {pitchingSortIcon("wins")}</span>
+                  </th>
+                  <th className={thClass} onClick={() => handlePitchingSort("so")}>
+                    <span className="inline-flex items-center">SO {pitchingSortIcon("so")}</span>
+                  </th>
+                  <th className={thClass} onClick={() => handlePitchingSort("ip")}>
+                    <span className="inline-flex items-center">IP {pitchingSortIcon("ip")}</span>
+                  </th>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pitchers.map((pitcher, index) => {
-                  const leagueRank = teamFilter
-                    ? allPitchers.findIndex((p) => p.playerid === pitcher.playerid) + 1
-                    : index + 1;
+                {sortedPitchers.map((pitcher, index) => {
+                  const leagueRank = allPitchers.findIndex((p) => p.playerid === pitcher.playerid) + 1;
                   return (
-                    <TableRow key={index}>
+                    <TableRow key={pitcher.playerid} className="hover:bg-transparent">
                       <TableCell className="text-center">
                         {leagueRank}
                         {teamFilter && <span className="ml-1 text-xs text-gray-400">(lg)</span>}
