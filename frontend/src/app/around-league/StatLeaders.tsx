@@ -9,14 +9,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/app/components/ui/table";
-
 type BattingSortKey = "rank" | "playername" | "teamname" | "avg" | "hr" | "rbi" | "sb";
 type PitchingSortKey = "rank" | "playername" | "teamname" | "era" | "wins" | "so" | "ip";
 type SortDir = "asc" | "desc";
@@ -135,7 +127,6 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
     pitchingSort.dir === "asc" ? <ChevronUp className="ml-1 shrink-0" size={13} /> :
     <ChevronDown className="ml-1 shrink-0" size={13} />;
 
-  const thClass = "border border-gray-300 p-2 cursor-pointer select-none hover:bg-alpbBlue/80 transition-colors";
 
   const handleExport = () => {
     const label = season ? `${season}-` : "";
@@ -172,161 +163,144 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
 
   if (leadersLoading) {
     return (
-      <div className="flex items-center justify-center bg-white p-6 rounded-lg shadow-sm border mb-8 w-[50%] max-w-[calc(100%-2rem)] min-w-[360px]">
-        <p className="text-gray-500 py-8">Loading stat leaders…</p>
+      <div className="flex items-center justify-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 w-full">
+        <p className="text-gray-400 py-8 text-sm">Loading stat leaders…</p>
       </div>
     );
   }
 
   if (leadersError) {
     return (
-      <div className="flex items-center justify-center bg-white p-6 rounded-lg shadow-sm border mb-8 w-[50%] max-w-[calc(100%-2rem)] min-w-[360px]">
-        <p className="text-gray-500 py-8 italic">Data unavailable for this season.</p>
+      <div className="flex items-center justify-center bg-white p-6 rounded-xl shadow-sm border border-gray-100 w-full">
+        <p className="text-gray-400 py-8 italic text-sm">Data unavailable for this season.</p>
       </div>
     );
   }
 
+  const colHead = (
+    label: string,
+    onClick: () => void,
+    icon: React.ReactNode,
+    align = "text-right",
+  ) => (
+    <th
+      className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap ${align}`}
+      onClick={onClick}
+    >
+      <span className={`inline-flex items-center gap-0.5 ${align === "text-right" ? "justify-end" : ""}`}>
+        {label} {icon}
+      </span>
+    </th>
+  );
+
   return (
-    <div className="flex flex-col items-center justify-center bg-white p-6 rounded-lg shadow-sm border mb-8 w-[50%] max-w-[calc(100%-2rem)] min-w-[360px]">
-      <Tabs defaultValue="batting" className="w-full max-w-3xl">
-        <div className="flex items-center justify-between mb-4">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden">
+      {/* ── toolbar ── */}
+      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+        <Tabs defaultValue="batting">
           <TabsList>
-            <TabsTrigger value="batting" onClick={() => setStatView("Batting")}>
-              Batting Leaders
-            </TabsTrigger>
-            <TabsTrigger value="pitching" onClick={() => setStatView("Pitching")}>
-              Pitching Leaders
-            </TabsTrigger>
+            <TabsTrigger value="batting" onClick={() => setStatView("Batting")}>Batting Leaders</TabsTrigger>
+            <TabsTrigger value="pitching" onClick={() => setStatView("Pitching")}>Pitching Leaders</TabsTrigger>
           </TabsList>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-400 rounded-md px-3 py-1.5 transition-colors"
-            title={`Export ${statView} leaders as CSV`}
-          >
-            <Download size={13} />
-            Export CSV
-          </button>
-        </div>
-        <p className="text-xs text-gray-500 w-full text-center">
-          {teamFilter
-            ? `${teamFilter} players · click any column to sort`
-            : `Click any column header to sort`}
+        </Tabs>
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-alpbBlue hover:border-alpbBlue border border-gray-200 rounded-md px-3 py-1.5 transition-colors"
+        >
+          <Download size={12} />
+          Export CSV
+        </button>
+      </div>
+
+      {/* ── batting ── */}
+      {statView === "Batting" && (
+        batters.length === 0 ? (
+          <p className="italic text-sm text-gray-400 text-center py-10">No batting data for this team.</p>
+        ) : (
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-gray-100">
+                {colHead("#",      () => handleBattingSort("rank"),       battingSortIcon("rank"),       "text-center")}
+                {colHead("Player", () => handleBattingSort("playername"), battingSortIcon("playername"), "text-left")}
+                {!teamFilter && colHead("Team", () => handleBattingSort("teamname"), battingSortIcon("teamname"), "text-left")}
+                {colHead("AVG",    () => handleBattingSort("avg"),        battingSortIcon("avg"))}
+                {colHead("HR",     () => handleBattingSort("hr"),         battingSortIcon("hr"))}
+                {colHead("RBI",    () => handleBattingSort("rbi"),        battingSortIcon("rbi"))}
+                {colHead("SB",     () => handleBattingSort("sb"),         battingSortIcon("sb"))}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedBatters.map((batter, index) => {
+                const leagueRank = allBatters.findIndex((b) => b.playerid === batter.playerid) + 1;
+                return (
+                  <tr
+                    key={batter.playerid}
+                    className={`border-b border-gray-100 hover:bg-blue-50/40 transition-colors ${index % 2 === 1 ? "bg-gray-50" : "bg-white"}`}
+                  >
+                    <td className="px-3 py-2.5 text-center tabular-nums text-gray-500 text-sm w-10">
+                      {leagueRank}{teamFilter && <span className="ml-0.5 text-[10px] text-gray-400">(lg)</span>}
+                    </td>
+                    <td className="px-4 py-2.5 font-medium text-gray-800">{batter.playername}</td>
+                    {!teamFilter && <td className="px-3 py-2.5 text-gray-500 text-sm">{batter.teamname?.fullname ?? batter.teamname?.$t}</td>}
+                    <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-800">{batter.avg}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{batter.hr}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{batter.rbi}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{batter.sb}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )
+      )}
+
+      {/* ── pitching ── */}
+      {statView === "Pitching" && (
+        pitchers.length === 0 ? (
+          <p className="italic text-sm text-gray-400 text-center py-10">No pitching data for this team.</p>
+        ) : (
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-gray-100">
+                {colHead("#",      () => handlePitchingSort("rank"),       pitchingSortIcon("rank"),       "text-center")}
+                {colHead("Player", () => handlePitchingSort("playername"), pitchingSortIcon("playername"), "text-left")}
+                {!teamFilter && colHead("Team", () => handlePitchingSort("teamname"), pitchingSortIcon("teamname"), "text-left")}
+                {colHead("ERA",    () => handlePitchingSort("era"),        pitchingSortIcon("era"))}
+                {colHead("W",      () => handlePitchingSort("wins"),       pitchingSortIcon("wins"))}
+                {colHead("SO",     () => handlePitchingSort("so"),         pitchingSortIcon("so"))}
+                {colHead("IP",     () => handlePitchingSort("ip"),         pitchingSortIcon("ip"))}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedPitchers.map((pitcher, index) => {
+                const leagueRank = allPitchers.findIndex((p) => p.playerid === pitcher.playerid) + 1;
+                return (
+                  <tr
+                    key={pitcher.playerid}
+                    className={`border-b border-gray-100 hover:bg-blue-50/40 transition-colors ${index % 2 === 1 ? "bg-gray-50" : "bg-white"}`}
+                  >
+                    <td className="px-3 py-2.5 text-center tabular-nums text-gray-500 text-sm w-10">
+                      {leagueRank}{teamFilter && <span className="ml-0.5 text-[10px] text-gray-400">(lg)</span>}
+                    </td>
+                    <td className="px-4 py-2.5 font-medium text-gray-800">{pitcher.playername}</td>
+                    {!teamFilter && <td className="px-3 py-2.5 text-gray-500 text-sm">{pitcher.teamname?.fullname ?? pitcher.teamname?.$t}</td>}
+                    <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-800">{pitcher.era}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.wins}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.so}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.ip}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )
+      )}
+
+      {lastUpdated && (
+        <p className="text-right text-[11px] text-gray-400 px-5 py-2.5 border-t border-gray-100">
+          Updated {lastUpdated}
         </p>
-
-        <TabsContent value="batting">
-          {batters.length === 0 ? (
-            <p className="text-center text-gray-400 italic py-6 text-sm">No batting data for this team.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-alpbBlue text-white">
-                <TableRow className="hover:bg-transparent">
-                  <th className={thClass} onClick={() => handleBattingSort("rank")}>
-                    <span className="inline-flex items-center"># {battingSortIcon("rank")}</span>
-                  </th>
-                  <th className={thClass} onClick={() => handleBattingSort("playername")}>
-                    <span className="inline-flex items-center">Player {battingSortIcon("playername")}</span>
-                  </th>
-                  {!teamFilter && (
-                    <th className={thClass} onClick={() => handleBattingSort("teamname")}>
-                      <span className="inline-flex items-center">Team {battingSortIcon("teamname")}</span>
-                    </th>
-                  )}
-                  <th className={thClass} onClick={() => handleBattingSort("avg")}>
-                    <span className="inline-flex items-center">AVG {battingSortIcon("avg")}</span>
-                  </th>
-                  <th className={thClass} onClick={() => handleBattingSort("hr")}>
-                    <span className="inline-flex items-center">HR {battingSortIcon("hr")}</span>
-                  </th>
-                  <th className={thClass} onClick={() => handleBattingSort("rbi")}>
-                    <span className="inline-flex items-center">RBI {battingSortIcon("rbi")}</span>
-                  </th>
-                  <th className={thClass} onClick={() => handleBattingSort("sb")}>
-                    <span className="inline-flex items-center">SB {battingSortIcon("sb")}</span>
-                  </th>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedBatters.map((batter, index) => {
-                  const leagueRank = allBatters.findIndex((b) => b.playerid === batter.playerid) + 1;
-                  return (
-                    <TableRow key={batter.playerid} className="hover:bg-transparent">
-                      <TableCell className="text-center">
-                        {leagueRank}
-                        {teamFilter && <span className="ml-1 text-xs text-gray-400">(lg)</span>}
-                      </TableCell>
-                      <TableCell>{batter.playername}</TableCell>
-                      {!teamFilter && <TableCell>{batter.teamname?.fullname ?? batter.teamname?.$t}</TableCell>}
-                      <TableCell>{batter.avg}</TableCell>
-                      <TableCell>{batter.hr}</TableCell>
-                      <TableCell>{batter.rbi}</TableCell>
-                      <TableCell>{batter.sb}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </TabsContent>
-
-        <TabsContent value="pitching">
-          {pitchers.length === 0 ? (
-            <p className="text-center text-gray-400 italic py-6 text-sm">No pitching data for this team.</p>
-          ) : (
-            <Table>
-              <TableHeader className="bg-alpbBlue text-white">
-                <TableRow className="hover:bg-transparent">
-                  <th className={thClass} onClick={() => handlePitchingSort("rank")}>
-                    <span className="inline-flex items-center"># {pitchingSortIcon("rank")}</span>
-                  </th>
-                  <th className={thClass} onClick={() => handlePitchingSort("playername")}>
-                    <span className="inline-flex items-center">Player {pitchingSortIcon("playername")}</span>
-                  </th>
-                  {!teamFilter && (
-                    <th className={thClass} onClick={() => handlePitchingSort("teamname")}>
-                      <span className="inline-flex items-center">Team {pitchingSortIcon("teamname")}</span>
-                    </th>
-                  )}
-                  <th className={thClass} onClick={() => handlePitchingSort("era")}>
-                    <span className="inline-flex items-center">ERA {pitchingSortIcon("era")}</span>
-                  </th>
-                  <th className={thClass} onClick={() => handlePitchingSort("wins")}>
-                    <span className="inline-flex items-center">W {pitchingSortIcon("wins")}</span>
-                  </th>
-                  <th className={thClass} onClick={() => handlePitchingSort("so")}>
-                    <span className="inline-flex items-center">SO {pitchingSortIcon("so")}</span>
-                  </th>
-                  <th className={thClass} onClick={() => handlePitchingSort("ip")}>
-                    <span className="inline-flex items-center">IP {pitchingSortIcon("ip")}</span>
-                  </th>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedPitchers.map((pitcher, index) => {
-                  const leagueRank = allPitchers.findIndex((p) => p.playerid === pitcher.playerid) + 1;
-                  return (
-                    <TableRow key={pitcher.playerid} className="hover:bg-transparent">
-                      <TableCell className="text-center">
-                        {leagueRank}
-                        {teamFilter && <span className="ml-1 text-xs text-gray-400">(lg)</span>}
-                      </TableCell>
-                      <TableCell>{pitcher.playername}</TableCell>
-                      {!teamFilter && <TableCell>{pitcher.teamname?.fullname ?? pitcher.teamname?.$t}</TableCell>}
-                      <TableCell>{pitcher.era}</TableCell>
-                      <TableCell>{pitcher.wins}</TableCell>
-                      <TableCell>{pitcher.so}</TableCell>
-                      <TableCell>{pitcher.ip}</TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      <p className="w-full text-center text-xs text-gray-500 mt-5">
-        {lastUpdated ? `Last updated at ${lastUpdated}` : ""}
-      </p>
+      )}
     </div>
   );
 };

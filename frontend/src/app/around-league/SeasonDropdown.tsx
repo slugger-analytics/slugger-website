@@ -13,9 +13,10 @@ import { fetchSeasons, SeasonOption } from "@/api/league";
 type Props = {
   value: string;
   onChange: (year: string) => void;
+  triggerClassName?: string;
 };
 
-const SeasonDropdown = ({ value, onChange }: Props) => {
+const SeasonDropdown = ({ value, onChange, triggerClassName = "" }: Props) => {
   const [seasons, setSeasons] = useState<SeasonOption[]>([]);
   const [loaded, setLoaded] = useState(false);
 
@@ -38,13 +39,13 @@ const SeasonDropdown = ({ value, onChange }: Props) => {
 
   if (!loaded) {
     return (
-      <div className="h-9 w-36 animate-pulse rounded-md bg-gray-200" />
+      <div className="h-9 w-36 animate-pulse rounded-md bg-white/20" />
     );
   }
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-40">
+      <SelectTrigger className={`w-40 ${triggerClassName}`}>
         <SelectValue placeholder="Select season" />
       </SelectTrigger>
       <SelectContent>

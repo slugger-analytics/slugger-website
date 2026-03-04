@@ -29,13 +29,21 @@ export default function RecentGameResults() {
         };
     }, []);
 
-    if (loading) return <div>Loading recent games...</div>;
-    if (error) return <div className="text-red-600">{error}</div>;
-    if (!games || games.length === 0) return <div>No recent games available</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center py-8 text-gray-400 text-sm gap-2">
+            <div className="w-4 h-4 rounded-full border-2 border-gray-200 border-t-blue-500 animate-spin" />
+            Loading recent games…
+        </div>
+    );
+    if (error) return (
+        <div className="text-red-500 text-sm py-4 text-center">{error}</div>
+    );
+    if (!games || games.length === 0) return (
+        <div className="text-gray-400 text-sm py-4 text-center">No recent games available</div>
+    );
 
-    // Render each game using the presentational component as vertical tiles
     return (
-        <div className="flex flex-col items-center gap-3 py-2 max-h-[400px] overflow-y-auto pr-4">
+        <div className="flex flex-col gap-3">
             {games.map((g: RecentScore, idx: number) => (
                 <RecentGameResult key={g.game_id ?? idx} game={g} />
             ))}

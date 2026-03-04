@@ -15,9 +15,10 @@ const ALL_TEAMS = "__all__";
 type Props = {
   value: string;
   onChange: (team: string) => void;
+  triggerClassName?: string;
 };
 
-const TeamDropdown = ({ value, onChange }: Props) => {
+const TeamDropdown = ({ value, onChange, triggerClassName = "" }: Props) => {
   const standingsData = useStore($standings);
 
   const liveTeams = useMemo(() => {
@@ -30,16 +31,13 @@ const TeamDropdown = ({ value, onChange }: Props) => {
     return Array.from(names).sort();
   }, [standingsData]);
 
-  // Keep the last confirmed non-empty list so the Select never unmounts or
-  // loses its displayed value while new season data is loading.
   const [stableTeams, setStableTeams] = useState<string[]>([]);
   useEffect(() => {
     if (liveTeams.length > 0) setStableTeams(liveTeams);
   }, [liveTeams]);
 
-  // Show skeleton only on very first load before any data arrives
   if (!stableTeams.length) {
-    return <div className="h-9 w-48 animate-pulse rounded-md bg-gray-200" />;
+    return <div className="h-9 w-48 animate-pulse rounded-md bg-white/20" />;
   }
 
   return (
@@ -47,9 +45,9 @@ const TeamDropdown = ({ value, onChange }: Props) => {
       value={value || ALL_TEAMS}
       onValueChange={(v) => onChange(v === ALL_TEAMS ? "" : v)}
     >
-      <SelectTrigger className="w-48">
+      <SelectTrigger className={`w-48 ${triggerClassName}`}>
         {/* Render label directly so it never flashes blank when SelectItems re-render */}
-        <span className={value ? "" : "text-muted-foreground"}>
+        <span className={value ? "" : "text-gray-400"}>
           {value || "All Teams"}
         </span>
       </SelectTrigger>

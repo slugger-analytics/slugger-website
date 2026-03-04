@@ -28,7 +28,9 @@ Slugger (parent page)
 |------|-------|------|
 | Step 1 | Your frontend | Listen for the `SLUGGER_AUTH` message from Slugger and extract `bootstrapToken` |
 | Step 2 | Your backend | Use `bootstrapToken` to call Slugger's `/api/users/me` and upsert the user |
-| Step 3 | Your server config | Set `Content-Security-Policy: frame-ancestors` to allow Slugger to embed your widget |
+| Step 3 | Your server config | Set `Content-Security-Policy: frame-ancestors` to allow Slugger to embed your widget (**required**) |
+
+> **Domain whitelisting:** Only needed if your widget makes direct fetch/API calls to the Slugger backend from its own domain. The standard `postMessage` token flow does **not** require whitelisting — contact the Slugger platform team only if you need it.
 
 ---
 
@@ -283,9 +285,8 @@ app.use((req, res, next) => {
 ## Local Development Testing
 
 1. Start your widget's local server (e.g. `http://localhost:4000`)
-2. Ask the Slugger platform team to whitelist your widget's domain in the backend config
-3. Log in to Slugger: `http://localhost:3000/sign-in`
-4. Open the integration test page: `http://localhost:3000/widget-test`
+2. Log in to Slugger: `http://localhost:3000/sign-in`
+3. Open the integration test page: `http://localhost:3000/widget-test`
    - Change the Widget URL field to your local address (e.g. `http://localhost:4000`)
    - Watch the auth status and Event Log inside the iframe
-5. You can also open DevTools → Console and filter by `[WidgetFrame]` for detailed logs
+4. You can also open DevTools → Console and filter by `[WidgetFrame]` for detailed logs

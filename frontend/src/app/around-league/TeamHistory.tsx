@@ -2,13 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { fetchSeasons, fetchStandings } from "@/api/league";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/app/components/ui/table";
 
 type SeasonRecord = {
   year: string;
@@ -110,9 +103,7 @@ const TeamHistory = ({ teamName }: Props) => {
   }, null);
 
   return (
-    <div className="flex flex-col bg-white p-6 rounded-lg shadow-sm border mb-8 w-[50%] max-w-[calc(100%-2rem)] min-w-[360px]">
-      <h2 className="text-xl font-semibold mb-1">{teamName} — All Seasons</h2>
-      <p className="text-xs text-gray-400 mb-5">Season-by-season standings record</p>
+    <div className="flex flex-col bg-white p-6 rounded-xl shadow-sm border border-gray-100 w-full">
 
       {loading && (
         <div className="space-y-2">
@@ -134,71 +125,63 @@ const TeamHistory = ({ teamName }: Props) => {
 
       {!loading && !error && records.length > 0 && (
         <>
-          <div className="flex gap-6 mb-5 text-sm">
+          {/* Summary strip */}
+          <div className="flex flex-wrap gap-5 mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
             <div className="flex flex-col">
-              <span className="text-xs text-gray-400 uppercase tracking-wide">Seasons</span>
-              <span className="font-semibold">{records.length}</span>
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Seasons</span>
+              <span className="text-lg font-bold text-gray-800">{records.length}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-gray-400 uppercase tracking-wide">All-time W–L</span>
-              <span className="font-semibold">{totalWins}–{totalLosses}</span>
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">All-time W–L</span>
+              <span className="text-lg font-bold text-gray-800">{totalWins}–{totalLosses}</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-xs text-gray-400 uppercase tracking-wide">All-time PCT</span>
-              <span className="font-semibold">{overallPct}</span>
+              <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">All-time PCT</span>
+              <span className="text-lg font-bold text-gray-800">{overallPct}</span>
             </div>
             {bestSeason && (
               <div className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Best Season</span>
-                <span className="font-semibold">{bestSeason.year} ({bestSeason.pct})</span>
+                <span className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Best Season</span>
+                <span className="text-lg font-bold text-gray-800">{bestSeason.year} <span className="text-sm font-normal text-gray-500">({bestSeason.pct})</span></span>
               </div>
             )}
           </div>
 
-          <Table>
-            <TableHeader className="bg-alpbBlue text-white">
-              <TableRow className="hover:bg-transparent">
-                <th className="border border-gray-300 p-2 text-left">Season</th>
-                <th className="border border-gray-300 p-2 text-left">Division</th>
-                <th className="border border-gray-300 p-2">W</th>
-                <th className="border border-gray-300 p-2">L</th>
-                <th className="border border-gray-300 p-2">PCT</th>
-                <th className="border border-gray-300 p-2">Win %</th>
-                <th className="border border-gray-300 p-2">Streak</th>
-                <th className="border border-gray-300 p-2">Last 10</th>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {records.map((rec) => (
-                <TableRow key={rec.year} className="hover:bg-transparent">
-                  <TableCell className="border border-gray-300 p-2 font-medium">
-                    {rec.year}
-                  </TableCell>
-                  <TableCell className="border border-gray-300 p-2 text-sm text-gray-600">
-                    {rec.division}
-                  </TableCell>
-                  <TableCell className="border border-gray-300 p-2 text-center">
-                    {rec.wins}
-                  </TableCell>
-                  <TableCell className="border border-gray-300 p-2 text-center">
-                    {rec.losses}
-                  </TableCell>
-                  <TableCell className="border border-gray-300 p-2 text-center">
-                    {rec.pct}
-                  </TableCell>
-                  <TableCell className="border border-gray-300 p-2">
-                    <WinBar wins={rec.wins} losses={rec.losses} />
-                  </TableCell>
-                  <TableCell className="border border-gray-300 p-2 text-center">
-                    {rec.streak || "—"}
-                  </TableCell>
-                  <TableCell className="border border-gray-300 p-2 text-center">
-                    {rec.last10 || "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="overflow-hidden rounded-lg border border-gray-100">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-left">Season</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-left">Division</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-center">W</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-center">L</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-center">PCT</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">Win %</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-center">Streak</th>
+                  <th className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-center">Last 10</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((rec, index) => (
+                  <tr
+                    key={rec.year}
+                    className={`border-b border-gray-100 hover:bg-blue-50/40 transition-colors ${index % 2 === 1 ? "bg-gray-50" : "bg-white"}`}
+                  >
+                    <td className="px-4 py-2.5 font-semibold text-gray-800 tabular-nums">{rec.year}</td>
+                    <td className="px-4 py-2.5 text-gray-600">{rec.division}</td>
+                    <td className="px-4 py-2.5 text-center tabular-nums text-gray-700">{rec.wins}</td>
+                    <td className="px-4 py-2.5 text-center tabular-nums text-gray-700">{rec.losses}</td>
+                    <td className="px-4 py-2.5 text-center tabular-nums font-medium text-gray-800">{rec.pct}</td>
+                    <td className="px-4 py-2.5">
+                      <WinBar wins={rec.wins} losses={rec.losses} />
+                    </td>
+                    <td className="px-4 py-2.5 text-center text-gray-600">{rec.streak || "—"}</td>
+                    <td className="px-4 py-2.5 text-center tabular-nums text-gray-600">{rec.last10 || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
     </div>

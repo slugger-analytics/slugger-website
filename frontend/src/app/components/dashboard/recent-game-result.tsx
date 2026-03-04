@@ -7,87 +7,84 @@ type Props = {
 };
 
 export default function RecentScoreResult({ game }: Props) {
-  // ---------- FIELD NORMALIZATION ----------
-  const rawDate = game.date
-  const home = game.home_team_name
-  const away = game.visiting_team_name
-  const homeScore = game.home_team_score
-  const awayScore = game.visiting_team_score
-  const status = game.game_status || "";
-  const inningsPlayed = game.innings_played
-  const regulation = game.regulation_innings
-  const fieldName = game.field
-  const gametime = game.gametime || "";
-  const timezone = game.timezone || "";
+  const rawDate      = game.date;
+  const home         = game.home_team_name;
+  const away         = game.visiting_team_name;
+  const homeScore    = game.home_team_score;
+  const awayScore    = game.visiting_team_score;
+  const status       = game.game_status || "";
+  const inningsPlayed = game.innings_played;
+  const fieldName    = game.field;
+  const gametime     = game.gametime || "";
+  const timezone     = game.timezone || "";
 
-  // ---------- FORMATTERS ----------
-  const formatDate = (val: any) => {
+  const isFinal      = status.toLowerCase().includes("final");
+  const isLive       = status.toLowerCase().includes("in progress");
+  const isScheduled  = status.toLowerCase().includes("scheduled");
+
+  const homeWon = isFinal && homeScore != null && awayScore != null && homeScore > awayScore;
+  const awayWon = isFinal && homeScore != null && awayScore != null && awayScore > homeScore;
+
+  const formatDate = (val: unknown) => {
     if (!val) return "";
-
     const s = String(val);
-    const dateOnlyMatch = /^\d{4}-\d{2}-\d{2}$/.test(s);
-    let d: Date;
-    if (dateOnlyMatch) {
-      const [y, m, day] = s.split("-").map((n) => parseInt(n, 10));
-      d = new Date(y, m - 1, day); // local date at midnight
-    } else {
-      d = new Date(s);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [y, m, d] = s.split("-").map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
     }
-
-    if (isNaN(d.getTime())) return String(val);
-    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? s : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   };
 
-  const formatStatus = () => {
-    if (!status) return "";
-
-    if (status.toLowerCase().includes("final")) {
-      return "Final";
-    }
-
-    if (status.toLowerCase().includes("in progress")) {
-      if (inningsPlayed) return `In Progress — ${inningsPlayed} inn`;
-      return "In Progress";
-    }
-
-    if (status.toLowerCase().includes("scheduled")) {
-      if (gametime) return `Scheduled — ${gametime} ${timezone}`;
-      return "Scheduled";
-    }
-
-    return status;
+  const statusBadge = () => {
+    if (isFinal)     return { label: "Final",       cls: "bg-gray-100 text-gray-600" };
+    if (isLive)      return { label: `Live · ${inningsPlayed ?? ""}`, cls: "bg-green-100 text-green-700 animate-pulse" };
+    if (isScheduled) return { label: gametime ? `${gametime} ${timezone}` : "Scheduled", cls: "bg-blue-50 text-blue-600" };
+    return { label: status, cls: "bg-gray-100 text-gray-500" };
   };
 
-  const date = formatDate(rawDate);
-  const statusText = formatStatus();
+  const badge = statusBadge();
 
-  // ---------- RENDER ----------
   return (
-    <div className="min-w-[280px] w-56 flex-shrink-0 p-3 bg-white rounded-lg border border-gray-300 shadow-sm">
-      {/* DATE */}
-      <div className="mb-1 text-xs text-gray-500">{date}</div>
+    <div className="w-full bg-white border border-gray-100 rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow">
+      {/* Top row: date + status */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs text-gray-400">{formatDate(rawDate)}</span>
+        <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide ${badge.cls}`}>
+          {badge.label}
+        </span>
+      </div>
 
-      {/* STATUS */}
-      {statusText && (
-        <div className="mb-2 text-[11px] text-blue-600 font-medium uppercase tracking-wide">
-          {statusText}
+      {/* Teams + scores */}
+      <div className="flex flex-col gap-1.5">
+        {/* Away team */}
+        <div className="flex items-center justify-between">
+          <span className={`text-sm truncate max-w-[160px] ${awayWon ? "font-bold text-gray-900" : "text-gray-500"}`}>
+            {away}
+          </span>
+          <span className={`text-lg font-bold tabular-nums ${awayWon ? "text-gray-900" : "text-gray-400"}`}>
+            {awayScore ?? "—"}
+          </span>
         </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-100" />
+
+        {/* Home team */}
+        <div className="flex items-center justify-between">
+          <span className={`text-sm truncate max-w-[160px] ${homeWon ? "font-bold text-gray-900" : "text-gray-500"}`}>
+            {home}
+          </span>
+          <span className={`text-lg font-bold tabular-nums ${homeWon ? "text-gray-900" : "text-gray-400"}`}>
+            {homeScore ?? "—"}
+          </span>
+        </div>
+      </div>
+
+      {/* Venue */}
+      {fieldName && (
+        <p className="mt-2 text-[11px] text-gray-400 truncate">{fieldName}</p>
       )}
-
-      {/* TEAM NAMES */}
-      <div className="mb-2">
-        <div className="text-sm font-medium truncate">
-          {away} <span className="text-gray-400">@</span> {home}
-        </div>
-        <div className="text-xs text-gray-500 truncate">{fieldName}</div>
-      </div>
-
-      {/* SCORE */}
-      <div className="mt-auto text-lg font-semibold flex justify-center items-center">
-        <span className="mr-2">{awayScore ?? "-"}</span>
-        <span className="text-gray-400">—</span>
-        <span className="ml-2">{homeScore ?? "-"}</span>
-      </div>
     </div>
   );
 }

@@ -9,13 +9,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "@/app/components/ui/table";
 
 type SortKey = "teamname" | "wins" | "losses" | "pct" | "streak" | "last10";
 type SortDir = "asc" | "desc";
@@ -34,48 +27,35 @@ function sortTeams(teams: Team[], key: SortKey, dir: SortDir): Team[] {
   return [...teams].sort((a, b) => {
     let diff = 0;
     switch (key) {
-      case "wins":    diff = parseInt(a.wins)    - parseInt(b.wins);    break;
-      case "losses":  diff = parseInt(a.losses)  - parseInt(b.losses);  break;
-      case "pct":     diff = parseFloat(a.pct)   - parseFloat(b.pct);   break;
-      case "streak":  diff = parseStreak(a.streak) - parseStreak(b.streak); break;
-      case "last10":  diff = parseLast10Wins(a.last10) - parseLast10Wins(b.last10); break;
-      case "teamname":
-        diff = a.teamname.localeCompare(b.teamname);
-        break;
+      case "wins":     diff = parseInt(a.wins)    - parseInt(b.wins);    break;
+      case "losses":   diff = parseInt(a.losses)  - parseInt(b.losses);  break;
+      case "pct":      diff = parseFloat(a.pct)   - parseFloat(b.pct);   break;
+      case "streak":   diff = parseStreak(a.streak) - parseStreak(b.streak); break;
+      case "last10":   diff = parseLast10Wins(a.last10) - parseLast10Wins(b.last10); break;
+      case "teamname": diff = a.teamname.localeCompare(b.teamname); break;
     }
     return dir === "asc" ? diff : -diff;
   });
 }
 
-function Last10Cell({ value, compact }: { value: string; compact: boolean }) {
+/** Mini pip bar for Last 10 */
+function PipBar({ value }: { value: string }) {
   const parts = value?.split("-");
   const wins = parseInt(parts?.[0] ?? "0") || 0;
   const losses = parseInt(parts?.[1] ?? "0") || 0;
-  const total = wins + losses;
-
   return (
-    <TableCell
-      className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}
-    >
-      {!compact && value ? (
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-sm">{value}</span>
-          <div className="flex gap-0.5">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <span
-                key={i}
-                className={`inline-block w-3 h-3 rounded-sm ${
-                  i < wins ? "bg-gray-700" : "bg-gray-300"
-                }`}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-gray-500">{wins} W · {losses} L</span>
-        </div>
-      ) : (
-        value
-      )}
-    </TableCell>
+    <div className="flex flex-col items-center gap-0.5">
+      <span className="tabular-nums text-xs font-medium">{value}</span>
+      <div className="flex gap-px">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <span
+            key={i}
+            className={`inline-block w-2 h-2 rounded-sm ${i < wins ? "bg-alpbBlue" : "bg-gray-200"}`}
+          />
+        ))}
+      </div>
+      <span className="text-[9px] text-gray-400 tabular-nums">{wins}W·{losses}L</span>
+    </div>
   );
 }
 
@@ -114,24 +94,15 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
       const data = allStandingsData.standings.conference.find(
         (conf) => conf.name === view,
       );
-      // Store raw order — sorting is applied at render time
       const divisions = data?.division.map((division) => ({
         ...division,
         team: [...division.team],
       })) ?? [];
-
       setStandingsData(divisions);
-      const readableDate = new Date(allStandingsData.updatedAt).toLocaleString(
-        "en-US",
-        {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        },
-      );
+      const readableDate = new Date(allStandingsData.updatedAt).toLocaleString("en-US", {
+        year: "numeric", month: "long", day: "numeric",
+        hour: "numeric", minute: "2-digit", hour12: true,
+      });
       setLastUpdated(readableDate);
     }
   }, [allStandingsData, view]);
@@ -145,19 +116,10 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
     const rows: string[][] = [header];
     standingsData.forEach((division) => {
       sortTeams(division.team, sortKey, sortDir).forEach((team) => {
-        rows.push([
-          division.name,
-          team.teamname,
-          team.wins,
-          team.losses,
-          team.pct,
-          team.streak,
-          team.last10,
-        ]);
+        rows.push([division.name, team.teamname, team.wins, team.losses, team.pct, team.streak, team.last10]);
       });
     });
-    const label = season ? `${season}-` : "";
-    downloadCsv(`${label}standings.csv`, rows);
+    downloadCsv(`${season ? `${season}-` : ""}standings.csv`, rows);
   };
 
   const handleSort = (key: SortKey) => {
@@ -165,153 +127,159 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
-      // Sensible defaults: fewest losses → asc; everything else → desc
       setSortDir(key === "losses" || key === "teamname" ? "asc" : "desc");
     }
   };
 
-  const sortIndicator = (key: SortKey) => {
-    if (key !== sortKey)
-      return <ChevronsUpDown className="ml-1 opacity-30 shrink-0" size={13} />;
+  const sortIcon = (key: SortKey) => {
+    if (key !== sortKey) return <ChevronsUpDown className="opacity-30 shrink-0" size={11} />;
     return sortDir === "asc"
-      ? <ChevronUp className="ml-1 shrink-0" size={13} />
-      : <ChevronDown className="ml-1 shrink-0" size={13} />;
+      ? <ChevronUp className="shrink-0" size={11} />
+      : <ChevronDown className="shrink-0" size={11} />;
   };
 
-  const SortableTh = ({
-    colKey,
-    children,
-    className = "",
-  }: {
-    colKey: SortKey;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <th
-      className={`border border-gray-300 p-2 cursor-pointer select-none hover:bg-alpbBlue/80 transition-colors ${className}`}
-      onClick={() => handleSort(colKey)}
-    >
-      <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
-        {children}
-        {sortIndicator(colKey)}
-      </span>
-    </th>
-  );
+  const colHead = (key: SortKey, label: string, align = "text-right") =>
+    compact ? (
+      <th key={key} className={`px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 ${align}`}>
+        {label}
+      </th>
+    ) : (
+      <th
+        key={key}
+        className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap ${align}`}
+        onClick={() => handleSort(key)}
+      >
+        <span className="inline-flex items-center gap-0.5 justify-end">
+          {label} {sortIcon(key)}
+        </span>
+      </th>
+    );
 
   if (standingsLoading) {
     return (
-      <div className={`flex items-center justify-center rounded-lg ${compact ? "" : "p-6 bg-white shadow-sm border mb-8 w-[50%]"}`}>
-        <p className="text-gray-500 py-8">Loading standings…</p>
+      <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 p-6"}`}>
+        <div className="space-y-2 py-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-8 rounded bg-gray-100 animate-pulse" />)}
+        </div>
       </div>
     );
   }
 
   if (standingsError) {
     return (
-      <div className={`flex items-center justify-center rounded-lg ${compact ? "" : "p-6 bg-white shadow-sm border mb-8 w-[50%]"}`}>
-        <p className="text-gray-500 py-8 italic">Data unavailable for this season.</p>
+      <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 p-6"}`}>
+        <p className="text-gray-400 italic text-sm py-6 text-center">Data unavailable for this season.</p>
       </div>
     );
   }
 
+  // Build flat list of {division, teams} respecting filters
+  const sections = standingsData
+    .map((division) => {
+      const base = maxTeams ? division.team.slice(0, maxTeams) : division.team;
+      const filtered = teamFilter ? base.filter((t) => t.teamname === teamFilter) : base;
+      const teams = sortTeams(filtered, sortKey, sortDir);
+      return { division, teams };
+    })
+    .filter(({ teams }) => teams.length > 0);
+
   return (
-    <div
-      className={`flex flex-col items-center justify-center rounded-lg ${
-        compact ? "p-0 mb-0 bg-transparent shadow-none border-none" : "p-6 bg-white shadow-sm border mb-8 w-[50%]"
-      }`}
-    >
+    <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden"}`}>
       {!compact && (
-        <div className="w-full flex items-center justify-between mb-5">
-          <Tabs
-            defaultValue="OVERALL"
-            className="flex justify-center"
-          >
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+          <Tabs defaultValue="OVERALL">
             <TabsList>
-              <TabsTrigger value="OVERALL" onClick={() => setView("OVERALL")}>
-                Overall
-              </TabsTrigger>
-              <TabsTrigger value="FIRST HALF" onClick={() => setView("FIRST HALF")}>
-                First Half
-              </TabsTrigger>
-              <TabsTrigger
-                value="SECOND HALF"
-                onClick={() => setView("SECOND HALF")}
-              >
-                Second Half
-              </TabsTrigger>
+              <TabsTrigger value="OVERALL" onClick={() => setView("OVERALL")}>Overall</TabsTrigger>
+              <TabsTrigger value="FIRST HALF" onClick={() => setView("FIRST HALF")}>First Half</TabsTrigger>
+              <TabsTrigger value="SECOND HALF" onClick={() => setView("SECOND HALF")}>Second Half</TabsTrigger>
             </TabsList>
           </Tabs>
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 hover:border-gray-400 rounded-md px-3 py-1.5 transition-colors"
-            title="Export standings as CSV"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-alpbBlue hover:border-alpbBlue border border-gray-200 rounded-md px-3 py-1.5 transition-colors"
           >
-            <Download size={13} />
+            <Download size={12} />
             Export CSV
           </button>
         </div>
       )}
-      <div>
-        {standingsData.map((division) => {
-          const baseTeams = maxTeams ? division.team.slice(0, maxTeams) : division.team;
-          const filtered = teamFilter
-            ? baseTeams.filter((t) => t.teamname === teamFilter)
-            : baseTeams;
-          const teams = sortTeams(filtered, sortKey, sortDir);
 
-          // Hide the whole division when no teams match the filter
-          if (teams.length === 0) return null;
+      <table className="w-full border-collapse text-sm">
+        {/* Column headers */}
+        <thead>
+          <tr className="border-b border-gray-100">
+            {compact ? (
+              <th className="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 text-left">Team</th>
+            ) : (
+              <th
+                className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-left cursor-pointer select-none hover:text-gray-700 transition-colors"
+                onClick={() => handleSort("teamname")}
+              >
+                <span className="inline-flex items-center gap-0.5">Team {sortIcon("teamname")}</span>
+              </th>
+            )}
+            {colHead("wins",    "W")}
+            {colHead("losses",  "L")}
+            {colHead("pct",     "PCT")}
+            {colHead("streak",  "STRK")}
+            {colHead("last10",  "L10", "text-center")}
+          </tr>
+        </thead>
 
-          return (
-            <div key={division.name} className="mb-5">
-              <Table>
-                <TableHeader className="bg-alpbBlue text-white">
-                  <TableRow className="hover:bg-transparent">
-                    {compact ? (
-                      <th className="border border-gray-300 p-2">{division.name}</th>
-                    ) : (
-                      <SortableTh colKey="teamname">{division.name}</SortableTh>
-                    )}
-                    <SortableTh colKey="wins">W</SortableTh>
-                    <SortableTh colKey="losses">L</SortableTh>
-                    <SortableTh colKey="pct">PCT</SortableTh>
-                    <SortableTh colKey="streak">Streak</SortableTh>
-                    <SortableTh colKey="last10">Last 10</SortableTh>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {teams.map((team, index) => (
-                    <TableRow
-                      key={index}
-                      className={`hover:bg-transparent ${teamFilter && team.teamname === teamFilter ? "bg-alpbBlue/5 font-medium" : ""}`}
-                    >
-                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
-                        {team.teamname}
-                      </TableCell>
-                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
-                        {team.wins}
-                      </TableCell>
-                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
-                        {team.losses}
-                      </TableCell>
-                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
-                        {team.pct}
-                      </TableCell>
-                      <TableCell className={`border border-gray-300 ${compact ? "p-1" : "p-2"}`}>
-                        {team.streak}
-                      </TableCell>
-                      <Last10Cell value={team.last10} compact={!!compact} />
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          );
-        })}
-        <p className="w-full text-center text-xs text-gray-500 mt-5">
-          {lastUpdated ? `Last updated at ${lastUpdated}` : ""}
+        <tbody>
+          {sections.map(({ division, teams }) => (
+            <React.Fragment key={division.name}>
+              {/* Division label row */}
+              {!compact && !teamFilter && (
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400"
+                  >
+                    {division.name}
+                  </td>
+                </tr>
+              )}
+              {teams.map((team, idx) => (
+                <tr
+                  key={idx}
+                  className={`border-b border-gray-100 transition-colors hover:bg-blue-50/40 ${
+                    teamFilter && team.teamname === teamFilter ? "bg-alpbBlue/5" : ""
+                  }`}
+                >
+                  <td className={`${compact ? "px-2 py-2" : "px-4 py-3"} font-medium text-gray-800`}>
+                    {team.teamname}
+                  </td>
+                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
+                    {team.wins}
+                  </td>
+                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
+                    {team.losses}
+                  </td>
+                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums font-semibold text-gray-800`}>
+                    {team.pct}
+                  </td>
+                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-600`}>
+                    {team.streak}
+                  </td>
+                  <td className={`${compact ? "px-2 py-2" : "px-3 py-3"} text-center`}>
+                    {!compact && team.last10
+                      ? <PipBar value={team.last10} />
+                      : <span className="tabular-nums text-xs text-gray-600">{team.last10}</span>
+                    }
+                  </td>
+                </tr>
+              ))}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
+
+      {!compact && lastUpdated && (
+        <p className="text-right text-[11px] text-gray-400 px-5 py-2.5 border-t border-gray-100">
+          Updated {lastUpdated}
         </p>
-      </div>
+      )}
     </div>
   );
 };

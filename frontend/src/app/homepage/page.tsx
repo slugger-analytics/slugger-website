@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/app/components/app-sidebar";
 import {
@@ -10,16 +11,20 @@ import {
 import ProtectedRoute from "../components/ProtectedRoutes";
 import useQueryWidgets from "../hooks/use-query-widgets";
 import { useStore } from "@nanostores/react";
-import { useAuth } from "../contexts/AuthContext";
-import DashboardLoading from "../components/dashboard/dashboard-loading";
-import DashboardContent from "../components/dashboard/dashboard-content";
 import { $favWidgetIds, addRecentWidget } from "@/lib/widgetStore";
 import { openWidgetTab } from "@/lib/tabStore";
 import { $user } from "@/lib/userStore";
-import StatLeaders from "../around-league/StatLeaders";
 import Standings from "../around-league/Standings";
 import RecentGameResults from "@/app/components/dashboard/recent-game-results";
 import { AngleIcon } from "@radix-ui/react-icons";
+import { BarChart2, Trophy, Star, CalendarDays, ArrowRight } from "lucide-react";
+
+const TODAY = new Date().toLocaleDateString("en-US", {
+  weekday: "long",
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+});
 
 export default function HomePage() {
   const router = useRouter();
@@ -42,7 +47,7 @@ export default function HomePage() {
       : user.email) || "there";
 
   const favoriteWidgets = widgets.filter((widget) =>
-    favWidgetIds?.has(widget.id)
+    favWidgetIds?.has(widget.id),
   );
 
   return (
@@ -50,108 +55,160 @@ export default function HomePage() {
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
-          <SidebarTrigger />
-          <div className="w-full h-full p-2">
-            <div
-              className="
-                grid
-                grid-cols-4
-                grid-rows-4
-                gap-4
-                w-full
-                h-full
-              "
-            >
-              {/* ---------- HELLO (TOP LEFT) ---------- */}
-              <div className="col-span-2 row-span-1 bg-white rounded-xl">
-                <h1 className="text-3xl font-bold">Hello, {displayName}</h1>
-              </div>
+          <div className="w-full min-h-full bg-gray-50 p-4 pb-20">
+            <div className="max-w-7xl mx-auto flex flex-col gap-4 mb-16">
 
-              {/* ---------- (TOP RIGHT) ---------- */}
-              <div className="col-span-2 row-span-2 bg-white rounded-xl  p-2 flex flex-col">
-                <h1 className="text-2xl font-bold text-center mb-1">{`${year} Current Leaders`}</h1>
-                <div className="flex-1 overflow-y-auto flex justify-center">
-                  <div className="w-fit text-center">
-                    <Standings season={year} maxTeams={1} compact />
-                  </div>
+              {/* ── WELCOME BANNER ── */}
+              <div className="relative rounded-2xl bg-alpbBlue px-3 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow">
+                <div className="absolute top-2 left-2 z-10">
+                  <SidebarTrigger className="text-white hover:bg-white/20 hover:text-white" />
+                </div>
+                <div className="pt-7 sm:pt-1 pl-10">
+                  <p className="text-blue-200 font-bold text-8px">
+                    Atlantic League of Professional Baseball
+                  </p>
+            
+                  <p className="text-2xl font-bold text-white leading-none my-6">
+                    Welcome back, {displayName}
+                  </p>
+                  <p className="text-blue-200 text-sm mb-3">
+                    {TODAY}
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Link
+                    href="/around-league"
+                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <BarChart2 size={15} />
+                    Around the League
+                    <ArrowRight size={13} />
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  >
+                    <Star size={15} />
+                    My Widgets
+                    <ArrowRight size={13} />
+                  </Link>
                 </div>
               </div>
 
-              {/* ---------- RECENT GAMES (BOTTOM LEFT) ---------- */}
-              <div className="col-span-2 row-span-3 bg-white rounded-xl  p-4 flex flex-col">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2 text-center">
-                  Recent Games
-                </h2>
-                <div className="flex-1 flex justify-center overflow-hidden">
-                  <RecentGameResults />
-                </div>
-              </div>
+              {/* ── MAIN GRID ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[680px]">
 
-              {/* ---------- FAVORITES (BOTTOM RIGHT) ---------- */}
-              <div className="col-span-2 row-span-2 bg-white rounded-xl shadow p-4 flex flex-col">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2 text-center">
-                  Favorite Widgets
-                </h2>
-                {widgetsLoading ? (
-                  <div className="flex-1 flex items-center justify-center text-gray-400 text-sm">
-                    Loading favorites...
+                {/* ── RECENT GAMES ── */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 pb-8 flex flex-col overflow-hidden lg:h-full">
+                  <div className="flex items-center gap-2 mb-4 shrink-0">
+                    <CalendarDays size={18} className="text-alpbBlue" />
+                    <h2 className="text-base font-semibold text-gray-800">Recent Games</h2>
                   </div>
-                ) : !favoriteWidgets.length ? (
-                  <div className="flex-1 flex items-center justify-center text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
-                    You don&apos;t have any favorites yet.
+                  <div className="flex-1 overflow-y-auto min-h-0">
+                    <RecentGameResults />
                   </div>
-                ) : (
-                  <div className="grid grid-cols-3 gap-4 overflow-y-auto pb-2 flex-1 min-h-0">
-                    {favoriteWidgets.map((widget) => (
-                      <button
-                        type="button"
-                        key={widget.id}
-                        onClick={() => handleFavoriteWidgetClick(widget)}
-                        className="
-                          relative
-                          bg-gray-50 rounded-lg shadow
-                          border border-gray-200
-                          p-3 min-w-0 w-full
-                          flex flex-col text-left
-                          hover:bg-gray-100 cursor-pointer transition
-                          group
-                        "
+                </div>
+
+                {/* ── RIGHT COLUMN ── */}
+                <div className="flex flex-col gap-4 lg:h-full min-h-0">
+
+                  {/* ── CURRENT STANDINGS LEADERS ── */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col shrink-0">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Trophy size={18} className="text-alpbBlue" />
+                        <h2 className="text-base font-semibold text-gray-800">
+                          Current Standings
+                        </h2>
+                      </div>
+                      <Link
+                        href="/around-league"
+                        className="text-xs text-alpbBlue hover:underline flex items-center gap-0.5"
                       >
-                        <div className="w-full mb-2 flex-shrink-0">
-                          <div className="w-full aspect-square rounded-lg bg-gray-200 overflow-hidden flex items-center justify-center">
-                            {widget.imageUrl && widget.imageUrl !== "default" ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={widget.imageUrl}
-                                alt={widget.name}
-                                className="object-cover w-full h-full"
-                              />
-                            ) : (
-                              <AngleIcon className="size-10 fill-current text-gray-400" />
-                            )}
-                          </div>
-                        </div>
-                        <p className="font-semibold text-gray-900 text-xs line-clamp-2 text-center mt-1">
-                          {widget.name}
-                        </p>
-                        {widget.description ? (
-                          <span
-                            className="
-                              absolute inset-0 rounded-lg top-[1px]
-                              bg-white/80 opacity-0 group-hover:opacity-100
-                              transition-opacity duration-200
-                              flex items-start justify-center p-3 pt-3
-                              text-xs text-gray-700 text-center overflow-y-auto
-                            "
-                            aria-hidden
-                          >
-                            {widget.description}
-                          </span>
-                        ) : null}
-                      </button>
-                    ))}
+                        Full standings <ArrowRight size={11} />
+                      </Link>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <Standings season={year} maxTeams={1} compact />
+                    </div>
                   </div>
-                )}
+
+                  {/* ── FAVORITE WIDGETS ── */}
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex flex-col flex-1 min-h-0">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Star size={18} className="text-alpbBlue" />
+                        <h2 className="text-base font-semibold text-gray-800">
+                          Favorite Widgets
+                        </h2>
+                      </div>
+                      <Link
+                        href="/dashboard"
+                        className="text-xs text-alpbBlue hover:underline flex items-center gap-0.5"
+                      >
+                        All widgets <ArrowRight size={11} />
+                      </Link>
+                    </div>
+
+                    {widgetsLoading ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-gray-400">
+                          <div className="w-6 h-6 rounded-full border-2 border-gray-200 border-t-alpbBlue animate-spin" />
+                          <span className="text-sm">Loading…</span>
+                        </div>
+                      </div>
+                    ) : !favoriteWidgets.length ? (
+                      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-6 border border-dashed border-gray-200 rounded-xl">
+                        <Star size={28} className="text-gray-300" />
+                        <p className="text-gray-400 text-sm text-center">
+                          No favorites yet.
+                        </p>
+                        <Link
+                          href="/dashboard"
+                          className="text-xs text-alpbBlue hover:underline"
+                        >
+                          Browse widgets →
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 gap-2 overflow-y-auto flex-1 min-h-0">
+                        {favoriteWidgets.map((widget) => (
+                          <button
+                            type="button"
+                            key={widget.id}
+                            onClick={() => handleFavoriteWidgetClick(widget)}
+                            className="relative group bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg p-2 flex flex-col items-center transition-colors cursor-pointer"
+                          >
+                            <div className="w-full aspect-square rounded-md bg-gray-200 overflow-hidden flex items-center justify-center mb-1">
+                              {widget.imageUrl && widget.imageUrl !== "default" ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={widget.imageUrl}
+                                  alt={widget.name}
+                                  className="object-cover w-full h-full"
+                                />
+                              ) : (
+                                <AngleIcon className="size-5 fill-current text-gray-400" />
+                              )}
+                            </div>
+                            <p className="font-medium text-gray-700 text-xs line-clamp-2 text-center leading-tight">
+                              {widget.name}
+                            </p>
+                            {widget.description && (
+                              <span
+                                className="absolute inset-0 rounded-lg bg-white/90 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-start justify-center p-1.5 text-[14px] text-gray-600 text-center leading-tight overflow-y-auto"
+                                aria-hidden
+                              >
+                                {widget.description}
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
               </div>
             </div>
           </div>
