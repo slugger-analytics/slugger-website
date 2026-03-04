@@ -1,4 +1,4 @@
-import { atom } from "nanostores";
+import { atom, map } from "nanostores";
 import { persistentMap } from "@nanostores/persistent";
 import { UserType } from "@/data/types";
 
@@ -15,19 +15,23 @@ const emptyUser: UserType = {
 // Custom encoder/decoder to handle boolean values
 const booleanEncoder = {
   encode: (value: any) => {
-    if (typeof value === 'boolean') {
-      return String(value);
-    }
+    if (typeof value === "boolean") return String(value);
     return value;
   },
   decode: (value: any) => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
+    if (value === "true") return true;
+    if (value === "false") return false;
     return value;
-  }
+  },
 };
 
-export const $user = persistentMap("user:", emptyUser, booleanEncoder);
+// Use a non-persistent store during SSR to avoid storage/proxy issues
+const isBrowser = typeof window !== "undefined";
+
+// Avoid ":" in prefix because it can create keys like "user:id" which may break proxies
+export const $user = isBrowser
+  ? persistentMap<UserType>("user_", emptyUser, booleanEncoder)
+  : map<UserType>(emptyUser);
 
 export const $otpCode = atom<string>("");
 export const $passwordResetEmail = atom<string>("");
@@ -52,9 +56,14 @@ type UpdateUserType = {
   teamId?: string;
   is_admin?: boolean;
 };
-export function updateStoreUser({ first, last, teamId, is_admin }: UpdateUserType) {
-  const user = $user.get();
 
+export function updateStoreUser({
+  first,
+  last,
+  teamId,
+  is_admin,
+}: UpdateUserType) {
+  const user = $user.get();
   if (!user) return;
 
   $user.set({

@@ -1,0 +1,7 @@
+npm error Lifecycle script `dev:frontend` failed with error:
+npm error workspace alpb-website@0.1.0
+npm error location /Users/chenyuang/projects/slugger-website/frontend
+npm error Missing script: "dev:frontend"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run --workspace=alpb-website@0.1.0
