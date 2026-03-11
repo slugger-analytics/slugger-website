@@ -104,7 +104,7 @@ router.post("/sign-in", async (req, res) => {
 
     const query = "SELECT * FROM users WHERE email = $1";
     let dbResult = await pool.query(query, [email]);
-    
+
     let user;
     if (dbResult.rows.length === 0) {
       // User authenticated with Cognito but doesn't exist in DB
@@ -124,13 +124,13 @@ router.post("/sign-in", async (req, res) => {
 
       // Not a pending developer - auto-create with default role
       console.log(`Auto-creating user for ${email} after successful Cognito auth`);
-      
+
       // Get user details from Cognito
       const cognitoUser = await cognito.getUser({ AccessToken }).promise();
       const firstName = cognitoUser.UserAttributes.find(attr => attr.Name === 'given_name')?.Value || '';
       const lastName = cognitoUser.UserAttributes.find(attr => attr.Name === 'family_name')?.Value || '';
       const cognitoUserId = cognitoUser.Username;
-      
+
       // Create user in database
       user = await createUser({
         cognitoUserId,
@@ -139,7 +139,7 @@ router.post("/sign-in", async (req, res) => {
         last: lastName,
         role: 'user' // Default role
       });
-      
+
       console.log(`User created successfully: ${user.user_id}`);
     } else {
       user = dbResult.rows[0];
@@ -152,13 +152,14 @@ router.post("/sign-in", async (req, res) => {
     const isProduction = process.env.NODE_ENV === 'production';
     const isLocalDev = process.env.LOCAL_DEV === 'true';
     const useSecureCookies = isProduction && !isLocalDev;
-    
+
     res.cookie('accessToken', AccessToken, {
       httpOnly: true,
       secure: useSecureCookies,
       sameSite: useSecureCookies ? 'none' : 'lax',
       maxAge: authResult.AuthenticationResult.ExpiresIn * 1000, // Convert seconds to milliseconds
-      path: '/' // Available to all routes including /widgets/*
+      path: '/', // Available to all routes including /widgets/*
+      ...(useSecureCookies && { domain: '.alpb-analytics.com' }), // Share cookie across subdomains (www, api)
     });
 
     // Set user name cookie for widgets to display user's name
@@ -168,7 +169,8 @@ router.post("/sign-in", async (req, res) => {
       secure: useSecureCookies,
       sameSite: useSecureCookies ? 'none' : 'lax',
       maxAge: authResult.AuthenticationResult.ExpiresIn * 1000,
-      path: '/'
+      path: '/',
+      ...(useSecureCookies && { domain: '.alpb-analytics.com' }), // Share cookie across subdomains (www, api)
     });
 
     res.status(200).json({
@@ -233,7 +235,7 @@ router.post("/sign-in", async (req, res) => {
  */
 router.post('/refresh-token', async (req, res) => {
   const { refreshToken } = req.body;
-  
+
   if (!refreshToken) {
     return res.status(400).json({
       success: false,
@@ -252,20 +254,21 @@ router.post('/refresh-token', async (req, res) => {
   try {
     const authResult = await cognito.initiateAuth(params).promise();
     const { AccessToken, IdToken, ExpiresIn } = authResult.AuthenticationResult;
-    
+
     // Update accessToken cookie with refreshed token
     const isProduction = process.env.NODE_ENV === 'production';
     const isLocalDev = process.env.LOCAL_DEV === 'true';
     const useSecureCookies = isProduction && !isLocalDev;
-    
+
     res.cookie('accessToken', AccessToken, {
       httpOnly: true,
       secure: useSecureCookies,
       sameSite: useSecureCookies ? 'none' : 'lax',
       maxAge: ExpiresIn * 1000,
-      path: '/'
+      path: '/',
+      ...(useSecureCookies && { domain: '.alpb-analytics.com' }), // Share cookie across subdomains (www, api)
     });
-    
+
     // Note: Cognito doesn't return a new refresh token on refresh
     res.status(200).json({
       success: true,
@@ -278,14 +281,14 @@ router.post('/refresh-token', async (req, res) => {
     });
   } catch (error) {
     console.error('Token refresh error:', error);
-    
+
     if (error.code === 'NotAuthorizedException') {
       return res.status(401).json({
         success: false,
         message: "Refresh token is invalid or expired. Please login again."
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: "Failed to refresh token"
@@ -297,9 +300,9 @@ router.post('/logout', async (req, res) => {
   try {
     // If there's no data in the session, nothing to do
     if (!req.session || !req.session.user) {
-      return res.status(200).json({ 
+      return res.status(200).json({
         success: true,
-        message: 'Already logged out' 
+        message: 'Already logged out'
       });
     }
 
@@ -318,17 +321,17 @@ router.post('/logout', async (req, res) => {
         sameSite: 'strict'
       });
 
-      res.status(200).json({ 
+      res.status(200).json({
         success: true,
-        message: 'Successfully logged out' 
+        message: 'Successfully logged out'
       });
     });
 
   } catch (error) {
     console.error('Logout error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Internal server error during logout' 
+      message: 'Internal server error during logout'
     });
   }
 });
@@ -602,8 +605,8 @@ router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSc
 
     // Lookup internal widget ID from public ID
     const widgetRes = await pool.query(
-        "SELECT widget_id FROM widgets WHERE public_id = $1",
-        [publicWidgetId]
+      "SELECT widget_id FROM widgets WHERE public_id = $1",
+      [publicWidgetId]
     );
 
     if (widgetRes.rowCount === 0) {
@@ -632,7 +635,7 @@ router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSc
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error generating token " + error.message 
+      message: "Error generating token " + error.message
     });
   }
 })
@@ -640,22 +643,22 @@ router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSc
 router.get('/search', requireSiteAdmin, async (req, res) => {
   try {
     const { email } = req.query;
-    
+
     const query = `
       SELECT user_id, email
       FROM users
       WHERE email = $1
     `;
-    
+
     const result = await pool.query(query, [email]);
-    
+
     if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
-    
+
     res.json({
       success: true,
       data: result.rows[0]
@@ -689,7 +692,7 @@ router.post('/send-password-reset-email', async (req, res) => {
 router.post('/reset-password', async (req, res) => {
   try {
     const { email, password } = req.body;
-  
+
     // Validate input
     if (!email || !password) {
       return res.status(400).json({
