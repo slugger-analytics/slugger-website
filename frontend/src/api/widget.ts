@@ -172,6 +172,42 @@ export interface WidgetExecutionResult {
   widgetOutput?: unknown;
   teamIds?: Array<string | number>;
   playerIds?: Array<string | number>;
+  uiOnly?: boolean;
+  redirectLink?: string;
+}
+
+export interface WidgetSelectorTeam {
+  id: string | number;
+  name: string;
+}
+
+export interface WidgetSelectorPlayer {
+  id: string | number;
+  name: string;
+  teamId: string | number;
+  position: string;
+  externalId?: string | null;
+  sourceLabel?: string;
+}
+
+export interface WidgetSelectorOptionsResult {
+  widgetId?: number;
+  widgetName?: string;
+  teams: WidgetSelectorTeam[];
+  players: WidgetSelectorPlayer[];
+  metadata?: {
+    sourceOptionCount?: number;
+    mappedPlayerCount?: number;
+  };
+}
+
+export interface WidgetPdfExportResult {
+  widgetId: number;
+  widgetName: string;
+  success: boolean;
+  message: string;
+  pdfUrl?: string;
+  sourceUrl?: string;
 }
 
 export const fetchWidgetOutputs = async (
@@ -217,10 +253,74 @@ export const fetchWidgetOutputs = async (
       widgetOutput: res?.data?.widgetOutput,
       teamIds: res?.data?.teamIds,
       playerIds: res?.data?.playerIds,
+      uiOnly: Boolean(res?.data?.uiOnly),
+      redirectLink: typeof res?.data?.redirectLink === "string" ? res.data.redirectLink : undefined,
     } as WidgetExecutionResult;
   });
 
   return Promise.all(requests);
+};
+
+export const exportWidgetPdf = async (
+  widgetId: number,
+  options?: {
+    teamIds?: Array<string | number>;
+    playerIds?: Array<string | number>;
+    teamNames?: string[];
+    playerNames?: string[];
+    source?: string;
+  },
+): Promise<WidgetPdfExportResult> => {
+  const teamIds = options?.teamIds ?? [];
+  const playerIds = options?.playerIds ?? [];
+  const teamNames = options?.teamNames ?? [];
+  const playerNames = options?.playerNames ?? [];
+  const source = options?.source ?? "superwidget-pdf";
+
+  const response = await fetch(`${API_URL}/api/widgets/${widgetId}/export-pdf`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ teamIds, playerIds, teamNames, playerNames, source }),
+  });
+
+  const res = await response.json();
+
+  if (!response.ok || !res?.success) {
+    return {
+      widgetId,
+      widgetName: res?.data?.widgetName || `Widget ${widgetId}`,
+      success: false,
+      message: res?.message || `Failed to export PDF for widget ${widgetId}`,
+    };
+  }
+
+  return {
+    widgetId,
+    widgetName: res?.data?.widgetName || `Widget ${widgetId}`,
+    success: true,
+    message: res?.message || "PDF exported",
+    pdfUrl: res?.data?.pdfUrl,
+    sourceUrl: res?.data?.sourceUrl,
+  };
+};
+
+export const fetchWidgetSelectorOptions = async (widgetId: number): Promise<WidgetSelectorOptionsResult> => {
+  const response = await fetch(`${API_URL}/api/widgets/${widgetId}/selector-options`);
+  const res = await response.json();
+
+  if (!response.ok || !res?.success) {
+    throw new Error(res?.message || `Failed to fetch selector options for widget ${widgetId}`);
+  }
+
+  return {
+    widgetId: res?.data?.widgetId,
+    widgetName: res?.data?.widgetName,
+    teams: Array.isArray(res?.data?.teams) ? res.data.teams : [],
+    players: Array.isArray(res?.data?.players) ? res.data.players : [],
+    metadata: res?.data?.metadata,
+  };
 };
 
 export const updateWidget = async ({

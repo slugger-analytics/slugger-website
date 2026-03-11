@@ -16,7 +16,7 @@ const percent = (value: number | undefined, decimals = 1): string => {
   return `${(value * 100).toFixed(decimals)}%`;
 };
 
-const detectFocus = (widget: WidgetType): string => {
+export const detectWidgetFocus = (widget: WidgetType): string => {
   const name = widget.name?.toLowerCase() ?? "";
   const description = widget.description?.toLowerCase() ?? "";
   const categories = (widget.categories ?? []).map((category) => category.name?.toLowerCase() ?? "");
@@ -43,7 +43,7 @@ const focusLabelMap: Record<string, string> = {
 
 const groupWidgetsByFocus = (widgets: WidgetType[]): Record<string, WidgetType[]> => {
   return widgets.reduce<Record<string, WidgetType[]>>((acc, widget) => {
-    const focus = detectFocus(widget);
+    const focus = detectWidgetFocus(widget);
     if (!acc[focus]) acc[focus] = [];
     acc[focus].push(widget);
     return acc;
@@ -380,7 +380,7 @@ const buildWidgetInsight = (
   battingPlayers: ParameterizedPlayerAnalysis[],
   pitchingPlayers: ParameterizedPlayerAnalysis[]
 ): WidgetInsightBlock | null => {
-  const focus = detectFocus(widget);
+  const focus = detectWidgetFocus(widget);
   let headline = "Widget insight";
   let bullets: string[] = [];
 
