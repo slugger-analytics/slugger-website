@@ -122,6 +122,20 @@ export function ParameterAnalysisResult({
   error
 }: ParameterAnalysisProps) {
   const hasSelections = selectedTeams.length > 0 || selectedPlayers.length > 0;
+  const analysisData = analysis?.data;
+
+  const widgetInsights: WidgetInsightBlock[] = useMemo(
+    () => buildWidgetInsights(selectedWidgets, analysisData),
+    [selectedWidgets, analysisData]
+  );
+
+  const topPlayers: ParameterizedPlayerAnalysis[] = useMemo(() => {
+    if (!analysisData) return [];
+    return (analysisData.playerAnalysis ?? [])
+      .slice()
+      .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
+      .slice(0, 6);
+  }, [analysisData]);
 
   if (!hasSelections && selectedWidgets.length === 0) {
     return (
@@ -158,23 +172,9 @@ export function ParameterAnalysisResult({
     );
   }
 
-  const analysisData = analysis?.data;
   const metadata = analysis?.metadata;
   const teamAnalysis = analysisData?.teamAnalysis ?? [];
   const playerAnalysis = analysisData?.playerAnalysis ?? [];
-
-  const widgetInsights: WidgetInsightBlock[] = useMemo(
-    () => buildWidgetInsights(selectedWidgets, analysisData),
-    [selectedWidgets, analysisData]
-  );
-
-  const topPlayers: ParameterizedPlayerAnalysis[] = useMemo(() => {
-    if (!analysisData) return [];
-    return (analysisData.playerAnalysis ?? [])
-      .slice()
-      .sort((a, b) => (b.performanceScore ?? 0) - (a.performanceScore ?? 0))
-      .slice(0, 6);
-  }, [analysisData]);
 
   const comparativeInsights = analysisData?.comparativeInsights ?? [];
   const keyInsights = analysisData?.insights ?? [];
