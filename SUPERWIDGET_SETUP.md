@@ -3,32 +3,40 @@
 ## Quick Start
 
 ### Prerequisites
-- Node.js v18+ and npm v9+
-- PostgreSQL running locally
+- **Node.js v20+** (v18 causes backend crash: `File is not defined`)
+- PostgreSQL running (local Docker or RDS via `.env`)
 - Port 3000 (frontend) and 3001 (backend) available
 
-### Backend Setup
+### Option A: Run both from root (recommended)
+```bash
+cd /Users/nancy/slugger-website
+export $(cat .env | grep -v '^#' | xargs) && npm run dev
+```
+- Frontend: http://localhost:3000
+- Backend: http://localhost:3001
+
+### Option B: Run backend and frontend separately
+
+**Backend:**
 ```bash
 cd backend
 npm install
-npm run dev
+export $(cat ../.env | grep -v '^#' | xargs) && npm run dev
 ```
-
 Server runs at `http://localhost:3001`
 
-### Frontend Setup
+**Frontend** (in another terminal):
 ```bash
 cd frontend
 npm install
-npm run dev
+export $(cat ../.env | grep -v '^#' | xargs) && npm run dev
 ```
-
 App runs at `http://localhost:3000`
 
 ## Access SuperWidget
 
-
-- **Parameterized Analysis**: `http://localhost:3000/super-widget/parameterized`
+- **Main Analyzer**: http://localhost:3000/super-widget
+- **Parameterized Analysis**: http://localhost:3000/super-widget/parameterized
   - Select teams and players
   - Run widgets with custom parameters
   - See results from Pointstreak integration
@@ -66,6 +74,9 @@ Content-Type: application/json
 
 ## Troubleshooting
 
+**Backend crashes with `ReferenceError: File is not defined`?**
+- Upgrade to Node 20+: `nvm install 20 && nvm use 20` (or install from nodejs.org)
+
 **Port already in use?**
 ```bash
 lsof -ti:3001 | xargs kill -9
@@ -81,8 +92,4 @@ lsof -ti:3001 | xargs kill -9
 - Try refreshing the page
 
 ## Git Branch
-Current implementation is on the `superwidget` branch. To view changes:
-```bash
-git checkout superwidget
-git diff main
-```
+SuperWidget is merged into `main`. No branch switch needed.

@@ -28,7 +28,6 @@ import league from "./api/league.js";
 import auth from "./api/auth.js";
 import teamAdmins from "./api/team-admins.js";
 import games from "./api/scores.js";
-import { refreshUserAdminStatus } from "./middleware/permission-guards.js";
 import superWidget from "./api/super-widget-parameterized.js";
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
@@ -62,17 +61,17 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-
+    
     // In local development, allow any localhost/127.0.0.1 origin
     if (isLocalDevelopment && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
       return callback(null, true);
     }
-
+    
     // Check against allowed origins list
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
-
+    
     callback(new Error('Not allowed by CORS'));
   }
 }))
@@ -134,13 +133,9 @@ app.use(
       secure: useSecureCookies, // Secure only in true production (not local dev with prod DB)
       sameSite: useSecureCookies ? 'none' : 'lax', // 'none' only for true production
       maxAge: 24 * 60 /*minutes*/ * 60 /*seconds*/ * 1000, // session length (ms)
-      ...(useSecureCookies && { domain: '.alpb-analytics.com' }), // Share session across subdomains
     },
   }),
 );
-
-// Refresh user's admin status from database on each request
-app.use(refreshUserAdminStatus);
 
 // ---------------------------------------------------
 // API Routes
