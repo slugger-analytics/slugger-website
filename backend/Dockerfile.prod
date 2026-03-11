@@ -2,7 +2,7 @@
 # NOTE: This Dockerfile must be built from the monorepo root with backend/ as context
 # Example: docker build -f backend/Dockerfile.prod --build-context root=. backend/
 
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Install build dependencies required for native modules like bcrypt and runtime health checks
 RUN apk add --no-cache python3 make g++ curl
