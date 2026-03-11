@@ -457,32 +457,28 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
 
     const widgetIds = baseRows.map((r) => r.widget_id);
 
-    // Execute all related queries in parallel for better performance
-    const [categoriesRes, devsRes, metricsRes] = await Promise.all([
-      // Fetch categories for these widgets
-      pool.query(
-        `SELECT wc.widget_id, c.id, c.name, c.hex_code
-         FROM widget_categories wc
-         JOIN categories c ON c.id = wc.category_id
-         WHERE wc.widget_id = ANY($1::int[])
-         ORDER BY wc.widget_id, c.name`,
-        [widgetIds]
-      ),
-      // Fetch developer relations
-      pool.query(
-        `SELECT widget_id, user_id FROM user_widget WHERE widget_id = ANY($1::int[])
-         ORDER BY widget_id, user_id`,
-        [widgetIds]
-      ),
-      // Fetch metrics for these widgets (all timeframes stored)
-      pool.query(
-        `SELECT widget_id, timeframe_type, total_launches, unique_launches
-         FROM widget_metrics
-         WHERE widget_id = ANY($1::int[])
-         ORDER BY widget_id, timeframe_type`,
-        [widgetIds]
-      )
-    ]);
+    // Fetch categories for these widgets
+    const categoriesRes = await pool.query(
+      `SELECT wc.widget_id, c.id, c.name, c.hex_code
+       FROM widget_categories wc
+       JOIN categories c ON c.id = wc.category_id
+       WHERE wc.widget_id = ANY($1::int[])`,
+      [widgetIds]
+    );
+
+    // Fetch developer relations
+    const devsRes = await pool.query(
+      `SELECT widget_id, user_id FROM user_widget WHERE widget_id = ANY($1::int[])`,
+      [widgetIds]
+    );
+
+    // Fetch metrics for these widgets (all timeframes stored)
+    const metricsRes = await pool.query(
+      `SELECT widget_id, timeframe_type, total_launches, unique_launches
+       FROM widget_metrics
+       WHERE widget_id = ANY($1::int[])`,
+      [widgetIds]
+    );
 
     // Aggregate into maps for quick lookup
     const categoriesMap = new Map();

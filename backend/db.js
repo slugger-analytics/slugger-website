@@ -12,7 +12,6 @@ dotenv.config(); // Load environment variables from a `.env` file
 /**
  * Creates a new connection pool to the PostgreSQL database.
  * The connection details are loaded from environment variables.
- * Optimized for high-throughput widget data fetching.
  */
 const pool = new Pool({
   user: process.env.DB_USERNAME, // The username for the database connection
@@ -23,11 +22,6 @@ const pool = new Pool({
   // Connection timeout and retry settings to prevent startup crashes
   connectionTimeoutMillis: 5000, // Timeout after 5 seconds
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-  // Performance optimizations for fetch operations
-  max: 30, // Maximum number of connections in the pool (increased from default 10)
-  min: 10, // Minimum number of connections to keep alive
-  statement_timeout: 30000, // 30 second timeout for individual queries
-  idle_in_transaction_session_timeout: 10000, // 10 second timeout for idle transactions
 });
 
 // Handle pool errors gracefully to prevent crashes

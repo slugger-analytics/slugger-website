@@ -5,7 +5,6 @@
 
 import express, { json } from "express"; // Express.js framework for creating APIs
 import cors from "cors"; // Middleware to enable Cross-Origin Resource Sharing
-import compression from "compression"; // Middleware for gzip compression
 import pool from "./db.js";
 import session from "express-session";
 import pgSession from "connect-pg-simple";
@@ -70,17 +69,6 @@ app.use(cors({
     callback(new Error('Not allowed by CORS'));
   }
 }))
-
-/**
- * Enable gzip compression for all responses.
- * Significantly reduces payload size for JSON responses, especially widget data.
- * Typically reduces response size by 60-80%, speeding up fetch operations.
- */
-app.use(compression({
-  level: 6, // Balance between compression speed and ratio (0-9)
-  threshold: 1024, // Only compress responses larger than 1KB
-  type: ['application/json', 'text/json', 'application/json; charset=utf-8']
-}));
 
 /**
  * Parse incoming JSON requests.
