@@ -26,6 +26,9 @@ interface ParameterSelectorProps {
   selectedPlayers: Player[];
   onTeamsChange: (teams: Team[]) => void;
   onPlayersChange: (players: Player[]) => void;
+  overrideTeams?: Team[];
+  overridePlayers?: Player[];
+  overrideLabel?: string;
 }
 
 const DEFAULT_API_BASE = "http://localhost:3001";
@@ -45,7 +48,10 @@ export function ParameterSelector({
   selectedTeams,
   selectedPlayers,
   onTeamsChange,
-  onPlayersChange
+  onPlayersChange,
+  overrideTeams,
+  overridePlayers,
+  overrideLabel,
 }: ParameterSelectorProps) {
   const [showTeamDropdown, setShowTeamDropdown] = useState(false);
   const [showPlayerDropdown, setShowPlayerDropdown] = useState(false);
@@ -54,8 +60,19 @@ export function ParameterSelector({
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [loadingPlayers, setLoadingPlayers] = useState(false);
 
+  const usingOverrideData = Boolean(overrideTeams && overridePlayers);
+
+  useEffect(() => {
+    if (!usingOverrideData) return;
+    setAllTeams(overrideTeams || []);
+    setAllPlayers(overridePlayers || []);
+    setLoadingTeams(false);
+    setLoadingPlayers(false);
+  }, [usingOverrideData, overrideTeams, overridePlayers]);
+
   // Fetch available teams from API on component mount
   useEffect(() => {
+    if (usingOverrideData) return;
     const fetchTeams = async () => {
       try {
         setLoadingTeams(true);
@@ -72,10 +89,11 @@ export function ParameterSelector({
     };
 
     fetchTeams();
-  }, []);
+  }, [usingOverrideData]);
 
   // Fetch available players from API on component mount
   useEffect(() => {
+    if (usingOverrideData) return;
     const fetchPlayers = async () => {
       try {
         setLoadingPlayers(true);
@@ -92,7 +110,7 @@ export function ParameterSelector({
     };
 
     fetchPlayers();
-  }, []);
+  }, [usingOverrideData]);
 
   const handleTeamToggle = (team: Team) => {
     const isSelected = selectedTeams.some(t => t.id === team.id);
@@ -138,6 +156,11 @@ export function ParameterSelector({
           <span className="text-lg">🎯 Custom Analysis Parameters</span>
         </CardTitle>
         <CardDescription>Select specific teams and players for targeted analysis</CardDescription>
+        {usingOverrideData && overrideLabel && (
+          <CardDescription className="text-xs text-indigo-700">
+            {overrideLabel}
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Team Selection */}

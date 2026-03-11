@@ -15,8 +15,9 @@ import {
   Puzzle,
   Activity
 } from "lucide-react";
-import { buildWidgetInsights } from "../utils/widgetAnalysis";
+import { buildWidgetInsights, detectWidgetFocus } from "../utils/widgetAnalysis";
 import { ParameterizedAnalysisResponse, ParameterizedPlayerAnalysis, WidgetInsightBlock } from "../types";
+import type { WidgetExecutionResult } from "@/api/widget";
 
 interface Team {
   id: string | number;
@@ -35,6 +36,7 @@ interface ParameterAnalysisProps {
   selectedPlayers: Player[];
   selectedWidgets: WidgetType[];
   analysis: ParameterizedAnalysisResponse | null;
+  widgetOutputs?: WidgetExecutionResult[];
   loading: boolean;
   error?: string | null;
 }
@@ -118,16 +120,47 @@ export function ParameterAnalysisResult({
   selectedPlayers,
   selectedWidgets,
   analysis,
+  widgetOutputs = [],
   loading,
   error
 }: ParameterAnalysisProps) {
   const hasSelections = selectedTeams.length > 0 || selectedPlayers.length > 0;
   const analysisData = analysis?.data;
 
-  const widgetInsights: WidgetInsightBlock[] = useMemo(
+  const fallbackWidgetInsights: WidgetInsightBlock[] = useMemo(
     () => buildWidgetInsights(selectedWidgets, analysisData),
     [selectedWidgets, analysisData]
   );
+
+  const widgetInsights: WidgetInsightBlock[] = useMemo(() => {
+    if (selectedWidgets.length === 0) return [];
+
+    const outputMap = new Map<number, WidgetExecutionResult>();
+    widgetOutputs.forEach((output) => {
+      outputMap.set(output.widgetId, output);
+    });
+
+    const fallbackMap = new Map<number, WidgetInsightBlock>();
+    fallbackWidgetInsights.forEach((insight) => {
+      fallbackMap.set(insight.widget.id, insight);
+    });
+
+    return selectedWidgets
+      .map((widget) => {
+        const output = outputMap.get(widget.id);
+        if (output && Array.isArray(output.bullets) && output.bullets.length > 0) {
+          return {
+            widget,
+            focus: detectWidgetFocus(widget),
+            headline: output.success ? "Direct widget output" : "Widget execution feedback",
+            bullets: output.bullets,
+          } as WidgetInsightBlock;
+        }
+
+        return fallbackMap.get(widget.id) ?? null;
+      })
+      .filter((insight): insight is WidgetInsightBlock => Boolean(insight));
+  }, [selectedWidgets, widgetOutputs, fallbackWidgetInsights]);
 
   const topPlayers: ParameterizedPlayerAnalysis[] = useMemo(() => {
     if (!analysisData) return [];
