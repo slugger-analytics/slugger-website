@@ -2,6 +2,7 @@ import { Router } from "express";
 import dotenv from "dotenv";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { streamToString } from "../utils/stream.js";
+import { cacheManager } from "../utils/cacheManager.js";
 
 dotenv.config({ path: "../.env" });
 
@@ -11,6 +12,7 @@ const CURRENT_YEAR = process.env.SEASON_YEAR;
 const BUCKET_NAME = process.env.JSON_BUCKET_NAME;
 
 const FIRST_YEAR = 2021;
+const CACHE_TTL = 300; // Cache league data for 5 minutes (300 seconds)
 
 // Configure S3 client - uses IAM role in production, explicit credentials in local dev
 const s3Config = {
@@ -55,6 +57,19 @@ router.get("/seasons", (req, res) => {
 
 router.get("/standings", async (req, res) => {
     const year = req.query.year || CURRENT_YEAR;
+    const cacheKey = `standings_${year}`;
+
+    // Check cache first
+    const cachedData = cacheManager.get(cacheKey);
+    if (cachedData) {
+        return res.status(200).json({
+            success: true,
+            message: "Fetched season standings successfully",
+            data: cachedData,
+            cached: true
+        });
+    }
+
     const key = `standings/${year}-standings.json`;
 
     try {
@@ -62,6 +77,9 @@ router.get("/standings", async (req, res) => {
         const s3Response = await s3.send(command);
         const jsonText = await streamToString(s3Response.Body);
         const data = JSON.parse(jsonText);
+
+        // Cache the data
+        cacheManager.set(cacheKey, data, CACHE_TTL);
 
         res.status(200).json({
             success: true,
@@ -82,6 +100,19 @@ router.get("/standings", async (req, res) => {
 
 router.get("/leaders", async (req, res) => {
     const year = req.query.year || CURRENT_YEAR;
+    const cacheKey = `leaders_${year}`;
+
+    // Check cache first
+    const cachedData = cacheManager.get(cacheKey);
+    if (cachedData) {
+        return res.status(200).json({
+            success: true,
+            message: "Fetched league leaders successfully",
+            data: cachedData,
+            cached: true
+        });
+    }
+
     const key = `league-leaders/${year}-league-leaders.json`;
 
     try {
@@ -89,6 +120,9 @@ router.get("/leaders", async (req, res) => {
         const s3Response = await s3.send(command);
         const jsonText = await streamToString(s3Response.Body);
         const data = JSON.parse(jsonText);
+
+        // Cache the data
+        cacheManager.set(cacheKey, data, CACHE_TTL);
 
         res.status(200).json({
             success: true,
