@@ -3,13 +3,19 @@
  * This file sets up middleware, routes, and starts the server.
  */
 
+import dotenv from "dotenv"; // For managing environment variables
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Load environment variables from parent directory's .env.local
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, "../.env.local") });
+
 import express, { json } from "express"; // Express.js framework for creating APIs
 import cors from "cors"; // Middleware to enable Cross-Origin Resource Sharing
 import pool from "./db.js";
 import session from "express-session";
 import pgSession from "connect-pg-simple";
-import dotenv from "dotenv"; // For managing environment variables
-dotenv.config(); // Load environment variables from a `.env` file
 
 // Importing API route handlers
 import widgets from "./api/widgets.js";
@@ -23,6 +29,7 @@ import auth from "./api/auth.js";
 import teamAdmins from "./api/team-admins.js";
 import games from "./api/scores.js";
 import { refreshUserAdminStatus } from "./middleware/permission-guards.js";
+import superWidget from "./api/super-widget-parameterized.js";
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // Initialize the Express app
@@ -105,10 +112,21 @@ console.log('Environment configuration:', {
   DB_HOST: process.env.DB_HOST
 });
 
+// Ensure a session secret exists in production. In local development we
+// allow a temporary dev secret to avoid crashing the server during local
+// testing. Do NOT use the dev secret in production.
+if (!SESSION_SECRET && !isLocalDevelopment) {
+  console.error('SESSION_SECRET must be set in production. Exiting.');
+  process.exit(1);
+}
+if (!SESSION_SECRET && isLocalDevelopment) {
+  console.warn('SESSION_SECRET not set — using temporary development secret (unsafe for production).');
+}
+
 app.use(
   session({
     store: sessionStore,
-    secret: SESSION_SECRET,
+    secret: SESSION_SECRET || 'dev-secret',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -141,6 +159,8 @@ app.use("/api/widget-categories", categories);
 app.use("/api/developers", developers);
 
 app.use("/api/league", league);
+
+app.use("/api/super-widget/parameterized-analysis", superWidget);
 
 app.use("/api/auth", auth);
 

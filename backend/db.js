@@ -6,19 +6,29 @@
 import pkg from "pg"; // Import the `pg` package for PostgreSQL
 const { Pool } = pkg; // Extract the Pool class for managing connections
 import dotenv from "dotenv"; // Import dotenv for environment variable management
+import path from "path";
+import { fileURLToPath } from "url";
 
-dotenv.config(); // Load environment variables from a `.env` file
+// Try to load backend/.env.local first (shared with Express server)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const localEnvPath = path.join(__dirname, "../.env.local");
+const envResult = dotenv.config({ path: localEnvPath });
+
+// Fall back to default .env if .env.local is missing
+if (envResult.error) {
+  dotenv.config();
+}
 
 /**
  * Creates a new connection pool to the PostgreSQL database.
  * The connection details are loaded from environment variables.
  */
 const pool = new Pool({
-  user: process.env.DB_USERNAME, // The username for the database connection
+  user: process.env.DB_USER ?? process.env.DB_USERNAME, // Support both DB_USER and DB_USERNAME env vars
   host: process.env.DB_HOST, // The host where the database is running
   database: process.env.DB_NAME, // The name of the database
   password: process.env.DB_PASSWORD, // The password for the database connection
-  port: 5432, // The port on which PostgreSQL is running (default: 5432)
+  port: process.env.DB_PORT ?? 5432, // The port on which PostgreSQL is running (default: 5432)
   // Connection timeout and retry settings to prevent startup crashes
   connectionTimeoutMillis: 5000, // Timeout after 5 seconds
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds

@@ -163,6 +163,66 @@ export const fetchWidgets = async (userId?: string): Promise<WidgetType[]> => {
   }
 };
 
+export interface WidgetExecutionResult {
+  widgetId: number;
+  widgetName: string;
+  success: boolean;
+  message: string;
+  bullets: string[];
+  widgetOutput?: unknown;
+  teamIds?: Array<string | number>;
+  playerIds?: Array<string | number>;
+}
+
+export const fetchWidgetOutputs = async (
+  widgetIds: number[],
+  options?: {
+    teamIds?: Array<string | number>;
+    playerIds?: Array<string | number>;
+    source?: string;
+  },
+): Promise<WidgetExecutionResult[]> => {
+  if (!widgetIds.length) return [];
+
+  const teamIds = options?.teamIds ?? [];
+  const playerIds = options?.playerIds ?? [];
+  const source = options?.source ?? "superwidget-script";
+
+  const requests = widgetIds.map(async (widgetId) => {
+    const params = new URLSearchParams({
+      teamIds: JSON.stringify(teamIds),
+      playerIds: JSON.stringify(playerIds),
+      source,
+    });
+
+    const response = await fetch(`${API_URL}/api/widgets/${widgetId}/execute?${params.toString()}`);
+    const res = await response.json();
+
+    if (!response.ok) {
+      return {
+        widgetId,
+        widgetName: `Widget ${widgetId}`,
+        success: false,
+        message: res?.message || `HTTP ${response.status}`,
+        bullets: [res?.message || `Failed to execute widget ${widgetId}`],
+      } as WidgetExecutionResult;
+    }
+
+    return {
+      widgetId,
+      widgetName: res?.data?.widgetName || `Widget ${widgetId}`,
+      success: Boolean(res?.success),
+      message: res?.message || "Widget executed",
+      bullets: Array.isArray(res?.data?.bullets) ? res.data.bullets : [],
+      widgetOutput: res?.data?.widgetOutput,
+      teamIds: res?.data?.teamIds,
+      playerIds: res?.data?.playerIds,
+    } as WidgetExecutionResult;
+  });
+
+  return Promise.all(requests);
+};
+
 export const updateWidget = async ({
   id,
   name,

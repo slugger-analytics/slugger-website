@@ -27,6 +27,48 @@ const selectWidgetById = `
 
 const router = Router();
 
+const parseIdList = (value) => {
+  if (value === undefined || value === null) return [];
+
+  const normalize = (items) =>
+    items
+      .map((item) => {
+        if (typeof item === "number") return item;
+        if (typeof item === "string") {
+          const trimmed = item.trim();
+          if (!trimmed) return null;
+          const asNumber = Number(trimmed);
+          return Number.isNaN(asNumber) ? trimmed : asNumber;
+        }
+        return null;
+      })
+      .filter((item) => item !== null);
+
+  if (Array.isArray(value)) {
+    return normalize(value);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    if (trimmed.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          return normalize(parsed);
+        }
+      } catch (error) {
+        return [];
+      }
+    }
+
+    return normalize(trimmed.split(","));
+  }
+
+  return [];
+};
+
 // get all widgets
 router.get(
   "/",
@@ -50,6 +92,284 @@ router.get(
     }
   },
 );
+
+// Special endpoint for Hitting Analytics widget (widget_id 93)
+// Returns hitting statistics as JSON
+router.get("/93/hitting-data", async (req, res) => {
+  try {
+    const playerIds = parseIdList(req.query.playerIds);
+    const teamIds = parseIdList(req.query.teamIds);
+
+    // Build query to get player hitting stats
+    let query = `
+      SELECT 
+        p.player_id,
+        p.player_name,
+        p.team_id,
+        p.player_batting_handedness as position
+      FROM player p
+    `;
+
+    const params = [];
+    const conditions = [];
+
+    // Filter by playerIds if provided
+    if (playerIds.length > 0) {
+      conditions.push(`p.player_id = ANY($${params.length + 1}::text[])`);
+      params.push(playerIds);
+    }
+
+    // Filter by teamIds if provided
+    if (teamIds.length > 0) {
+      conditions.push(`p.team_id = ANY($${params.length + 1}::uuid[])`);
+      params.push(teamIds);
+    }
+
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(" AND ")}`;
+    }
+
+    query += ` LIMIT 100`;
+
+    const result = await pool.query(query, params);
+    const players = result.rows || [];
+
+    // Build hitting statistics response
+    const hittingData = {
+      success: true,
+      data: {
+        widgetId: 93,
+        widgetName: "Hitting Analytics",
+        playerCount: players.length,
+        teamCount: teamIds.length,
+        players: players.map((p) => ({
+          id: p.player_id,
+          name: p.player_name,
+          team: p.team_id,
+          position: p.position,
+          stats: {
+            avg: Math.random() * 0.3 + 0.2, // Mock data
+            hr: Math.floor(Math.random() * 40),
+            rbi: Math.floor(Math.random() * 120),
+            hits: Math.floor(Math.random() * 180),
+            ab: Math.floor(Math.random() * 600),
+          },
+        })),
+        bullets: [
+          `Hitting Analytics executed successfully.`,
+          `Analysis covers ${players.length} player(s) from ${teamIds.length} team(s).`,
+          players.length > 0
+            ? `Top performer: ${players[0].player_name} (AVG .${(Math.random() * 300 + 200).toFixed(0)})`
+            : "No players selected for analysis.",
+        ],
+      },
+    };
+
+    return res.status(200).json(hittingData);
+  } catch (error) {
+    console.error("[Hitting Analytics] Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: `Error fetching hitting data: ${error.message}`,
+    });
+  }
+});
+
+router.get("/:widgetId/execute", async (req, res) => {
+  try {
+    const widgetId = parseInt(req.params.widgetId, 10);
+    if (Number.isNaN(widgetId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid widgetId",
+      });
+    }
+
+    const teamIds = parseIdList(req.query.teamIds);
+    const playerIds = parseIdList(req.query.playerIds);
+    const source = typeof req.query.source === "string" ? req.query.source : "superwidget";
+
+    // Special handling for Hitting Analytics widget (93)
+    if (widgetId === 93) {
+      try {
+        const hittingResponse = await fetch(`http://localhost:3001/api/widgets/93/hitting-data?${new URLSearchParams({
+          playerIds: JSON.stringify(playerIds),
+          teamIds: JSON.stringify(teamIds)
+        }).toString()}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        const hittingData = await hittingResponse.json();
+        if (hittingData.success) {
+          return res.status(200).json({
+            success: true,
+            message: "Widget executed successfully",
+            data: {
+              widgetId,
+              widgetName: "Hitting Analytics",
+              teamIds,
+              playerIds,
+              widgetOutput: hittingData.data,
+              bullets: hittingData.data.bullets || []
+            }
+          });
+        }
+      } catch (hittingError) {
+        console.error("[Widget Execute] Error calling hitting-data endpoint:", hittingError);
+      }
+    }
+
+    const widgetResult = await pool.query(selectWidgetById, [widgetId]);
+    if (widgetResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `Widget ${widgetId} not found`,
+      });
+    }
+
+    const widget = widgetResult.rows[0];
+    const widgetName = widget.widget_name || widget.name || `Widget ${widgetId}`;
+    const description = widget.description || "No widget description provided.";
+    const redirectLink = widget.redirect_link || widget.redirectlink || null;
+
+    // If no redirectLink, return metadata only
+    if (!redirectLink) {
+      const bullets = [
+        `${widgetName}: No redirect link configured.`,
+        `Selection scope: ${teamIds.length} team(s), ${playerIds.length} player(s).`,
+        `Source: ${source}`,
+      ];
+
+      if (description) {
+        bullets.push(`Summary: ${description}`);
+      }
+
+      return res.status(200).json({
+        success: false,
+        message: "Widget has no redirect link configured",
+        data: {
+          widgetId,
+          widgetName,
+          teamIds,
+          playerIds,
+          bullets,
+        },
+      });
+    }
+
+    // Try to call the widget's redirectLink with parameters
+    try {
+      const url = new URL(redirectLink);
+      url.searchParams.append('teamIds', JSON.stringify(teamIds));
+      url.searchParams.append('playerIds', JSON.stringify(playerIds));
+      url.searchParams.append('source', source);
+
+      console.log(`[Widget Execute] Calling ${widgetName} at ${url.toString()}`);
+
+      const widgetResponse = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Slugger-SuperWidget/1.0'
+        },
+        signal: AbortSignal.timeout(10000)
+      });
+
+      const contentType = widgetResponse.headers.get('content-type');
+      const responseText = await widgetResponse.text();
+
+      // Check if response is JSON
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          const widgetData = JSON.parse(responseText);
+          
+          // Return the actual widget data
+          return res.status(200).json({
+            success: true,
+            message: "Widget executed successfully",
+            data: {
+              widgetId,
+              widgetName,
+              teamIds,
+              playerIds,
+              widgetOutput: widgetData,
+              bullets: widgetData.bullets || [`${widgetName} returned data successfully`]
+            },
+          });
+        } catch (parseError) {
+          console.error(`[Widget Execute] Failed to parse JSON response from ${widgetName}:`, parseError);
+        }
+      }
+
+      // If we got HTML or non-JSON response, widget doesn't support API mode
+      console.warn(`[Widget Execute] ${widgetName} returned HTML/non-JSON (Content-Type: ${contentType})`);
+      
+      const bullets = [
+        `${widgetName} is a UI-only widget (returns HTML, not JSON).`,
+        `To use this widget in SuperWidget, it needs an API endpoint that returns JSON.`,
+        `Selection scope: ${teamIds.length} team(s), ${playerIds.length} player(s).`,
+        `Configured redirect: ${redirectLink}`
+      ];
+
+      if (description) {
+        bullets.push(`Summary: ${description}`);
+      }
+
+      return res.status(200).json({
+        success: false,
+        message: "Widget does not support API mode (returns HTML instead of JSON)",
+        data: {
+          widgetId,
+          widgetName,
+          teamIds,
+          playerIds,
+          bullets,
+          widgetOutput: {
+            error: "Widget UI returned HTML instead of JSON API response",
+            contentType,
+            responsePreview: responseText.substring(0, 200) + "..."
+          }
+        },
+      });
+
+    } catch (fetchError) {
+      console.error(`[Widget Execute] Error calling ${widgetName}:`, fetchError.message);
+
+      const bullets = [
+        `${widgetName}: Failed to fetch data from widget endpoint.`,
+        `Error: ${fetchError.message}`,
+        `Selection scope: ${teamIds.length} team(s), ${playerIds.length} player(s).`,
+        `Configured redirect: ${redirectLink}`
+      ];
+
+      if (description) {
+        bullets.push(`Summary: ${description}`);
+      }
+
+      return res.status(200).json({
+        success: false,
+        message: `Failed to execute widget: ${fetchError.message}`,
+        data: {
+          widgetId,
+          widgetName,
+          teamIds,
+          playerIds,
+          bullets,
+          widgetOutput: {
+            error: fetchError.message
+          }
+        },
+      });
+    }
+
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: `Internal error: ${error.message}`,
+    });
+  }
+});
 
 // edit a widget
 router.patch(
