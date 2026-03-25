@@ -72,14 +72,14 @@ useEffect(() => {
   ];
 
   function onMessage(event) {
-    // ✅ Security check 1: always validate the origin
+    // Security check 1: always validate the origin
     if (!SLUGGER_ORIGINS.includes(event.origin)) return;
 
-    // ✅ Security check 2: validate message format
+    // Security check 2: validate message format
     const { type, payload } = event.data || {};
     if (type !== "SLUGGER_AUTH" || !payload?.bootstrapToken) return;
 
-    // ✅ Send bootstrapToken to your own backend immediately
+    // Send bootstrapToken to your own backend immediately
     fetch("/api/bootstrap", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
