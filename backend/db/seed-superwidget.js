@@ -1,11 +1,3 @@
-/**
- * Inserts or updates the SuperWidget Analyzer widget so that
- * its redirect_link points to the parameterized analysis page
- * at `/super-widget/parameterized`.
- *
- * Run from the backend folder:
- *   node db/seed-superwidget.js
- */
 import pool from "../db.js";
 
 async function seedSuperWidget() {
