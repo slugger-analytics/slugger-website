@@ -13,7 +13,8 @@ import {
   Clock3,
   AlertTriangle,
   Puzzle,
-  Activity
+  Loader2,
+  Newspaper,
 } from "lucide-react";
 import { buildWidgetInsights, detectWidgetFocus } from "../utils/widgetAnalysis";
 import { ParameterizedAnalysisResponse, ParameterizedPlayerAnalysis, WidgetInsightBlock } from "../types";
@@ -115,6 +116,11 @@ const formatPerformance = (value?: number): string => {
   return `${Math.round(value)} / 100`;
 };
 
+const performancePct = (value?: number): number => {
+  if (typeof value !== "number" || Number.isNaN(value)) return 0;
+  return Math.min(100, Math.max(0, value));
+};
+
 export function ParameterAnalysisResult({
   selectedTeams,
   selectedPlayers,
@@ -172,9 +178,15 @@ export function ParameterAnalysisResult({
 
   if (!hasSelections && selectedWidgets.length === 0) {
     return (
-      <Card className="w-full border-gray-200 opacity-60">
-        <CardContent className="pt-6">
-          <p className="text-center text-gray-500">Select teams, players, or widgets to start the analysis.</p>
+      <Card className="w-full rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 shadow-sm">
+        <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
+          <Sparkles className="h-8 w-8 text-gray-300" aria-hidden />
+          <div className="max-w-sm space-y-1">
+            <p className="text-xs font-medium text-gray-700">Nothing to analyze yet</p>
+            <p className="text-xs text-gray-500">
+              Add widgets and at least one team or player in the left column to generate a report.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -182,10 +194,15 @@ export function ParameterAnalysisResult({
 
   if (loading) {
     return (
-      <Card className="w-full border-blue-200">
-        <CardContent className="flex flex-col items-center justify-center gap-3 py-10">
-          <Activity className="h-6 w-6 animate-spin text-blue-600" />
-          <p className="text-sm text-gray-600">Running analysis with selected widgets…</p>
+      <Card className="w-full overflow-hidden rounded-2xl border-emerald-200/60 bg-gradient-to-br from-emerald-50/60 to-white shadow-sm">
+        <CardContent
+          className="flex flex-col items-center justify-center gap-3 py-12"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" aria-hidden />
+          <p className="text-xs font-medium text-gray-700">Running analysis with selected widgets…</p>
+          <p className="text-xs text-gray-500">This may take a moment.</p>
         </CardContent>
       </Card>
     );
@@ -193,13 +210,15 @@ export function ParameterAnalysisResult({
 
   if (error) {
     return (
-      <Card className="w-full border-red-200">
-        <CardHeader className="flex flex-row items-center gap-2">
-          <AlertTriangle className="text-red-500" />
-          <CardTitle>Analysis Error</CardTitle>
+      <Card className="w-full rounded-2xl border-red-200/80 bg-red-50/30 shadow-sm">
+        <CardHeader className="flex flex-row items-center gap-3 pb-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100 text-red-600">
+            <AlertTriangle className="h-4 w-4" />
+          </span>
+          <CardTitle className="mt-3 text-base font-semibold text-red-900">Analysis error</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-gray-600">{error}</p>
+          <p className="text-xs text-gray-700">{error}</p>
         </CardContent>
       </Card>
     );
@@ -214,22 +233,78 @@ export function ParameterAnalysisResult({
   const recommendations = analysisData?.recommendations ?? [];
 
   return (
-    <div className="space-y-4 w-full">
+    <div className="w-full space-y-4">
+      {/* Selection Summary */}
+      {(selectedTeams.length > 0 || selectedPlayers.length > 0 || selectedWidgets.length > 0) && (
+        <Card className="overflow-hidden rounded-2xl border-gray-200/80 bg-gray-50/60 shadow-sm">
+          <CardHeader className="space-y-0.5 pb-2 pt-1">
+            <CardTitle className="mt-3 flex items-center gap-2 text-base font-semibold text-gray-800">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-700">
+                <Users className="h-4 w-4" />
+              </span>
+              Selection summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {selectedTeams.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-600 mb-2">Teams</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedTeams.map((team) => (
+                    <Badge key={team.id} variant="secondary" className="bg-blue-100 text-xs text-blue-800">
+                      {team.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedPlayers.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-600 mb-2">Players</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedPlayers.map((player) => (
+                    <Badge key={player.id} variant="outline" className="border-green-200 bg-green-50 text-xs text-green-800">
+                      {player.name} ({player.position})
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {selectedWidgets.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-600 mb-2">Widgets</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedWidgets.map((widget) => (
+                    <Badge key={widget.id} variant="secondary" className="bg-purple-100 text-xs text-purple-800">
+                      {widget.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Summary */}
-      <Card className="w-full border-emerald-200 bg-gradient-to-br from-emerald-50 to-white">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-emerald-900">
-            <Sparkles className="text-emerald-600" />
-            SuperWidget Analysis
+      <Card className="w-full overflow-hidden rounded-2xl border-emerald-200/60 bg-gradient-to-br from-emerald-50/90 via-white to-white shadow-sm">
+        <CardHeader className="space-y-0.5 pb-2 pt-1">
+          <CardTitle className="mt-3 flex items-center gap-1.5 text-base font-semibold text-emerald-950">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            SuperWidget analysis
           </CardTitle>
           {metadata?.dataSource && (
-            <CardDescription>
+            <CardDescription className="text-xs">
               Data source: {metadata.dataSource}{metadata.season ? ` • Season ${metadata.season}` : ""}
             </CardDescription>
           )}
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-gray-700">
+          <p className="text-xs text-gray-700">
             {analysisData?.summary || "Select teams and players to generate the combined report."}
           </p>
 
@@ -258,66 +333,98 @@ export function ParameterAnalysisResult({
 
       {/* Team Performance */}
       {teamAnalysis.length > 0 && (
-        <Card className="border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-900">
-              <BarChart3 className="text-blue-600" />
-              Team Performance Breakdown
+        <Card className="overflow-hidden rounded-2xl border-blue-200/60 bg-gradient-to-br from-blue-50/50 via-white to-white shadow-sm">
+          <CardHeader className="space-y-0.5 pb-2 pt-1">
+            <CardTitle className="mt-3 flex items-center gap-2 text-base font-semibold text-blue-950">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                <BarChart3 className="h-4 w-4" />
+              </span>
+              Team performance
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {teamAnalysis.map((team) => (
-              <div key={team.teamId} className="border border-blue-100 rounded-lg p-4 bg-blue-50">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="font-semibold text-blue-900">{team.teamName}</h4>
-                    <p className="text-xs text-blue-700 mt-1">
-                      Record: {(team.wins ?? 0)}-{(team.losses ?? 0)}
-                    </p>
+          <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {teamAnalysis.map((team) => {
+              const pct = performancePct(team.avgPerformance);
+              return (
+                <div
+                  key={team.teamId}
+                  className="rounded-xl border border-blue-100/80 bg-blue-50/60 p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <h4 className="text-xs font-semibold text-blue-950">{team.teamName}</h4>
+                      <p className="mt-1 text-xs text-blue-800/90">
+                        Record: {team.wins ?? 0}-{team.losses ?? 0}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0 bg-blue-200/90 text-xs text-blue-950">
+                      {formatPerformance(team.avgPerformance)}
+                    </Badge>
                   </div>
-                  <Badge variant="secondary" className="bg-blue-200 text-blue-900">
-                    {formatPerformance(team.avgPerformance)}
-                  </Badge>
-                </div>
-                {team.statusSummary && (
-                  <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-900 border border-blue-200">
-                    <p className="font-semibold mb-1 flex items-center gap-1">
-                      <span className="text-blue-600">📰</span> Latest News
-                    </p>
-                    <p className="italic">{team.statusSummary}</p>
+                  <div className="mt-3">
+                    <div className="mb-1 flex items-center justify-between text-[10px] font-medium uppercase tracking-wide text-blue-700/80">
+                      <span>Performance</span>
+                      <span>{pct}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-blue-100">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-sky-400 transition-[width] duration-300"
+                        style={{ width: `${pct}%` }}
+                        role="progressbar"
+                        aria-valuenow={pct}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      />
+                    </div>
                   </div>
-                )}
-                <div className="mt-3 text-xs text-blue-800 space-y-1">
-                  <p>Win %: {formatWinPct(team.topMetrics?.winPercentage)}</p>
-                  <p>Players in sample: {team.playerCount}</p>
-                  {typeof team.topMetrics?.offensiveRating === "number" && (
-                    <p>Offensive rating: {Math.round(team.topMetrics.offensiveRating)}</p>
+                  {team.statusSummary && (
+                    <div className="mt-3 rounded-lg border border-blue-200/80 bg-blue-100/50 p-2 text-xs text-blue-950">
+                      <p className="mb-1 flex items-center gap-1.5 font-semibold text-blue-900">
+                        <Newspaper className="h-3.5 w-3.5 text-blue-600" />
+                        Latest news
+                      </p>
+                      <p className="italic leading-relaxed text-blue-900/90">{team.statusSummary}</p>
+                    </div>
                   )}
+                  <div className="mt-3 space-y-1 text-xs text-blue-900/85">
+                    <p>Win %: {formatWinPct(team.topMetrics?.winPercentage)}</p>
+                    <p>Players in sample: {team.playerCount}</p>
+                    {typeof team.topMetrics?.offensiveRating === "number" && (
+                      <p>Offensive rating: {Math.round(team.topMetrics.offensiveRating)}</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </CardContent>
         </Card>
       )}
 
       {/* Player Highlights */}
       {topPlayers.length > 0 && (
-        <Card className="border-purple-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-purple-900">
-              <Users className="text-purple-600" />
-              Player Highlights
+        <Card className="overflow-hidden rounded-2xl border-violet-200/60 bg-gradient-to-br from-violet-50/40 via-white to-white shadow-sm">
+          <CardHeader className="space-y-0.5 pb-2 pt-1">
+            <CardTitle className="mt-3 flex items-center gap-2 text-base font-semibold text-violet-950">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-700">
+                <Users className="h-4 w-4" />
+              </span>
+              Player highlights
             </CardTitle>
-            <CardDescription>Ranked by performance score</CardDescription>
+            <CardDescription className="text-xs">Ranked by performance score</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {topPlayers.map((player) => (
-              <div key={player.playerId} className="flex flex-wrap justify-between gap-2 border border-purple-100 rounded-lg p-3 bg-purple-50">
-                <div>
-                  <p className="font-medium text-purple-900">{player.playerName}</p>
-                  <p className="text-xs text-purple-700">{player.team} • {player.position} • Score {Math.round(player.performanceScore)}</p>
+              <div
+                key={player.playerId}
+                className="flex flex-wrap items-start justify-between gap-2 rounded-xl border border-violet-100/80 bg-violet-50/50 p-3 shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-violet-950">{player.playerName}</p>
+                  <p className="text-xs text-violet-800/90">
+                    {player.team} • {player.position} • Score {Math.round(player.performanceScore)}
+                  </p>
                 </div>
-                <p className="text-xs text-purple-800">{formatKeyStats(player)}</p>
+                <p className="max-w-full text-xs leading-snug text-violet-900/85">{formatKeyStats(player)}</p>
               </div>
             ))}
           </CardContent>
@@ -326,28 +433,35 @@ export function ParameterAnalysisResult({
 
       {/* Widget Modules */}
       {widgetInsights.length > 0 && (
-        <Card className="border-emerald-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-emerald-900">
-              <Puzzle className="text-emerald-600" />
-              Widget-Driven Modules
+        <Card className="overflow-hidden rounded-2xl border-teal-200/60 bg-gradient-to-br from-teal-50/35 via-white to-white shadow-sm">
+          <CardHeader className="space-y-0.5 pb-2 pt-1">
+            <CardTitle className="mt-3 flex items-center gap-2 text-base font-semibold text-teal-950">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-100 text-teal-700">
+                <Puzzle className="h-4 w-4" />
+              </span>
+              Widget-driven modules
             </CardTitle>
-            <CardDescription>Each widget contributes targeted analysis for the current selection.</CardDescription>
+            <CardDescription className="text-xs">
+              Each widget contributes targeted analysis for the current selection.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {widgetInsights.map((block) => (
-              <div key={block.widget.id} className="border border-emerald-100 rounded-lg p-4 bg-emerald-50">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-semibold text-emerald-900">{block.widget.name}</p>
-                  <Badge variant="secondary" className="bg-emerald-200 text-emerald-900 capitalize">
+              <div
+                key={block.widget.id}
+                className="rounded-xl border border-teal-100/80 bg-teal-50/40 p-4 shadow-sm"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="text-xs font-semibold text-teal-950">{block.widget.name}</p>
+                  <Badge variant="secondary" className="shrink-0 bg-teal-200/90 text-xs capitalize text-teal-950">
                     {block.focus}
                   </Badge>
                 </div>
-                <p className="text-xs text-emerald-800 mb-2">{block.headline}</p>
-                <ul className="space-y-1 text-xs text-emerald-700">
+                <p className="mb-2 text-xs text-teal-900/85">{block.headline}</p>
+                <ul className="space-y-1 text-xs text-teal-900/80">
                   {block.bullets.map((bullet, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <span className="text-emerald-600">•</span>
+                      <span className="text-teal-600">•</span>
                       <span>{bullet}</span>
                     </li>
                   ))}
@@ -360,24 +474,26 @@ export function ParameterAnalysisResult({
 
       {/* Key Insights & Comparative Notes */}
       {(keyInsights.length > 0 || comparativeInsights.length > 0) && (
-        <Card className="border-amber-200 bg-gradient-to-br from-amber-50 to-white">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-900">
-              <Target className="text-amber-600" />
-              Key Insights
+        <Card className="overflow-hidden rounded-2xl border-amber-200/60 bg-gradient-to-br from-amber-50/70 via-white to-white shadow-sm">
+          <CardHeader className="space-y-0.5 pb-2 pt-1">
+            <CardTitle className="mt-3 flex items-center gap-2 text-base font-semibold text-amber-950">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                <Target className="h-4 w-4" />
+              </span>
+              Key insights
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {keyInsights.map((insight, index) => (
-              <div key={`insight-${index}`} className="flex items-start gap-3 text-sm text-amber-800">
-                <span className="text-amber-600 font-bold">•</span>
+              <div key={`insight-${index}`} className="flex items-start gap-3 text-xs text-amber-950/90">
+                <span className="font-bold text-amber-600">•</span>
                 <span>{insight}</span>
               </div>
             ))}
 
             {comparativeInsights.map((insight, index) => (
-              <div key={`comparative-${index}`} className="flex items-start gap-3 text-sm text-amber-800">
-                <span className="text-amber-600 font-bold">•</span>
+              <div key={`comparative-${index}`} className="flex items-start gap-3 text-xs text-amber-950/90">
+                <span className="font-bold text-amber-600">•</span>
                 <span>
                   <strong>{insight.title}:</strong> {insight.description}
                 </span>
@@ -389,17 +505,19 @@ export function ParameterAnalysisResult({
 
       {/* Recommendations */}
       {recommendations.length > 0 && (
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-slate-900">
-              <ListChecks className="text-slate-700" />
-              Recommended Actions
+        <Card className="overflow-hidden rounded-2xl border-slate-200/70 bg-gradient-to-br from-slate-50/80 via-white to-white shadow-sm">
+          <CardHeader className="space-y-0.5 pb-2 pt-1">
+            <CardTitle className="mt-3 flex items-center gap-2 text-base font-semibold text-slate-900">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                <ListChecks className="h-4 w-4" />
+              </span>
+              Recommended actions
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-slate-700">
+          <CardContent className="space-y-2 text-xs text-slate-800">
             {recommendations.map((rec, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <span className="text-slate-500">{index + 1}.</span>
+              <div key={index} className="flex items-start gap-2 rounded-lg border border-slate-100 bg-white/80 px-3 py-2">
+                <span className="font-medium text-slate-500 tabular-nums">{index + 1}.</span>
                 <span>{rec}</span>
               </div>
             ))}
@@ -407,54 +525,6 @@ export function ParameterAnalysisResult({
         </Card>
       )}
 
-      {/* Selection Summary */}
-      {(selectedTeams.length > 0 || selectedPlayers.length > 0 || selectedWidgets.length > 0) && (
-        <Card className="border-gray-200 bg-gray-50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm text-gray-700">Selection Summary</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {selectedTeams.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-600 mb-2">Teams</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedTeams.map((team) => (
-                    <Badge key={team.id} variant="secondary" className="bg-blue-100 text-blue-800">
-                      {team.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {selectedPlayers.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-600 mb-2">Players</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedPlayers.map((player) => (
-                    <Badge key={player.id} variant="outline" className="bg-green-50 text-green-800 border-green-200">
-                      {player.name} ({player.position})
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {selectedWidgets.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-gray-600 mb-2">Widgets</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedWidgets.map((widget) => (
-                    <Badge key={widget.id} variant="secondary" className="bg-purple-100 text-purple-800">
-                      {widget.name}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
