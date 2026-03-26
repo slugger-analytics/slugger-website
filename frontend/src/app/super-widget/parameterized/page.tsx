@@ -23,6 +23,7 @@ interface Player {
   name: string;
   teamId: string | number;
   position: string;
+  sourceLabel?: string;
 }
 
 interface WidgetPdfState {
@@ -128,6 +129,8 @@ export default function SuperWidgetParameterizedPage() {
       try {
         setSelectorOptionsLoading(true);
         setSelectorOptionsError(null);
+        setSelectorTeams([]);
+        setSelectorPlayers([]);
         const data = await fetchWidgetSelectorOptions(selectorSourceWidgetId);
         const teams = (data.teams || []) as Team[];
         const players = (data.players || []) as Player[];
@@ -135,18 +138,16 @@ export default function SuperWidgetParameterizedPage() {
 
         setSelectorSourceWidgetName(widgetName);
 
-        if (teams.length > 0 && players.length > 0) {
-          setSelectorTeams(teams);
-          setSelectorPlayers(players);
-        } else {
-          setSelectorTeams(null);
-          setSelectorPlayers(null);
-          setSelectorOptionsError(`${widgetName} has no mappable team/player options; using default selector source.`);
+        setSelectorTeams(teams);
+        setSelectorPlayers(players);
+
+        if (teams.length === 0 || players.length === 0) {
+          setSelectorOptionsError(`${widgetName} has no mappable team/player options.`);
         }
       } catch (error) {
         console.error("Error loading widget selector options:", error);
-        setSelectorTeams(null);
-        setSelectorPlayers(null);
+        setSelectorTeams([]);
+        setSelectorPlayers([]);
         setSelectorSourceWidgetName(selectorSourceWidget?.name || null);
         setSelectorOptionsError((error as Error)?.message ?? "Failed to load selector options");
       } finally {
@@ -335,7 +336,7 @@ export default function SuperWidgetParameterizedPage() {
       .map(player => player.id)
       .filter(id => id !== undefined && id !== null);
     const playerNames = selectedPlayers
-      .map(player => player.name)
+      .map(player => player.sourceLabel || player.name)
       .filter(name => typeof name === "string" && name.trim().length > 0);
 
     setWidgetPdfStates(prev => ({
@@ -376,88 +377,6 @@ export default function SuperWidgetParameterizedPage() {
     }
   }, [selectedTeams, selectedPlayers]);
 
-  const handleOpenWidgetInBrowser = useCallback((widgetId: number, directLink?: string) => {
-    const widget = selectedWidgets.find(item => item.id === widgetId);
-    const redirectLink = directLink || widget?.redirectLink;
-
-    if (!redirectLink) {
-      setWidgetPdfStates(prev => ({
-        ...prev,
-        [widgetId]: {
-          loading: false,
-          error: "Widget redirect URL is missing",
-          pdfUrl: prev[widgetId]?.pdfUrl,
-        },
-      }));
-      return;
-    }
-
-    const teamIds = selectedTeams
-      .map(team => team.id)
-      .filter(id => id !== undefined && id !== null)
-      .map(id => String(id));
-    const teamNames = selectedTeams
-      .map(team => team.name)
-      .filter(name => typeof name === "string" && name.trim().length > 0);
-    const playerIds = selectedPlayers
-      .map(player => player.id)
-      .filter(id => id !== undefined && id !== null)
-      .map(id => String(id));
-    const playerNames = selectedPlayers
-      .map(player => player.name)
-      .filter(name => typeof name === "string" && name.trim().length > 0);
-
-    const parsedRedirect = new URL(redirectLink);
-    const baseUrl = `${parsedRedirect.origin}${parsedRedirect.pathname}`;
-    const url = new URL(baseUrl);
-
-    if (teamIds.length > 0) {
-      url.searchParams.set("teamIds", JSON.stringify(teamIds));
-      url.searchParams.set("team_ids", teamIds.join(","));
-      url.searchParams.set("teamId", teamIds[0]);
-    }
-    if (playerIds.length > 0) {
-      url.searchParams.set("playerIds", JSON.stringify(playerIds));
-      url.searchParams.set("player_ids", playerIds.join(","));
-      url.searchParams.set("playerId", playerIds[0]);
-    }
-    if (teamNames.length > 0) {
-      url.searchParams.set("teamNames", JSON.stringify(teamNames));
-      url.searchParams.set("team_names", teamNames.join(","));
-      url.searchParams.set("teamName", teamNames[0]);
-    }
-    if (playerNames.length > 0) {
-      url.searchParams.set("playerNames", JSON.stringify(playerNames));
-      url.searchParams.set("player_names", playerNames.join(","));
-      url.searchParams.set("playerName", playerNames[0]);
-    }
-    url.searchParams.set("source", "superwidget-open-browser");
-
-    const popup = window.open("about:blank", "_blank", "width=1440,height=900");
-    if (!popup) {
-      setWidgetPdfStates(prev => ({
-        ...prev,
-        [widgetId]: {
-          loading: false,
-          error: "Popup was blocked. Please allow popups and try again.",
-          pdfUrl: prev[widgetId]?.pdfUrl,
-        },
-      }));
-      return;
-    }
-
-    popup.location.href = url.toString();
-
-    setWidgetPdfStates(prev => ({
-      ...prev,
-      [widgetId]: {
-        loading: false,
-        error: undefined,
-        pdfUrl: prev[widgetId]?.pdfUrl,
-      },
-    }));
-  }, [selectedWidgets, selectedTeams, selectedPlayers]);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
@@ -487,6 +406,16 @@ export default function SuperWidgetParameterizedPage() {
                 Step 1: select widget(s). Step 2: select team/player parameters.
               </p>
 
+              {selectorSourceWidgetId && selectorOptionsError && !selectorOptionsLoading && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  <p className="font-semibold">Widget selector options unavailable</p>
+                  <p className="mt-1">
+                    {selectorSourceWidgetName || "This widget"} did not expose mappable team/player options.
+                    Please choose another widget or use widget-specific in-page selectors after opening it.
+                  </p>
+                </div>
+              )}
+
               <ParameterSelector
                 selectedTeams={selectedTeams}
                 selectedPlayers={selectedPlayers}
@@ -502,7 +431,7 @@ export default function SuperWidgetParameterizedPage() {
                         ? `${selectorSourceWidgetName || "Widget"} options unavailable: ${selectorOptionsError}`
                         : selectorTeams && selectorPlayers
                           ? `Using ${selectorSourceWidgetName || "widget"} team/player options`
-                          : `Using default team/player options`
+                          : `Using ${selectorSourceWidgetName || "widget"} team/player options`
                     : undefined
                 }
               />
@@ -540,39 +469,28 @@ export default function SuperWidgetParameterizedPage() {
                         <div key={output.widgetId} className="border rounded-lg p-3">
                           <div className="flex items-center justify-between mb-2">
                             <h4 className="font-medium">{output.widgetName}</h4>
-                            <Badge variant={output.uiOnly || output.success ? "default" : "destructive"}>
-                              {output.uiOnly ? "UI Widget" : output.success ? "Success" : "Failed"}
+                            <Badge variant={output.success ? "default" : "destructive"}>
+                              {output.success ? "Ready" : "Failed"}
                             </Badge>
                           </div>
 
                           <div className="mb-3 flex items-center gap-3">
-                            {!output.uiOnly ? (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleExportWidgetPdf(output.widgetId)}
-                                disabled={widgetPdfStates[output.widgetId]?.loading}
-                              >
-                                {widgetPdfStates[output.widgetId]?.loading ? (
-                                  <>
-                                    <span className="inline-block animate-spin mr-2">⏳</span>
-                                    Generating PDF...
-                                  </>
-                                ) : (
-                                  <>📄 Export PDF</>
-                                )}
-                              </Button>
-                            ) : (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenWidgetInBrowser(output.widgetId, output.redirectLink)}
-                              >
-                                🌐 Open in Browser
-                              </Button>
-                            )}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleExportWidgetPdf(output.widgetId)}
+                              disabled={widgetPdfStates[output.widgetId]?.loading}
+                            >
+                              {widgetPdfStates[output.widgetId]?.loading ? (
+                                <>
+                                  <span className="inline-block animate-spin mr-2">⏳</span>
+                                  Generating PDF...
+                                </>
+                              ) : (
+                                <>📄 Export PDF</>
+                              )}
+                            </Button>
                             {widgetPdfStates[output.widgetId]?.pdfUrl && (
                               <a
                                 href={widgetPdfStates[output.widgetId].pdfUrl}
@@ -601,14 +519,7 @@ export default function SuperWidgetParameterizedPage() {
                             </ul>
                           )}
 
-                          <div className="bg-gray-50 rounded-md p-2">
-                            <p className="text-xs text-gray-500 mb-2">Raw Output</p>
-                            <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words max-h-48 overflow-auto">
-                              {typeof output.widgetOutput === "string"
-                                ? output.widgetOutput
-                                : JSON.stringify(output.widgetOutput ?? {}, null, 2)}
-                            </pre>
-                          </div>
+                          {/* Raw Output removed for user privacy */}
                         </div>
                       ))}
                     </div>
