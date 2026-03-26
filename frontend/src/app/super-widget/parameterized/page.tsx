@@ -12,7 +12,7 @@ import { ParameterizedAnalysisResponse } from "../types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
-import { Loader2, LayoutDashboard, Check } from "lucide-react";
+import { Loader2, LayoutDashboard, Check, FileText } from "lucide-react";
 
 function scrollToId(id: string) {
   const el = document.getElementById(id);
@@ -419,6 +419,80 @@ export default function SuperWidgetParameterizedPage() {
     }
   }, [selectedTeams, selectedPlayers]);
 
+  const handleOpenWidgetInBrowser = useCallback((widgetId: number, directLink?: string) => {
+    const widget = selectedWidgets.find((item) => item.id === widgetId);
+    const redirectLink = directLink || widget?.redirectLink;
+
+    if (!redirectLink) {
+      setWidgetPdfStates((prev) => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: "Widget redirect URL is missing",
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+      return;
+    }
+
+    try {
+      const parsedRedirect = new URL(redirectLink);
+      const url = new URL(`${parsedRedirect.origin}${parsedRedirect.pathname}`);
+
+      const teamIds = selectedTeams
+        .map((team) => team.id)
+        .filter((id) => id !== undefined && id !== null)
+        .map((id) => String(id));
+      const playerIds = selectedPlayers
+        .map((player) => player.id)
+        .filter((id) => id !== undefined && id !== null)
+        .map((id) => String(id));
+
+      if (teamIds.length > 0) {
+        url.searchParams.set("teamIds", JSON.stringify(teamIds));
+        url.searchParams.set("team_ids", teamIds.join(","));
+        url.searchParams.set("teamId", teamIds[0]);
+      }
+      if (playerIds.length > 0) {
+        url.searchParams.set("playerIds", JSON.stringify(playerIds));
+        url.searchParams.set("player_ids", playerIds.join(","));
+        url.searchParams.set("playerId", playerIds[0]);
+      }
+      url.searchParams.set("source", "superwidget-open-browser");
+
+      const popup = window.open(url.toString(), "_blank", "width=1440,height=900");
+      if (!popup) {
+        setWidgetPdfStates((prev) => ({
+          ...prev,
+          [widgetId]: {
+            loading: false,
+            error: "Popup was blocked. Please allow popups and try again.",
+            pdfUrl: prev[widgetId]?.pdfUrl,
+          },
+        }));
+        return;
+      }
+
+      setWidgetPdfStates((prev) => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: undefined,
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+    } catch (error) {
+      setWidgetPdfStates((prev) => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: (error as Error)?.message ?? "Invalid widget URL",
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+    }
+  }, [selectedWidgets, selectedTeams, selectedPlayers]);
+
   const stepWidgets = selectedWidgetIds.length > 0;
   const stepParams = selectedTeams.length > 0 || selectedPlayers.length > 0;
   const stepResults = stepWidgets && stepParams;
@@ -440,7 +514,7 @@ export default function SuperWidgetParameterizedPage() {
                 <LayoutDashboard className="h-4 w-4" aria-hidden />
               </div>
               <div className="w-full">
-                <p className="mt-3 text-xl font-bold tracking-tight text-gray-900">
+                <p className="text-xl font-bold tracking-tight text-gray-900">
                   SuperWidget Analysis
                 </p>
                 <p className="mt-3 max-w-2xl text-sm text-gray-600">
@@ -549,7 +623,12 @@ export default function SuperWidgetParameterizedPage() {
                 <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-indigo-50/50 to-white pb-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <CardTitle className="mt-3 text-base font-semibold">Widget script outputs</CardTitle>
+                      <CardTitle className="mt-3 flex items-center gap-2 text-base font-semibold">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-700">
+                          <FileText className="h-4 w-4" />
+                        </span>
+                        Widget script outputs
+                      </CardTitle>
                       <CardDescription className="mt-1 text-xs">
                         Live results from each selected widget for your current teams and players.
                       </CardDescription>
@@ -574,10 +653,10 @@ export default function SuperWidgetParameterizedPage() {
                   ) : widgetOutputs.length > 0 ? (
                     <div className="space-y-4">
                       {widgetOutputs.map((output) => (
-                        <div key={output.widgetId} className="border rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-medium">{output.widgetName}</h4>
-                            <Badge variant={output.uiOnly || output.success ? "default" : "destructive"}>
+                        <div key={output.widgetId} className="rounded-lg border p-3">
+                          <div className="mb-2 flex items-center justify-between gap-2">
+                            <h4 className="truncate text-sm font-semibold text-gray-900">{output.widgetName}</h4>
+                            <Badge className="shrink-0 text-xs" variant={output.uiOnly || output.success ? "default" : "destructive"}>
                               {output.uiOnly ? "UI Widget" : output.success ? "Success" : "Failed"}
                             </Badge>
                           </div>
@@ -588,6 +667,7 @@ export default function SuperWidgetParameterizedPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                className="h-8 text-xs"
                                 onClick={() => handleExportWidgetPdf(output.widgetId)}
                                 disabled={widgetPdfStates[output.widgetId]?.loading}
                               >
@@ -605,6 +685,7 @@ export default function SuperWidgetParameterizedPage() {
                                 type="button"
                                 variant="outline"
                                 size="sm"
+                                className="h-8 text-xs"
                                 onClick={() => handleOpenWidgetInBrowser(output.widgetId, output.redirectLink)}
                               >
                                 🌐 Open in Browser
@@ -615,14 +696,14 @@ export default function SuperWidgetParameterizedPage() {
                                 href={widgetPdfStates[output.widgetId].pdfUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline text-sm"
+                                className="text-xs text-blue-600 hover:underline"
                               >
                                 ↓ Download PDF
                               </a>
                             )}
                           </div>
                           {widgetPdfStates[output.widgetId]?.error && (
-                            <p className="text-red-600 text-sm mb-3">
+                            <p className="mb-3 text-xs text-red-600">
                               Error: {widgetPdfStates[output.widgetId].error}
                             </p>
                           )}
@@ -630,7 +711,7 @@ export default function SuperWidgetParameterizedPage() {
                           {output.bullets.length > 0 && (
                             <ul className="mb-3 space-y-1">
                               {output.bullets.map((bullet, index) => (
-                                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                                <li key={index} className="flex items-start gap-2 text-xs text-gray-700">
                                   <span className="text-indigo-600 mt-1">•</span>
                                   <span>{bullet}</span>
                                 </li>
@@ -639,7 +720,7 @@ export default function SuperWidgetParameterizedPage() {
                           )}
 
                           <div className="bg-gray-50 rounded-md p-2">
-                            <p className="text-xs text-gray-500 mb-2">Raw Output</p>
+                            <p className="mb-2 text-xs text-gray-500">Raw Output</p>
                             <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words max-h-48 overflow-auto">
                               {typeof output.widgetOutput === "string"
                                 ? output.widgetOutput
