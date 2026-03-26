@@ -65,6 +65,7 @@ interface Player {
   name: string;
   teamId: string | number;
   position: string;
+  sourceLabel?: string;
 }
 
 interface WidgetPdfState {
@@ -170,6 +171,8 @@ export default function SuperWidgetParameterizedPage() {
       try {
         setSelectorOptionsLoading(true);
         setSelectorOptionsError(null);
+        setSelectorTeams([]);
+        setSelectorPlayers([]);
         const data = await fetchWidgetSelectorOptions(selectorSourceWidgetId);
         const teams = (data.teams || []) as Team[];
         const players = (data.players || []) as Player[];
@@ -177,18 +180,16 @@ export default function SuperWidgetParameterizedPage() {
 
         setSelectorSourceWidgetName(widgetName);
 
-        if (teams.length > 0 && players.length > 0) {
-          setSelectorTeams(teams);
-          setSelectorPlayers(players);
-        } else {
-          setSelectorTeams(null);
-          setSelectorPlayers(null);
-          setSelectorOptionsError(`${widgetName} has no mappable team/player options; using default selector source.`);
+        setSelectorTeams(teams);
+        setSelectorPlayers(players);
+
+        if (teams.length === 0 || players.length === 0) {
+          setSelectorOptionsError(`${widgetName} has no mappable team/player options.`);
         }
       } catch (error) {
         console.error("Error loading widget selector options:", error);
-        setSelectorTeams(null);
-        setSelectorPlayers(null);
+        setSelectorTeams([]);
+        setSelectorPlayers([]);
         setSelectorSourceWidgetName(selectorSourceWidget?.name || null);
         setSelectorOptionsError((error as Error)?.message ?? "Failed to load selector options");
       } finally {
@@ -377,7 +378,7 @@ export default function SuperWidgetParameterizedPage() {
       .map(player => player.id)
       .filter(id => id !== undefined && id !== null);
     const playerNames = selectedPlayers
-      .map(player => player.name)
+      .map(player => player.sourceLabel || player.name)
       .filter(name => typeof name === "string" && name.trim().length > 0);
 
     setWidgetPdfStates(prev => ({
@@ -417,88 +418,6 @@ export default function SuperWidgetParameterizedPage() {
       }));
     }
   }, [selectedTeams, selectedPlayers]);
-
-  const handleOpenWidgetInBrowser = useCallback((widgetId: number, directLink?: string) => {
-    const widget = selectedWidgets.find(item => item.id === widgetId);
-    const redirectLink = directLink || widget?.redirectLink;
-
-    if (!redirectLink) {
-      setWidgetPdfStates(prev => ({
-        ...prev,
-        [widgetId]: {
-          loading: false,
-          error: "Widget redirect URL is missing",
-          pdfUrl: prev[widgetId]?.pdfUrl,
-        },
-      }));
-      return;
-    }
-
-    const teamIds = selectedTeams
-      .map(team => team.id)
-      .filter(id => id !== undefined && id !== null)
-      .map(id => String(id));
-    const teamNames = selectedTeams
-      .map(team => team.name)
-      .filter(name => typeof name === "string" && name.trim().length > 0);
-    const playerIds = selectedPlayers
-      .map(player => player.id)
-      .filter(id => id !== undefined && id !== null)
-      .map(id => String(id));
-    const playerNames = selectedPlayers
-      .map(player => player.name)
-      .filter(name => typeof name === "string" && name.trim().length > 0);
-
-    const parsedRedirect = new URL(redirectLink);
-    const baseUrl = `${parsedRedirect.origin}${parsedRedirect.pathname}`;
-    const url = new URL(baseUrl);
-
-    if (teamIds.length > 0) {
-      url.searchParams.set("teamIds", JSON.stringify(teamIds));
-      url.searchParams.set("team_ids", teamIds.join(","));
-      url.searchParams.set("teamId", teamIds[0]);
-    }
-    if (playerIds.length > 0) {
-      url.searchParams.set("playerIds", JSON.stringify(playerIds));
-      url.searchParams.set("player_ids", playerIds.join(","));
-      url.searchParams.set("playerId", playerIds[0]);
-    }
-    if (teamNames.length > 0) {
-      url.searchParams.set("teamNames", JSON.stringify(teamNames));
-      url.searchParams.set("team_names", teamNames.join(","));
-      url.searchParams.set("teamName", teamNames[0]);
-    }
-    if (playerNames.length > 0) {
-      url.searchParams.set("playerNames", JSON.stringify(playerNames));
-      url.searchParams.set("player_names", playerNames.join(","));
-      url.searchParams.set("playerName", playerNames[0]);
-    }
-    url.searchParams.set("source", "superwidget-open-browser");
-
-    const popup = window.open("about:blank", "_blank", "width=1440,height=900");
-    if (!popup) {
-      setWidgetPdfStates(prev => ({
-        ...prev,
-        [widgetId]: {
-          loading: false,
-          error: "Popup was blocked. Please allow popups and try again.",
-          pdfUrl: prev[widgetId]?.pdfUrl,
-        },
-      }));
-      return;
-    }
-
-    popup.location.href = url.toString();
-
-    setWidgetPdfStates(prev => ({
-      ...prev,
-      [widgetId]: {
-        loading: false,
-        error: undefined,
-        pdfUrl: prev[widgetId]?.pdfUrl,
-      },
-    }));
-  }, [selectedWidgets, selectedTeams, selectedPlayers]);
 
   const stepWidgets = selectedWidgetIds.length > 0;
   const stepParams = selectedTeams.length > 0 || selectedPlayers.length > 0;
@@ -579,6 +498,10 @@ export default function SuperWidgetParameterizedPage() {
                 loading={loadingWidgets}
               />
 
+              <p className="text-xs text-gray-600 px-1">
+                Step 1: select widget(s). Step 2: select team/player parameters.
+              </p>
+
               <ParameterSelector
                 selectedTeams={selectedTeams}
                 selectedPlayers={selectedPlayers}
@@ -594,7 +517,7 @@ export default function SuperWidgetParameterizedPage() {
                         ? `${selectorSourceWidgetName || "Widget"} options unavailable: ${selectorOptionsError}`
                         : selectorTeams && selectorPlayers
                           ? `Using ${selectorSourceWidgetName || "widget"} team/player options`
-                          : `Using default team/player options`
+                          : `Using ${selectorSourceWidgetName || "widget"} team/player options`
                     : undefined
                 }
               />
@@ -651,89 +574,77 @@ export default function SuperWidgetParameterizedPage() {
                   ) : widgetOutputs.length > 0 ? (
                     <div className="space-y-4">
                       {widgetOutputs.map((output) => (
-                        <div
-                          key={output.widgetId}
-                          className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50 shadow-sm"
-                        >
-                          <div className="flex items-center justify-between gap-3 border-b border-gray-100 bg-white px-4 py-3">
-                            <h4 className="truncate text-xs font-medium text-gray-900">{output.widgetName}</h4>
-                            <Badge
-                              variant={output.uiOnly || output.success ? "default" : "destructive"}
-                              className="shrink-0 text-xs"
-                            >
+                        <div key={output.widgetId} className="border rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-medium">{output.widgetName}</h4>
+                            <Badge variant={output.uiOnly || output.success ? "default" : "destructive"}>
                               {output.uiOnly ? "UI Widget" : output.success ? "Success" : "Failed"}
                             </Badge>
                           </div>
-                          <div className="space-y-3 p-4">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {!output.uiOnly ? (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 border-gray-200 text-xs"
-                                  onClick={() => handleExportWidgetPdf(output.widgetId)}
-                                  disabled={widgetPdfStates[output.widgetId]?.loading}
-                                >
-                                  {widgetPdfStates[output.widgetId]?.loading ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                      Generating…
-                                    </>
-                                  ) : (
-                                    "Export PDF"
-                                  )}
-                                </Button>
-                              ) : (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 border-gray-200 text-xs"
-                                  onClick={() => handleOpenWidgetInBrowser(output.widgetId, output.redirectLink)}
-                                >
-                                  Open in browser
-                                </Button>
-                              )}
-                              {widgetPdfStates[output.widgetId]?.pdfUrl && (
-                                <a
-                                  href={widgetPdfStates[output.widgetId].pdfUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs font-medium text-indigo-600 underline-offset-2 hover:underline"
-                                >
-                                  Download PDF
-                                </a>
-                              )}
-                            </div>
-                            {widgetPdfStates[output.widgetId]?.error && (
-                              <p className="text-xs text-red-600">
-                                {widgetPdfStates[output.widgetId].error}
-                              </p>
+
+                          <div className="mb-3 flex items-center gap-3">
+                            {!output.uiOnly ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleExportWidgetPdf(output.widgetId)}
+                                disabled={widgetPdfStates[output.widgetId]?.loading}
+                              >
+                                {widgetPdfStates[output.widgetId]?.loading ? (
+                                  <>
+                                    <span className="inline-block animate-spin mr-2">⏳</span>
+                                    Generating PDF...
+                                  </>
+                                ) : (
+                                  <>📄 Export PDF</>
+                                )}
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleOpenWidgetInBrowser(output.widgetId, output.redirectLink)}
+                              >
+                                🌐 Open in Browser
+                              </Button>
                             )}
-                            {output.bullets.length > 0 && (
-                              <ul className="space-y-1.5">
-                                {output.bullets.map((bullet, index) => (
-                                  <li key={index} className="flex items-start gap-2 text-xs text-gray-700">
-                                    <span className="mt-0.5 text-indigo-500">·</span>
-                                    <span>{bullet}</span>
-                                  </li>
-                                ))}
-                              </ul>
+                            {widgetPdfStates[output.widgetId]?.pdfUrl && (
+                              <a
+                                href={widgetPdfStates[output.widgetId].pdfUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline text-sm"
+                              >
+                                ↓ Download PDF
+                              </a>
                             )}
-                            <details className="group rounded-lg border border-gray-200 bg-white">
-                              <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-gray-500 marker:content-none [&::-webkit-details-marker]:hidden">
-                                <span className="inline-flex items-center gap-1">
-                                  <span className="transition group-open:rotate-90">▸</span>
-                                  Raw output
-                                </span>
-                              </summary>
-                              <pre className="max-h-48 overflow-auto border-t border-gray-100 p-3 font-mono text-xs text-gray-700 whitespace-pre-wrap break-words">
-                                {typeof output.widgetOutput === "string"
-                                  ? output.widgetOutput
-                                  : JSON.stringify(output.widgetOutput ?? {}, null, 2)}
-                              </pre>
-                            </details>
+                          </div>
+                          {widgetPdfStates[output.widgetId]?.error && (
+                            <p className="text-red-600 text-sm mb-3">
+                              Error: {widgetPdfStates[output.widgetId].error}
+                            </p>
+                          )}
+
+                          {output.bullets.length > 0 && (
+                            <ul className="mb-3 space-y-1">
+                              {output.bullets.map((bullet, index) => (
+                                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                                  <span className="text-indigo-600 mt-1">•</span>
+                                  <span>{bullet}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          <div className="bg-gray-50 rounded-md p-2">
+                            <p className="text-xs text-gray-500 mb-2">Raw Output</p>
+                            <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words max-h-48 overflow-auto">
+                              {typeof output.widgetOutput === "string"
+                                ? output.widgetOutput
+                                : JSON.stringify(output.widgetOutput ?? {}, null, 2)}
+                            </pre>
                           </div>
                         </div>
                       ))}

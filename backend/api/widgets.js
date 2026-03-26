@@ -97,6 +97,18 @@ const isGeneralStatisticsWidget = (widgetId, widgetName, redirectLink) => {
   );
 };
 
+const isCountBasedWidget = (widgetId, widgetName, redirectLink) => {
+  const normalizedName = (widgetName || "").toLowerCase();
+  const normalizedRedirect = (redirectLink || "").toLowerCase();
+
+  return (
+    widgetId === 227 ||
+    normalizedName.includes("count-based") ||
+    normalizedName.includes("count based") ||
+    normalizedRedirect.includes("ds717.shinyapps.io/alpb")
+  );
+};
+
 const addCommonWidgetParams = (url, teamIds, playerIds, source, teamNames = [], playerNames = []) => {
   const teamIdsAsStrings = teamIds.map((id) => String(id));
   const playerIdsAsStrings = playerIds.map((id) => String(id));
@@ -186,6 +198,20 @@ const normalizePlayerName = (value) =>
     .replace(/[^a-z0-9]+/g, "")
     .trim();
 
+const normalizeComparableName = (value) =>
+  String(value || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const tokenizeComparableName = (value) =>
+  normalizeComparableName(value)
+    .split(" ")
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2);
+
 const parseNameParts = (value) => {
   const cleaned = String(value || "").replace(/\([^)]*\)/g, "").trim();
   if (!cleaned) {
@@ -212,6 +238,69 @@ const parseNameParts = (value) => {
     firstName: String(firstName).trim().toLowerCase(),
     firstInitial: String(firstName).charAt(0).toLowerCase(),
   };
+};
+
+const namesLikelyMatch = (requestedName, selectedName) => {
+  const requestedNormalized = normalizeComparableName(requestedName);
+  const selectedNormalized = normalizeComparableName(selectedName);
+
+  if (!requestedNormalized || !selectedNormalized) {
+    return false;
+  }
+
+  if (requestedNormalized === selectedNormalized) {
+    return true;
+  }
+
+  const requestedTokens = tokenizeComparableName(requestedName);
+  if (requestedTokens.length > 0) {
+    const matchedTokenCount = requestedTokens.filter((token) => selectedNormalized.includes(token)).length;
+    if (matchedTokenCount === requestedTokens.length) {
+      return true;
+    }
+    if (requestedTokens.length >= 2 && matchedTokenCount >= 2) {
+      return true;
+    }
+  }
+
+  const requestedParts = parseNameParts(requestedName);
+  if (requestedParts.lastName && selectedNormalized.includes(requestedParts.lastName)) {
+    if (requestedParts.firstName && selectedNormalized.includes(requestedParts.firstName)) {
+      return true;
+    }
+    if (requestedParts.firstInitial && selectedNormalized.includes(requestedParts.firstInitial)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const buildCountBasedPlayerSearchTerms = (rawPlayerName) => {
+  const variants = [];
+  const add = (value) => {
+    const trimmed = String(value || "").replace(/\s+/g, " ").trim();
+    if (!trimmed) return;
+    if (!variants.some((existing) => normalizeComparableName(existing) === normalizeComparableName(trimmed))) {
+      variants.push(trimmed);
+    }
+  };
+
+  const cleaned = String(rawPlayerName || "").replace(/\([^)]*\)/g, " ").replace(/\s+/g, " ").trim();
+  add(cleaned);
+
+  const parts = parseNameParts(cleaned);
+  if (parts.firstName && parts.lastName) {
+    const first = parts.firstName.charAt(0).toUpperCase() + parts.firstName.slice(1);
+    const last = parts.lastName.charAt(0).toUpperCase() + parts.lastName.slice(1);
+    add(`${last}, ${first}`);
+    add(`${first} ${last}`);
+    add(last);
+    add(last.charAt(0));
+    add(first.charAt(0));
+  }
+
+  return variants.slice(0, 6);
 };
 
 const buildPlayerLookupMap = (rows) => {
@@ -268,6 +357,49 @@ const resolveLocalPlayerFromOption = (optionText, lookupMap) => {
 
 const selectorOptionsCache = new Map();
 
+const wakeSleepingSelectorPageIfNeeded = async (page) => {
+  const isSleeping = async () =>
+    page.evaluate(() => {
+      const text = String(document?.body?.innerText || "").toLowerCase();
+      return (
+        text.includes("has gone to sleep due to inactivity") ||
+        text.includes("would you like to wake it back up") ||
+        text.includes("yes, get this app back up")
+      );
+    });
+
+  if (!(await isSleeping())) return;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await page.evaluate(() => {
+      const labels = ["yes, get this app back up", "wake", "back up"];
+      const elements = Array.from(
+        document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']")
+      );
+
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
+
+      for (const element of elements) {
+        const text = normalize(element.textContent || element.getAttribute("value") || "");
+        if (!text) continue;
+        if (!labels.some((label) => text.includes(label))) continue;
+
+        element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        break;
+      }
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    if (!(await isSleeping())) return;
+  }
+};
+
 const fetchHittingWidgetPlayerOptions = async () => {
   let browser;
   try {
@@ -313,6 +445,120 @@ const fetchHittingWidgetPlayerOptions = async () => {
     });
 
     return options;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+};
+
+const fetchCountBasedWidgetPlayerOptions = async (redirectLink) => {
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+    });
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1440, height: 1200 });
+    await page.goto(redirectLink, { waitUntil: "networkidle2", timeout: 180000 });
+    await wakeSleepingSelectorPageIfNeeded(page);
+
+    try {
+      await page.waitForSelector("#player_name", { timeout: 30000 });
+    } catch {
+      return [];
+    }
+
+    const allPlayerNames = new Set();
+    const searchLetters = "abcdefghijklmnopqrstuvwxyz".split("");
+
+    for (const letter of searchLetters) {
+      const previousSignature = await page.evaluate(() => {
+        const select = document.querySelector("#player_selection_ui select");
+        if (!(select instanceof HTMLSelectElement)) return "";
+        return Array.from(select.options)
+          .filter((o) => Boolean(o.value) && !/select player/i.test(o.textContent || ""))
+          .map((o) => String(o.textContent || o.label || "").replace(/\s+/g, " ").trim())
+          .filter(Boolean)
+          .join("|");
+      });
+
+      const submitted = await page.evaluate((term) => {
+        const input = document.querySelector("#player_name");
+        if (!(input instanceof HTMLInputElement)) return false;
+
+        const submitButton = document.querySelector("#search");
+        input.focus();
+        input.value = term;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+
+        if (window.Shiny && typeof window.Shiny.setInputValue === "function") {
+          window.Shiny.setInputValue("player_name", term, { priority: "event" });
+          const currentSearchValue = Number(window.Shiny?.shinyapp?.$inputValues?.search || 0) || 0;
+          window.Shiny.setInputValue("search", currentSearchValue + 1, { priority: "event" });
+        }
+
+        if (submitButton instanceof HTMLElement) {
+          submitButton.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          submitButton.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+          submitButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        }
+
+        return true;
+      }, letter);
+
+      if (!submitted) continue;
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      try {
+        await page.waitForFunction(
+          (prev) => {
+            const select = document.querySelector("#player_selection_ui select");
+            const currentSignature = select instanceof HTMLSelectElement
+              ? Array.from(select.options)
+                  .filter((o) => Boolean(o.value) && !/select player/i.test(o.textContent || ""))
+                  .map((o) => String(o.textContent || o.label || "").replace(/\s+/g, " ").trim())
+                  .filter(Boolean)
+                  .join("|")
+              : "";
+
+            const hasFreshOptions = currentSignature.length > 0 && currentSignature !== prev;
+            const noPlayersMessageVisible = String(document?.body?.innerText || "")
+              .toLowerCase()
+              .includes("no players found with that name");
+
+            return hasFreshOptions || noPlayersMessageVisible;
+          },
+          { timeout: 12000 },
+          previousSignature
+        );
+      } catch {
+        continue;
+      }
+
+      const names = await page.evaluate((prev) => {
+        const select = document.querySelector("#player_selection_ui select");
+        if (!(select instanceof HTMLSelectElement)) return [];
+
+        const currentNames = Array.from(select.options)
+          .filter((o) => Boolean(o.value) && !/select player/i.test(o.textContent || ""))
+          .map((o) => String(o.textContent || o.label || "").replace(/\s+/g, " ").trim())
+          .filter(Boolean);
+
+        const currentSignature = currentNames.join("|");
+        if (!currentSignature || currentSignature === prev) return [];
+        return currentNames;
+      }, previousSignature);
+
+      for (const name of names) {
+        allPlayerNames.add(name);
+      }
+    }
+
+    return Array.from(allPlayerNames).map((text) => ({ text, externalId: "" }));
   } finally {
     if (browser) {
       await browser.close();
@@ -507,9 +753,11 @@ router.get("/:widgetId/selector-options", async (req, res) => {
 
     let sourceOptions = isHittingAnalyticsWidget(widgetId, widgetName, redirectLink)
       ? await fetchHittingWidgetPlayerOptions()
-      : isGeneralStatisticsWidget(widgetId, widgetName, redirectLink)
-        ? await fetchGeneralStatisticsOptionsViaBrowser(redirectLink)
-        : await fetchWidgetSelectorOptionsViaBrowser(redirectLink);
+      : isCountBasedWidget(widgetId, widgetName, redirectLink)
+        ? await fetchCountBasedWidgetPlayerOptions(redirectLink)
+        : isGeneralStatisticsWidget(widgetId, widgetName, redirectLink)
+          ? await fetchGeneralStatisticsOptionsViaBrowser(redirectLink)
+          : await fetchWidgetSelectorOptionsViaBrowser(redirectLink);
 
     const localPlayersResult = await pool.query(`
       SELECT
@@ -799,6 +1047,127 @@ const selectHittingPlayerInPage = async (page, rawPlayerName) => {
   return false;
 };
 
+const selectCountBasedPlayerInPage = async (page, rawPlayerName) => {
+  const searchTerms = buildCountBasedPlayerSearchTerms(rawPlayerName);
+  if (searchTerms.length === 0) return { label: "", foundInWidget: false };
+
+  try {
+    await page.waitForSelector("#player_name", { timeout: 20000 });
+  } catch {
+    return { label: "", foundInWidget: false };
+  }
+
+  let anyTermReturnedOptions = false;
+
+  for (const searchTerm of searchTerms) {
+    const searchSubmitted = await page.evaluate((term) => {
+      const input = document.querySelector("#player_name");
+      if (!(input instanceof HTMLInputElement)) return false;
+
+      const submitButton = document.querySelector("#search");
+
+      input.focus();
+      input.value = "";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+
+      input.value = term;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+
+      if (window.Shiny && typeof window.Shiny.setInputValue === "function") {
+        window.Shiny.setInputValue("player_name", term, { priority: "event" });
+        const currentSearchValue = Number(window.Shiny?.shinyapp?.$inputValues?.search || 0) || 0;
+        window.Shiny.setInputValue("search", currentSearchValue + 1, { priority: "event" });
+      }
+
+      if (submitButton instanceof HTMLElement) {
+        submitButton.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        submitButton.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        submitButton.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      }
+
+      return true;
+    }, searchTerm);
+
+    if (!searchSubmitted) continue;
+
+    await new Promise((resolve) => setTimeout(resolve, 3500));
+
+    try {
+      await page.waitForFunction(
+        () => {
+          const select = document.querySelector("#player_selection_ui select");
+          if (!(select instanceof HTMLSelectElement)) return false;
+          return Array.from(select.options).some(
+            (option) => Boolean(option.value) && !/select player/i.test(option.textContent || "")
+          );
+        },
+        { timeout: 12000 }
+      );
+    } catch {
+      continue;
+    }
+
+    const options = await page.evaluate(() => {
+      const select = document.querySelector("#player_selection_ui select");
+      if (!(select instanceof HTMLSelectElement)) return [];
+      return Array.from(select.options)
+        .filter((option) => Boolean(option.value) && !/select player/i.test(option.textContent || ""))
+        .map((option) => ({
+          value: option.value,
+          text: String(option.textContent || option.label || "").replace(/\s+/g, " ").trim(),
+        }))
+        .filter((row) => row.text.length > 0);
+    });
+
+    if (options.length === 0) {
+      continue;
+    }
+
+    anyTermReturnedOptions = true;
+
+    let best = null;
+    for (const option of options) {
+      let score = 0;
+      if (namesLikelyMatch(rawPlayerName, option.text)) score += 10;
+
+      const requestedTokens = tokenizeComparableName(rawPlayerName);
+      const optionNorm = normalizeComparableName(option.text);
+      for (const token of requestedTokens) {
+        if (optionNorm.includes(token)) score += 1;
+      }
+
+      if (!best || score > best.score) {
+        best = { ...option, score };
+      }
+    }
+
+    if (!best || best.score <= 0) {
+      continue;
+    }
+
+    const selectedLabel = await page.evaluate((bestValue) => {
+      const select = document.querySelector("#player_selection_ui select");
+      if (!(select instanceof HTMLSelectElement)) return "";
+
+      select.value = bestValue;
+      select.dispatchEvent(new Event("input", { bubbles: true }));
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+
+      const selectedOption = Array.from(select.options).find((o) => o.value === bestValue);
+      return String(selectedOption?.textContent || selectedOption?.label || "").replace(/\s+/g, " ").trim();
+    }, best.value);
+
+    if (selectedLabel) {
+      await new Promise((resolve) => setTimeout(resolve, 4500));
+      return { label: selectedLabel, foundInWidget: true };
+    }
+  }
+
+  return { label: "", foundInWidget: anyTermReturnedOptions };
+};
+
 router.get("/exports/:fileName", async (req, res) => {
   try {
     const fileName = req.params.fileName;
@@ -849,14 +1218,20 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
     console.log(`[PDF Export] Team IDs: ${JSON.stringify(teamIds)}, Player IDs: ${JSON.stringify(playerIds)}`);
     console.log(`[PDF Export] Team Names: ${JSON.stringify(teamNames)}, Player Names: ${JSON.stringify(playerNames)}`);
 
-    const executionUrl = buildWidgetExecutionUrl(
-      redirectLink,
-      teamIds,
-      playerIds,
-      source,
-      teamNames,
-      playerNames
-    );
+    const executionUrl = isCountBasedWidget(widgetId, widgetName, redirectLink)
+      ? (() => {
+          const url = new URL(redirectLink);
+          url.searchParams.set("source", source);
+          return url.toString();
+        })()
+      : buildWidgetExecutionUrl(
+          redirectLink,
+          teamIds,
+          playerIds,
+          source,
+          teamNames,
+          playerNames
+        );
     
     console.log(`[PDF Export] Full execution URL: ${executionUrl}`);
 
@@ -907,72 +1282,125 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
       // no-op fallback to timed wait below
     }
 
-    if (isHittingAnalyticsWidget(widgetId, widgetName, redirectLink) && playerNames.length > 0) {
+    await wakeSleepingSelectorPageIfNeeded(page);
+
+    if ((isHittingAnalyticsWidget(widgetId, widgetName, redirectLink) || isCountBasedWidget(widgetId, widgetName, redirectLink)) && playerNames.length > 0) {
       let matchedRequestedPlayer = null;
       const attemptedPlayers = [];
 
       for (const candidatePlayerName of playerNames) {
-        const selectedPlayer = await selectHittingPlayerInPage(page, candidatePlayerName);
-        console.log(`[PDF Export] Hitting player selection attempted for "${candidatePlayerName}": ${selectedPlayer}`);
+        if (isCountBasedWidget(widgetId, widgetName, redirectLink)) {
+          const result = await selectCountBasedPlayerInPage(page, candidatePlayerName);
+          const selectedText = result.label || "";
+          const matchedByName = namesLikelyMatch(candidatePlayerName, selectedText);
 
-        selectionDebug = await page.evaluate(() => {
-          const select = document.querySelector("#player");
-          if (!select || !(select instanceof HTMLSelectElement)) {
-            return { selected: false };
+          attemptedPlayers.push({
+            requested: candidatePlayerName,
+            selected: selectedText || null,
+            foundInWidget: result.foundInWidget,
+            matchedByName,
+          });
+
+          selectionDebug = {
+            selected: Boolean(selectedText),
+            text: selectedText || "",
+            requested: candidatePlayerName,
+            foundInWidget: result.foundInWidget,
+          };
+
+          if (!result.foundInWidget) {
+            return res.status(422).json({
+              success: false,
+              message: `${widgetName} could not find player "${candidatePlayerName}" in the widget dataset.`,
+              data: {
+                widgetId,
+                widgetName,
+                requestedPlayers: playerNames,
+                selectedPlayer: null,
+                attemptedPlayers,
+                sourceUrl: executionUrl,
+                selectionDebug,
+              },
+            });
           }
 
-          const selectedOption = select.options[select.selectedIndex];
-          return {
-            selected: true,
-            value: select.value,
-            text: selectedOption ? (selectedOption.textContent || "").trim() : "",
-          };
-        });
+          if (matchedByName) {
+            matchedRequestedPlayer = candidatePlayerName;
+            break;
+          }
+        } else {
+          const selectedPlayer = await selectHittingPlayerInPage(page, candidatePlayerName);
+          console.log(`[PDF Export] Hitting player selection attempted for "${candidatePlayerName}": ${selectedPlayer}`);
 
-        const normalizedCandidate = String(candidatePlayerName || "").toLowerCase();
-        const candidateLastName = normalizedCandidate.split(",")[0]?.trim() || "";
-        const candidateTokens = normalizedCandidate
-          .replace(/,/g, " ")
-          .split(/\s+/)
-          .filter((token) => token.length >= 2);
-        const selectedText = String(selectionDebug?.text || "").toLowerCase();
-        const matchedByLastName = candidateLastName.length >= 2 && selectedText.includes(candidateLastName);
-        const matchedByTokens = candidateTokens.some((token) => selectedText.includes(token));
+          selectionDebug = await page.evaluate(() => {
+            const select = document.querySelector("#player");
+            if (!select || !(select instanceof HTMLSelectElement)) {
+              return { selected: false };
+            }
 
-        attemptedPlayers.push({
-          requested: candidatePlayerName,
-          selected: selectionDebug?.text || null,
-          matchedByLastName,
-          matchedByTokens,
-        });
+            const selectedOption = select.options[select.selectedIndex];
+            return {
+              selected: true,
+              value: select.value,
+              text: selectedOption ? (selectedOption.textContent || "").trim() : "",
+            };
+          });
 
-        if (matchedByLastName || matchedByTokens) {
-          matchedRequestedPlayer = candidatePlayerName;
-          break;
+          const normalizedCandidate = String(candidatePlayerName || "").toLowerCase();
+          const candidateLastName = normalizedCandidate.split(",")[0]?.trim() || "";
+          const candidateTokens = normalizedCandidate
+            .replace(/,/g, " ")
+            .split(/\s+/)
+            .filter((token) => token.length >= 2);
+          const selectedText = String(selectionDebug?.text || "").toLowerCase();
+          const matchedByLastName = candidateLastName.length >= 2 && selectedText.includes(candidateLastName);
+          const matchedByTokens = candidateTokens.some((token) => selectedText.includes(token));
+
+          attemptedPlayers.push({
+            requested: candidatePlayerName,
+            selected: selectionDebug?.text || null,
+            matchedByLastName,
+            matchedByTokens,
+          });
+
+          if (matchedByLastName || matchedByTokens) {
+            matchedRequestedPlayer = candidatePlayerName;
+            break;
+          }
         }
       }
 
-      console.log(`[PDF Export] Hitting selection debug: ${JSON.stringify(selectionDebug)}`);
+      console.log(`[PDF Export] Player selection debug: ${JSON.stringify(selectionDebug)}`);
 
       if (!matchedRequestedPlayer) {
-        const availablePlayers = await page.evaluate(() => {
-          const select = document.querySelector("#player");
-          if (select && select.selectize && select.selectize.options) {
-            return Object.values(select.selectize.options)
-              .map((option) => (option?.text || "").trim())
-              .filter(Boolean)
-              .slice(0, 50);
-          }
+        const availablePlayers = isCountBasedWidget(widgetId, widgetName, redirectLink)
+          ? await page.evaluate(() => {
+              const select = document.querySelector("#player_selection_ui select");
+              if (!(select instanceof HTMLSelectElement)) return [];
+              return Array.from(select.options)
+                .filter((o) => Boolean(o.value) && !/select player/i.test(o.textContent || ""))
+                .map((o) => String(o.textContent || "").trim())
+                .filter(Boolean)
+                .slice(0, 50);
+            })
+          : await page.evaluate(() => {
+              const select = document.querySelector("#player");
+              if (select && select.selectize && select.selectize.options) {
+                return Object.values(select.selectize.options)
+                  .map((option) => (option?.text || "").trim())
+                  .filter(Boolean)
+                  .slice(0, 50);
+              }
 
-          return Array.from(document.querySelectorAll(".selectize-dropdown .option, .selectize-dropdown-content .option"))
-            .map((option) => (option.textContent || "").trim())
-            .filter(Boolean)
-            .slice(0, 50);
-        });
+              return Array.from(document.querySelectorAll(".selectize-dropdown .option, .selectize-dropdown-content .option"))
+                .map((option) => (option.textContent || "").trim())
+                .filter(Boolean)
+                .slice(0, 50);
+            });
 
         return res.status(422).json({
           success: false,
-          message: `Hitting widget could not match selected players (${playerNames.join(", ")}). Widget currently selected "${selectionDebug?.text || "unknown"}".`,
+          message: `${widgetName} could not match selected players (${playerNames.join(", ")}). Widget currently selected "${selectionDebug?.text || "unknown"}".`,
           data: {
             widgetId,
             widgetName,
@@ -986,7 +1414,7 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
         });
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 7000));
+      await new Promise((resolve) => setTimeout(resolve, isCountBasedWidget(widgetId, widgetName, redirectLink) ? 6000 : 7000));
     }
 
     console.log(`[PDF Export] Page loaded, waiting 12 seconds for rendering and parameter hydration...`);
