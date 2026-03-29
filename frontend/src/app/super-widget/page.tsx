@@ -403,7 +403,14 @@ export default function SuperWidgetPage() {
                       </ul>
                     )}
 
-                    {/* Raw Output removed for user privacy */}
+                    <div className="bg-gray-50 rounded-md p-2">
+                      <p className="text-xs text-gray-500 mb-2">Raw Output</p>
+                      <pre className="text-xs text-gray-700 whitespace-pre-wrap break-words max-h-48 overflow-auto">
+                        {typeof output.widgetOutput === "string"
+                          ? output.widgetOutput
+                          : JSON.stringify(output.widgetOutput ?? {}, null, 2)}
+                      </pre>
+                    </div>
                   </div>
                 ))}
               </div>
