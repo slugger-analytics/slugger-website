@@ -105,6 +105,8 @@ useEffect(() => {
   "type": "SLUGGER_AUTH",
   "payload": {
     "bootstrapToken": "eyJhbGciOiJIUzI1NiJ9...",
+    "accessToken": "...",
+    "idToken": "...",
     "user": {
       "id": "42",
       "email": "user@example.com",
@@ -112,12 +114,17 @@ useEffect(() => {
       "lastName": "Doe",
       "role": "league",
       "teamId": "5",
+      "teamName": "Example Team",
       "isAdmin": false
     },
     "expiresAt": 1234567890000
   }
 }
 ```
+
+- **`bootstrapToken`**: short-lived **Slugger** HS256 JWT (from `POST /api/users/widget-token`). Use this — not the Cognito `accessToken` — for `GET /api/users/me`.
+- **`accessToken` / `idToken`**: Cognito tokens (optional for widgets that still need them client-side).
+- **`user`**: populated from the shell session when available (so widgets are not required to call `/api/users/me` for basic profile).
 
 > **`bootstrapToken` is valid for 5 minutes.** Send it to your backend immediately upon receipt — do not store it in the frontend.
 

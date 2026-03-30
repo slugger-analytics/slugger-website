@@ -11,6 +11,8 @@ import {
   getTimeUntilExpiry
 } from "@/lib/auth-store";
 import { refreshTokens, requestWidgetToken } from "@/api/auth";
+import { $user } from "@/lib/userStore";
+import { resolveWidgetAuthUser } from "@/lib/widget-auth-payload";
 
 interface WidgetFrameProps {
   /** URL of the widget to embed */
@@ -48,6 +50,7 @@ export function WidgetFrame({
 }: WidgetFrameProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const tokens = useStore($authTokens);
+  const appUser = useStore($user);
   const [isReady, setIsReady] = useState(false);
   const [widgetOrigin, setWidgetOrigin] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -112,26 +115,35 @@ export function WidgetFrame({
       console.warn("[WidgetFrame] Could not get bootstrap token:", err);
     }
 
+    const resolvedUser = resolveWidgetAuthUser(widgetTokens.user, appUser);
+
     try {
       iframeRef.current.contentWindow.postMessage(
         {
           type: "SLUGGER_AUTH",
           payload: {
+            ...(bootstrapToken ? { bootstrapToken } : {}),
             accessToken: widgetTokens.accessToken,
             idToken: widgetTokens.idToken,
             expiresAt: widgetTokens.expiresAt,
-            // Include user info for widget developers
-            user: widgetTokens.user,
+            user: resolvedUser,
           },
         },
         widgetOrigin
       );
-      console.log("[WidgetFrame] Sent SLUGGER_AUTH to widget:", widgetId, "with user:", widgetTokens.user?.email);
+      console.log(
+        "[WidgetFrame] Sent SLUGGER_AUTH to widget:",
+        widgetId,
+        "bootstrap:",
+        Boolean(bootstrapToken),
+        "user:",
+        resolvedUser?.email
+      );
     } catch (error) {
       console.error("[WidgetFrame] Failed to send tokens:", error);
       onError?.("Failed to send auth tokens to widget");
     }
-  }, [widgetOrigin, widgetId, onError]);
+  }, [widgetOrigin, widgetId, onError, appUser]);
 
   // Listen for messages from widget
   useEffect(() => {
