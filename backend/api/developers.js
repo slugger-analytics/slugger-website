@@ -1,73 +1,101 @@
 import { Router } from "express";
-import { approveDeveloper, declineDeveloper, getPendingDevelopers, getAllDevelopersWithWidgets } from "../services/developerService.js";
+import {
+  approveDeveloper,
+  declineDeveloper,
+  getPendingDevelopers,
+  getAllDevelopersWithWidgets,
+} from "../services/developerService.js";
 import { requireSiteAdmin } from "../middleware/permission-guards.js";
 
 const router = Router();
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Parse and validate a developer ID from a route param.
+ * Returns the integer ID, or null if invalid.
+ */
+function parseDeveloperId(param) {
+  const id = parseInt(param, 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/**
+ * Central service error handler. Logs the full error internally and sends a
+ * sanitized 500 to the client.
+ */
+function handleServiceError(error, res, context) {
+  console.error(`[developers] ${context} — unexpected error:`, error);
+  return res.status(500).json({ success: false, message: "An unexpected error occurred." });
+}
+
+// ─── Routes ─────────────────────────────────────────────────────────────────
+
+/**
+ * POST /developers/pending/:developerId/approve
+ * Approve a pending developer and send them their API key.
+ */
 router.post("/pending/:developerId/approve", requireSiteAdmin, async (req, res) => {
+  const id = parseDeveloperId(req.params.developerId);
+  if (!id) {
+    return res.status(400).json({ success: false, message: "Invalid developer ID." });
+  }
+
   try {
-    const id = parseInt(req.params.developerId);
     const result = await approveDeveloper(id);
-    
-    res.status(200).json({
+    console.info(`[developers] approve — developer ${id} approved`);
+    return res.status(200).json({
       success: true,
-      message: "Developer approved and API key sent",
-      data: result
+      message: "Developer approved and API key sent.",
+      data: result,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Internal error: ${error.message}`
-    });
+    return handleServiceError(error, res, `approve(${id})`);
   }
 });
 
+/**
+ * POST /developers/pending/:developerId/decline
+ * Decline a pending developer.
+ */
 router.post("/pending/:developerId/decline", requireSiteAdmin, async (req, res) => {
-  try {
-    const id = parseInt(req.params.developerId);
-    await declineDeveloper(id);
+  const id = parseDeveloperId(req.params.developerId);
+  if (!id) {
+    return res.status(400).json({ success: false, message: "Invalid developer ID." });
+  }
 
-    res.status(200).json({
-      success: true,
-      message: "Developer declined",
-    });
+  try {
+    await declineDeveloper(id);
+    console.info(`[developers] decline — developer ${id} declined`);
+    return res.status(200).json({ success: true, message: "Developer declined." });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Internal error: ${error.message}`
-    });
+    return handleServiceError(error, res, `decline(${id})`);
   }
 });
 
+/**
+ * GET /developers/pending
+ * Fetch all pending developers awaiting approval.
+ */
 router.get("/pending", requireSiteAdmin, async (req, res) => {
   try {
     const result = await getPendingDevelopers();
-
-    res.status(200).json({
-      success: true,
-      data: result
-    });
+    return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Error fetching pending developers: ${error.message}`
-    });
+    return handleServiceError(error, res, "getPendingDevelopers");
   }
 });
 
+/**
+ * GET /developers
+ * Fetch all developers with their associated widgets.
+ */
 router.get("/", requireSiteAdmin, async (req, res) => {
   try {
     const result = await getAllDevelopersWithWidgets();
-
-    res.status(200).json({
-      success: true,
-      data: result
-    });
+    return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Error fetching developers: ${error.message}`
-    });
+    return handleServiceError(error, res, "getAllDevelopersWithWidgets");
   }
 });
 
