@@ -846,7 +846,7 @@ router.get("/:widgetId/selector-options", async (req, res) => {
   }
 });
 
-const selectHittingPlayerInPage = async (page, rawPlayerName) => {
+const selectHittingPlayerInPage = async (page, rawPlayerName, isPitching = false) => {
   const playerName = String(rawPlayerName || "").trim();
   if (!playerName) return false;
 
@@ -856,48 +856,58 @@ const selectHittingPlayerInPage = async (page, rawPlayerName) => {
     .split(/\s+/)
     .filter((token) => token.length >= 2);
 
-  const directSelectApplied = await page.evaluate((targetName, targetTokens) => {
-    const select = document.querySelector("#player");
-    if (!select || !(select instanceof HTMLSelectElement)) return false;
+  // Try multiple selectors for different widget types
+  const selectors = isPitching 
+    ? ["#pitcher", "#player_select", "#player", "[name='pitcher']", "[name='player']"]
+    : ["#player"];
 
-    const normalize = (value) =>
-      String(value || "")
-        .toLowerCase()
-        .replace(/\s+/g, " ")
-        .trim();
+  let directSelectApplied = false;
+  for (const selector of selectors) {
+    directSelectApplied = await page.evaluate((targetName, targetTokens, selector) => {
+      const select = document.querySelector(selector);
+      if (!select || !(select instanceof HTMLSelectElement)) return false;
 
-    const target = normalize(targetName);
-    let bestValue = "";
-    let bestScore = -1;
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
 
-    for (const option of Array.from(select.options)) {
-      const text = normalize(option.textContent || option.label || "");
-      if (!text) continue;
+      const target = normalize(targetName);
+      let bestValue = "";
+      let bestScore = -1;
 
-      let score = 0;
-      if (text.includes(target)) score += 5;
-      if (target.includes(text)) score += 2;
-      for (const token of targetTokens) {
-        if (text.includes(token)) score += 1;
+      for (const option of Array.from(select.options)) {
+        const text = normalize(option.textContent || option.label || "");
+        if (!text) continue;
+
+        let score = 0;
+        if (text.includes(target)) score += 5;
+        if (target.includes(text)) score += 2;
+        for (const token of targetTokens) {
+          if (text.includes(token)) score += 1;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestValue = option.value;
+        }
       }
 
-      if (score > bestScore) {
-        bestScore = score;
-        bestValue = option.value;
+      if (!bestValue || bestScore <= 0) return false;
+
+      select.value = bestValue;
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+
+      if (window.Shiny && typeof window.Shiny.setInputValue === "function") {
+        window.Shiny.setInputValue(selector.replace("#", ""), bestValue, { priority: "event" });
       }
-    }
 
-    if (!bestValue || bestScore <= 0) return false;
+      return true;
+    }, playerName, tokens, selector);
 
-    select.value = bestValue;
-    select.dispatchEvent(new Event("change", { bubbles: true }));
-
-    if (window.Shiny && typeof window.Shiny.setInputValue === "function") {
-      window.Shiny.setInputValue("player", bestValue, { priority: "event" });
-    }
-
-    return true;
-  }, playerName, tokens);
+    if (directSelectApplied) break;
+  }
 
   if (directSelectApplied) {
     await new Promise((resolve) => setTimeout(resolve, 2500));
@@ -1343,22 +1353,29 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
           }
         } else {
           // Handle hitting and pitching widgets (they likely have similar UI)
-          const selectedPlayer = await selectHittingPlayerInPage(page, candidatePlayerName);
+          const selectedPlayer = await selectHittingPlayerInPage(page, candidatePlayerName, isPitchingWidget(widgetId, widgetName, redirectLink));
           console.log(`[PDF Export] Player selection attempted for "${candidatePlayerName}": ${selectedPlayer}`);
 
-          selectionDebug = await page.evaluate(() => {
-            const select = document.querySelector("#player");
-            if (!select || !(select instanceof HTMLSelectElement)) {
-              return { selected: false };
+          selectionDebug = await page.evaluate((isPitching) => {
+            const selectors = isPitching 
+              ? ["#pitcher", "#player_select", "#player"]
+              : ["#player"];
+            
+            for (const selector of selectors) {
+              const select = document.querySelector(selector);
+              if (select && select instanceof HTMLSelectElement) {
+                const selectedOption = select.options[select.selectedIndex];
+                return {
+                  selected: true,
+                  value: select.value,
+                  text: selectedOption ? (selectedOption.textContent || "").trim() : "",
+                  selector: selector,
+                };
+              }
             }
-
-            const selectedOption = select.options[select.selectedIndex];
-            return {
-              selected: true,
-              value: select.value,
-              text: selectedOption ? (selectedOption.textContent || "").trim() : "",
-            };
-          });
+            
+            return { selected: false };
+          }, isPitchingWidget(widgetId, widgetName, redirectLink));
 
           const normalizedCandidate = String(candidatePlayerName || "").toLowerCase();
           const candidateLastName = normalizedCandidate.split(",")[0]?.trim() || "";
@@ -1397,20 +1414,26 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
                 .filter(Boolean)
                 .slice(0, 50);
             })
-          : await page.evaluate(() => {
-              const select = document.querySelector("#player");
-              if (select && select.selectize && select.selectize.options) {
-                return Object.values(select.selectize.options)
-                  .map((option) => (option?.text || "").trim())
-                  .filter(Boolean)
-                  .slice(0, 50);
+          : await page.evaluate((isPitching) => {
+              const selectors = isPitching 
+                ? ["#pitcher", "#player_select", "#player"]
+                : ["#player"];
+              
+              for (const selector of selectors) {
+                const select = document.querySelector(selector);
+                if (select && select.selectize && select.selectize.options) {
+                  return Object.values(select.selectize.options)
+                    .map((option) => (option?.text || "").trim())
+                    .filter(Boolean)
+                    .slice(0, 50);
+                }
               }
 
               return Array.from(document.querySelectorAll(".selectize-dropdown .option, .selectize-dropdown-content .option"))
                 .map((option) => (option.textContent || "").trim())
                 .filter(Boolean)
                 .slice(0, 50);
-            });
+            }, isPitchingWidget(widgetId, widgetName, redirectLink));
 
         return res.status(422).json({
           success: false,
