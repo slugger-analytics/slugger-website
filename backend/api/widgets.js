@@ -109,6 +109,19 @@ const isCountBasedWidget = (widgetId, widgetName, redirectLink) => {
   );
 };
 
+const isPitchingWidget = (widgetId, widgetName, redirectLink) => {
+  const normalizedName = (widgetName || "").toLowerCase();
+  const normalizedRedirect = (redirectLink || "").toLowerCase();
+
+  return (
+    widgetId === 223 ||
+    widgetId === 268 ||
+    normalizedName.includes("pitch") ||
+    normalizedRedirect.includes("alexz1445.shinyapps.io") ||
+    normalizedRedirect.includes("zora12345-slugger.hf.space")
+  );
+};
+
 const addCommonWidgetParams = (url, teamIds, playerIds, source, teamNames = [], playerNames = []) => {
   const teamIdsAsStrings = teamIds.map((id) => String(id));
   const playerIdsAsStrings = playerIds.map((id) => String(id));
@@ -1284,7 +1297,7 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
 
     await wakeSleepingSelectorPageIfNeeded(page);
 
-    if ((isHittingAnalyticsWidget(widgetId, widgetName, redirectLink) || isCountBasedWidget(widgetId, widgetName, redirectLink)) && playerNames.length > 0) {
+    if ((isHittingAnalyticsWidget(widgetId, widgetName, redirectLink) || isCountBasedWidget(widgetId, widgetName, redirectLink) || isPitchingWidget(widgetId, widgetName, redirectLink)) && playerNames.length > 0) {
       let matchedRequestedPlayer = null;
       const attemptedPlayers = [];
 
@@ -1329,8 +1342,9 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
             break;
           }
         } else {
+          // Handle hitting and pitching widgets (they likely have similar UI)
           const selectedPlayer = await selectHittingPlayerInPage(page, candidatePlayerName);
-          console.log(`[PDF Export] Hitting player selection attempted for "${candidatePlayerName}": ${selectedPlayer}`);
+          console.log(`[PDF Export] Player selection attempted for "${candidatePlayerName}": ${selectedPlayer}`);
 
           selectionDebug = await page.evaluate(() => {
             const select = document.querySelector("#player");
