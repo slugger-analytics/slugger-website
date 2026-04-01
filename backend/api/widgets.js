@@ -355,8 +355,6 @@ const resolveLocalPlayerFromOption = (optionText, lookupMap) => {
   return null;
 };
 
-const selectorOptionsCache = new Map();
-
 const wakeSleepingSelectorPageIfNeeded = async (page) => {
   const isSleeping = async () =>
     page.evaluate(() => {
@@ -399,6 +397,8 @@ const wakeSleepingSelectorPageIfNeeded = async (page) => {
     if (!(await isSleeping())) return;
   }
 };
+
+const selectorOptionsCache = new Map();
 
 const fetchHittingWidgetPlayerOptions = async () => {
   let browser;
