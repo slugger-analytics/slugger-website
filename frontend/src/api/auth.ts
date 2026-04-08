@@ -8,7 +8,7 @@ dotenv.config();
  * Includes functions to sign up and log in users via the backend API.
  */
 const DEBUG = false;
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 export type RoleType = "admin" | "master" | "widget developer" | "league";
 
 /**
@@ -71,7 +71,11 @@ export async function signUpUser(data: {
  * @returns {Promise<Object>} - The user data and tokens if login is successful.
  * @throws {Error} - Throws an error if the API call fails or the response is not successful.
  */
-export const loginUser = async (email: string, password: string) => {
+export const loginUser = async (
+  email: string,
+  password: string,
+  inviteToken?: string,
+) => {
   try {
     const startTime = performance.now();
     const response = await fetch(`${API_URL}/api/users/sign-in`, {
@@ -80,7 +84,7 @@ export const loginUser = async (email: string, password: string) => {
         "Content-Type": "application/json",
       },
       credentials: "include",
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, inviteToken }),
     });
     const endTime = performance.now();
     const authTime = endTime - startTime;

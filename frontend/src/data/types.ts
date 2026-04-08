@@ -88,6 +88,8 @@ export interface AuthDataType {
 export interface LoginType {
   user: UserType;
   authData: AuthDataType;
+  inviteAccepted?: boolean;
+  inviteTeamName?: string | null;
 }
 
 export type LoginAPIRes = APIResponse<LoginType>;

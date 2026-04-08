@@ -25,6 +25,7 @@ import LogoButton from "../components/navbar/LogoButton";
 import dynamic from "next/dynamic";
 import { useToast } from "@/hooks/use-toast";
 import { validatePassword } from "@/lib/utils";
+import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -40,6 +41,7 @@ const PasswordRequirements = dynamic(() => import("./PasswordRequirements"), {
 export function SignupForm() {
   const [submitStatus, setSubmitStatus] = useState(initialSubmitStatus);
   const router = useRouter();
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [invitedTeam, setInvitedTeam] = useState<{
     team_name: string;
     team_id: string;
@@ -49,16 +51,17 @@ export function SignupForm() {
   useEffect(() => {
     const fetchInvitedTeam = async () => {
       const searchParams = new URLSearchParams(window.location.search);
-      const inviteToken = searchParams.get("invite");
+      const inviteTokenFromUrl = searchParams.get("invite");
+      setInviteToken(inviteTokenFromUrl);
 
-      if (inviteToken) {
+      if (inviteTokenFromUrl) {
         try {
           const response = await fetch(`${API_URL}/api/teams/validate-invite`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
-            body: JSON.stringify({ inviteToken }),
+            body: JSON.stringify({ inviteToken: inviteTokenFromUrl }),
           });
 
           if (!response.ok) {
@@ -180,6 +183,14 @@ export function SignupForm() {
             <p className="text-sm text-blue-600">
               You&apos;ve been invited to join {invitedTeam.team_name}
             </p>
+            <div className="mt-2">
+              <Link
+                href={`/sign-in?invite=${encodeURIComponent(inviteToken || "")}`}
+                className="text-sm text-[#2272B4] underline"
+              >
+                Already have an account? Sign in instead
+              </Link>
+            </div>
           </div>
         )}
         <form onSubmit={handleSubmit}>

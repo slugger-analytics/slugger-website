@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import SubmitButton from "../components/input/SubmitButton";
 import { loginUser } from "../../api/auth";
 import { useAuth } from "../contexts/AuthContext";
@@ -19,6 +20,7 @@ import Link from "next/link";
 
 const LoginForm = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setIdToken, setAccessToken, setLoading, storeTokens } = useAuth();
   const { toast } = useToast();
 
@@ -27,10 +29,11 @@ const LoginForm = () => {
     const formData = new FormData(event.currentTarget);
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
+    const inviteToken = searchParams.get("invite") || undefined;
 
     try {
       setLoading(true);
-      const result = (await loginUser(email, password)) as LoginType;
+      const result = (await loginUser(email, password, inviteToken)) as LoginType;
       // TODO set user info here!!!
       console.log("[LoginForm] Login successful, storing tokens...");
       console.log("[LoginForm] authData:", {
@@ -52,6 +55,16 @@ const LoginForm = () => {
       console.log("[LoginForm] localStorage result:", stored ? "STORED" : "NOT STORED");
       console.log("[LoginForm] Current origin:", window.location.origin);
 
+      if (inviteToken && result.inviteAccepted) {
+        toast({
+          title: "Team invite accepted",
+          description: result.inviteTeamName
+            ? `You have joined ${result.inviteTeamName}.`
+            : "You have been added to the team.",
+          variant: "success",
+        });
+      }
+
       // Handle successful login and redirect based on user role
       if (result.user.role === "admin") {
         router.push("/pending-developers"); // Redirect to pending developers page for admin role
@@ -60,7 +73,11 @@ const LoginForm = () => {
       }
     } catch (error) {
       toast({
-        title: "Login failed. Please try again",
+        title: "Login failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Please check your credentials and try again.",
         variant: "destructive",
       });
     } finally {
@@ -77,6 +94,13 @@ const LoginForm = () => {
         <CardDescription>Sign in to continue to SLUGGER</CardDescription>
       </CardHeader>
       <CardContent>
+        {searchParams.get("invite") && (
+          <div className="mb-4 p-4 bg-blue-50 rounded-md">
+            <p className="text-sm text-blue-600">
+              You were invited to join a team. Sign in to accept the invite.
+            </p>
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="grid w-full items-center gap-4">
             <div className="flex flex-col space-y-1.5">

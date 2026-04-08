@@ -18,6 +18,7 @@ import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
 import { requireAuth, requireSiteAdmin } from "../middleware/permission-guards.js";
+import jwt from "jsonwebtoken";
 
 dotenv.config();
 const { CognitoIdentityServiceProvider } = pkg;
@@ -90,8 +91,10 @@ router.post("/sign-up", async (req, res) => {
  * Authenticate a user.
  */
 router.post("/sign-in", async (req, res) => {
-  let { email, password } = req.body;
+  let { email, password, inviteToken } = req.body;
   email = email.toLowerCase();
+  let inviteAccepted = false;
+  let inviteTeamName = null;
   const params = {
     AuthFlow: "USER_PASSWORD_AUTH",
     ClientId: process.env.COGNITO_APP_CLIENT_ID,
@@ -145,6 +148,65 @@ router.post("/sign-in", async (req, res) => {
       user = dbResult.rows[0];
     }
 
+    if (inviteToken) {
+      let decodedInvite;
+      try {
+        decodedInvite = jwt.verify(inviteToken, process.env.SESSION_SECRET);
+      } catch (inviteError) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid or expired invite link",
+        });
+      }
+
+      const invitedTeamId = decodedInvite?.teamId;
+      if (!invitedTeamId) {
+        return res.status(400).json({
+          success: false,
+          message: "Invite link is missing team information",
+        });
+      }
+
+      const teamExistsResult = await pool.query(
+        "SELECT team_id, team_name FROM team WHERE team_id = $1",
+        [invitedTeamId],
+      );
+
+      if (teamExistsResult.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Team not found",
+        });
+      }
+      inviteTeamName = teamExistsResult.rows[0].team_name;
+
+      if (user.team_id && `${user.team_id}` !== `${invitedTeamId}`) {
+        return res.status(409).json({
+          success: false,
+          message: "This account is already assigned to a different team",
+        });
+      }
+
+      if (!user.team_id) {
+        const invitedUserResult = await pool.query(
+          `
+            UPDATE users
+            SET team_id = $1,
+                role = CASE
+                  WHEN role = 'user' THEN 'league'
+                  ELSE role
+                END
+            WHERE user_id = $2
+            RETURNING *
+          `,
+          [invitedTeamId, user.user_id],
+        );
+
+        user = invitedUserResult.rows[0];
+      }
+      inviteAccepted = `${user.team_id}` === `${invitedTeamId}`;
+    }
+
     req.session.user = user; // IMPORTANT stores session in req body
 
     // Set accessToken as HTTP cookie for widget authentication
@@ -192,7 +254,9 @@ router.post("/sign-in", async (req, res) => {
           teamId: user.team_id,
           teamRole: user.team_role,
           is_admin: user.is_admin
-        }
+        },
+        inviteAccepted,
+        inviteTeamName,
       },
     });
   } catch (error) {
