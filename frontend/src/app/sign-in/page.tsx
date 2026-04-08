@@ -1,12 +1,15 @@
-"use client";
-
 import LoginForm from "./LoginForm";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 
-export default function SignIn() {
-  const searchParams = useSearchParams();
-  const inviteToken = searchParams.get("invite");
+type SignInPageProps = {
+  searchParams?: {
+    invite?: string | string[];
+  };
+};
+
+export default function SignIn({ searchParams }: SignInPageProps) {
+  const inviteParam = searchParams?.invite;
+  const inviteToken = Array.isArray(inviteParam) ? inviteParam[0] : inviteParam;
   const registerHref = inviteToken
     ? `/register?invite=${encodeURIComponent(inviteToken)}`
     : "/register-account";
