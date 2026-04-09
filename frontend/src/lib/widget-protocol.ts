@@ -15,6 +15,7 @@ export interface WidgetAuthUser {
     lastName: string;
     role: string;
     teamId?: string;
+    teamName?: string;
     teamRole?: string;
     isAdmin?: boolean;
 }
@@ -30,6 +31,7 @@ export interface WidgetAuthUser {
 export interface SluggerAuthMessage {
     type: "SLUGGER_AUTH";
     payload: {
+        bootstrapToken?: string;
         accessToken: string;
         idToken: string;
         expiresAt: number; // Unix timestamp in milliseconds

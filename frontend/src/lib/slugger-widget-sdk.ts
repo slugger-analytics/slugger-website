@@ -35,6 +35,8 @@ export interface SluggerUser {
   role?: string;
   /** Team ID if user belongs to a team */
   teamId?: string;
+  /** Team display name when provided by the shell */
+  teamName?: string;
   /** Role within the team */
   teamRole?: string;
   /** Whether user has site admin privileges */
@@ -42,6 +44,8 @@ export interface SluggerUser {
 }
 
 export interface SluggerAuth {
+  /** Short-lived Slugger JWT for verifying identity via GET /api/users/me */
+  bootstrapToken?: string;
   accessToken: string;
   idToken: string;
   expiresAt: number;
@@ -138,6 +142,7 @@ export class SluggerWidgetSDK {
   }
 
   private processAuth(payload: {
+    bootstrapToken?: string;
     accessToken: string;
     idToken: string;
     expiresAt: number;
@@ -156,6 +161,7 @@ export class SluggerWidgetSDK {
       const isRefresh = this.auth !== null;
 
       this.auth = {
+        ...(payload.bootstrapToken ? { bootstrapToken: payload.bootstrapToken } : {}),
         accessToken: payload.accessToken,
         idToken: payload.idToken,
         expiresAt: payload.expiresAt,
