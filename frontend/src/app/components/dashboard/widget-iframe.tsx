@@ -15,7 +15,8 @@ import {
     getRefreshToken,
     updateTokensAfterRefresh
 } from "@/lib/auth-store";
-import { refreshTokens } from "@/api/auth";
+import { refreshTokens, requestWidgetToken } from "@/api/auth";
+import { resolveWidgetAuthUser } from "@/lib/widget-auth-payload";
 
 interface WidgetIframeProps {
     tab: WidgetTab;
@@ -73,7 +74,7 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
      * Sends authentication tokens to the widget via PostMessage.
      * Only sends if iframe is ready and origin is validated.
      */
-    const sendTokensToWidget = useCallback(() => {
+    const sendTokensToWidget = useCallback(async () => {
         // Validate iframe contentWindow exists
         if (!iframeRef.current?.contentWindow) {
             console.warn(`[WidgetIframe] Cannot send tokens: iframe contentWindow not available`);
@@ -93,20 +94,36 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
             return;
         }
 
+        let bootstrapToken: string | undefined;
+        try {
+            bootstrapToken = await requestWidgetToken();
+        } catch (e) {
+            console.warn(`[WidgetIframe] Could not get bootstrap token:`, e);
+        }
+
+        const resolvedUser = resolveWidgetAuthUser(tokens.user, user);
+
         // Send SLUGGER_AUTH message
         const message = {
             type: "SLUGGER_AUTH",
             payload: {
+                ...(bootstrapToken ? { bootstrapToken } : {}),
                 accessToken: tokens.accessToken,
                 idToken: tokens.idToken,
                 expiresAt: tokens.expiresAt,
-                user: tokens.user,
+                user: resolvedUser,
             },
         };
 
-        console.log(`[WidgetIframe] Sending SLUGGER_AUTH to ${tab.name} at origin ${widgetOrigin}`);
+        console.log(
+            `[WidgetIframe] Sending SLUGGER_AUTH to ${tab.name} at origin ${widgetOrigin}`,
+            "bootstrap:",
+            Boolean(bootstrapToken),
+            "user:",
+            resolvedUser?.email
+        );
         iframeRef.current.contentWindow.postMessage(message, widgetOrigin);
-    }, [widgetOrigin, tab.name]);
+    }, [widgetOrigin, tab.name, user]);
 
     /**
      * Builds the iframe URL, injecting token for restricted widgets.

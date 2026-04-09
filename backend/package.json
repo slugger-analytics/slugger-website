@@ -24,7 +24,7 @@
     "jsonwebtoken": "^9.0.2",
     "lucia": "^3.2.2",
     "pg": "^8.13.1",
-    "puppeteer": "^24.6.1",
+    "puppeteer": "^24.40.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
