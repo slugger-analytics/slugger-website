@@ -667,25 +667,24 @@ export default function SuperWidgetParameterizedPage() {
                           </div>
                           <div className="space-y-3 p-4">
                             <div className="flex flex-wrap items-center gap-2">
-                              {!output.uiOnly ? (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 border-gray-200 text-xs"
-                                  onClick={() => handleExportWidgetPdf(output.widgetId)}
-                                  disabled={widgetPdfStates[output.widgetId]?.loading}
-                                >
-                                  {widgetPdfStates[output.widgetId]?.loading ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                      Generating…
-                                    </>
-                                  ) : (
-                                    "Export PDF"
-                                  )}
-                                </Button>
-                              ) : (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8 border-gray-200 text-xs"
+                                onClick={() => handleExportWidgetPdf(output.widgetId)}
+                                disabled={widgetPdfStates[output.widgetId]?.loading}
+                              >
+                                {widgetPdfStates[output.widgetId]?.loading ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                    Generating…
+                                  </>
+                                ) : (
+                                  "Export PDF"
+                                )}
+                              </Button>
+                              {output.uiOnly && output.redirectLink && (
                                 <Button
                                   type="button"
                                   variant="outline"

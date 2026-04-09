@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Badge } from "@/app/components/ui/badge";
 import { Loader2, Sparkles, BarChart3 } from "lucide-react";
 import { WidgetType } from "@/data/types";
-import { fetchWidgetOutputs, fetchWidgets, WidgetExecutionResult } from "@/api/widget";
+import { exportWidgetPdf, fetchWidgetOutputs, fetchWidgetSelectorOptions, fetchWidgets, WidgetExecutionResult } from "@/api/widget";
+import { ParameterSelector } from "./components/ParameterSelector";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/userStore";
 import {
@@ -46,6 +47,18 @@ export default function SuperWidgetPage() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [widgetOutputs, setWidgetOutputs] = useState<WidgetExecutionResult[]>([]);
+  const [widgetPdfStates, setWidgetPdfStates] = useState<Record<number, {
+    loading: boolean;
+    error?: string;
+    pdfUrl?: string;
+  }>>({});
+  const [selectedTeams, setSelectedTeams] = useState<{ id: string | number; name: string }[]>([]);
+  const [selectedPlayers, setSelectedPlayers] = useState<{ id: string | number; name: string; teamId: string | number; position: string; sourceLabel?: string }[]>([]);
+  const [selectorTeams, setSelectorTeams] = useState<Array<{ id: string | number; name: string }>>([]);
+  const [selectorPlayers, setSelectorPlayers] = useState<Array<{ id: string | number; name: string; teamId: string | number; position: string; sourceLabel?: string }>>([]);
+  const [selectorOptionsLoading, setSelectorOptionsLoading] = useState(false);
+  const [selectorOptionsError, setSelectorOptionsError] = useState<string | null>(null);
+  const [selectorSourceWidgetName, setSelectorSourceWidgetName] = useState<string | null>(null);
   const user = useStore($user);
 
   const loadAvailableWidgets = useCallback(async () => {
@@ -65,6 +78,66 @@ export default function SuperWidgetPage() {
       setLoading(false);
     }
   }, []); // Remove user.id dependency
+
+  const selectedWidgets = useMemo(
+    () => availableWidgets.filter((widget) => selectedWidgetIds.includes(widget.id)),
+    [availableWidgets, selectedWidgetIds]
+  );
+
+  const selectorSourceWidgetId = useMemo(() => {
+    if (selectedWidgetIds.includes(93)) return 93;
+    return selectedWidgetIds.length === 1 ? selectedWidgetIds[0] : null;
+  }, [selectedWidgetIds]);
+
+  const selectorSourceWidget = useMemo(
+    () => availableWidgets.find((widget) => widget.id === selectorSourceWidgetId) ?? null,
+    [availableWidgets, selectorSourceWidgetId]
+  );
+
+  useEffect(() => {
+    if (!selectorSourceWidgetId) {
+      setSelectorTeams([]);
+      setSelectorPlayers([]);
+      setSelectorSourceWidgetName(null);
+      setSelectorOptionsError(null);
+      return;
+    }
+
+    const loadSelectorOptions = async () => {
+      try {
+        setSelectorOptionsLoading(true);
+        setSelectorOptionsError(null);
+        setSelectorTeams([]);
+        setSelectorPlayers([]);
+        const options = await fetchWidgetSelectorOptions(selectorSourceWidgetId);
+        setSelectorSourceWidgetName(options.widgetName || selectorSourceWidget?.name || "widget");
+        setSelectorTeams(options.teams || []);
+        setSelectorPlayers(options.players || []);
+        if ((options.teams?.length ?? 0) === 0 || (options.players?.length ?? 0) === 0) {
+          setSelectorOptionsError(`${options.widgetName || selectorSourceWidget?.name || "Widget"} has no mappable team/player options.`);
+        }
+      } catch (error) {
+        console.error("Error loading widget selector options:", error);
+        setSelectorTeams([]);
+        setSelectorPlayers([]);
+        setSelectorSourceWidgetName(selectorSourceWidget?.name || null);
+        setSelectorOptionsError((error as Error)?.message ?? "Failed to load selector options");
+      } finally {
+        setSelectorOptionsLoading(false);
+      }
+    };
+
+    loadSelectorOptions();
+  }, [selectorSourceWidgetId, selectorSourceWidget?.name]);
+
+  useEffect(() => {
+    if (!selectorSourceWidgetId) return;
+    const validTeamIds = new Set(selectorTeams.map((team) => String(team.id)));
+    const validPlayerIds = new Set(selectorPlayers.map((player) => String(player.id)));
+
+    setSelectedTeams((prev) => prev.filter((team) => validTeamIds.has(String(team.id))));
+    setSelectedPlayers((prev) => prev.filter((player) => validPlayerIds.has(String(player.id))));
+  }, [selectorSourceWidgetId, selectorTeams, selectorPlayers]);
 
   const loadSavedAnalyses = useCallback(() => {
     if (typeof window === "undefined" || !user.id) return;
@@ -135,6 +208,8 @@ export default function SuperWidgetPage() {
       const selectedWidgets = availableWidgets.filter(w => selectedWidgetIds.includes(w.id));
 
       const directOutputs = await fetchWidgetOutputs(selectedWidgetIds, {
+        teamIds: selectedTeams.map((team) => team.id),
+        playerIds: selectedPlayers.map((player) => player.id),
         source: "superwidget-script"
       });
       setWidgetOutputs(directOutputs);
@@ -159,6 +234,86 @@ export default function SuperWidgetPage() {
       setIsAnalyzing(false);
     }
   };
+
+  const handleExportWidgetPdf = useCallback(async (widgetId: number) => {
+    setWidgetPdfStates(prev => ({
+      ...prev,
+      [widgetId]: {
+        loading: true,
+        error: undefined,
+        pdfUrl: prev[widgetId]?.pdfUrl,
+      },
+    }));
+
+    try {
+      const result = await exportWidgetPdf(widgetId, {
+        teamIds: selectedTeams.map((team) => team.id),
+        playerIds: selectedPlayers.map((player) => player.id),
+        teamNames: selectedTeams.map((team) => team.name),
+        playerNames: selectedPlayers.map((player) => player.sourceLabel || player.name),
+        source: "superwidget-analyzer-pdf",
+      });
+
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: result.success ? undefined : result.message,
+          pdfUrl: result.pdfUrl,
+        },
+      }));
+    } catch (error) {
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: (error as Error)?.message ?? "Failed to export PDF",
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+    }
+  }, [selectedTeams, selectedPlayers]);
+
+  const handleOpenWidgetInBrowser = useCallback((widgetId: number, directLink?: string) => {
+    const redirectLink = directLink;
+
+    if (!redirectLink) {
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: "Widget redirect URL is missing",
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+      return;
+    }
+
+    const url = new URL(redirectLink);
+    url.searchParams.set("source", "superwidget-open-browser");
+
+    const popup = window.open(url.toString(), "_blank", "width=1440,height=900");
+    if (!popup) {
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: "Popup was blocked. Please allow popups and try again.",
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+      return;
+    }
+
+    setWidgetPdfStates(prev => ({
+      ...prev,
+      [widgetId]: {
+        loading: false,
+        error: undefined,
+        pdfUrl: prev[widgetId]?.pdfUrl,
+      },
+    }));
+  }, []);
 
   useEffect(() => {
     if (user.id) {
@@ -297,6 +452,25 @@ export default function SuperWidgetPage() {
           </CardContent>
         </Card>
 
+        <div className="lg:col-span-3">
+          <ParameterSelector
+            selectedTeams={selectedTeams}
+            selectedPlayers={selectedPlayers}
+            onTeamsChange={setSelectedTeams}
+            onPlayersChange={setSelectedPlayers}
+            overrideTeams={selectorTeams}
+            overridePlayers={selectorPlayers}
+            overrideLabel={selectorSourceWidgetName ? `Filtered by ${selectorSourceWidgetName}` : undefined}
+          />
+          {(selectorOptionsError || (!selectorSourceWidgetId && selectedWidgetIds.length > 1)) && (
+            <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800">
+              {selectorOptionsError
+                ? selectorOptionsError
+                : "Select a single widget to load team/player filter options for this analysis."}
+            </div>
+          )}
+        </div>
+
         {/* AI Analysis Results */}
         <Card>
           <CardHeader>
@@ -401,6 +575,43 @@ export default function SuperWidgetPage() {
                           </li>
                         ))}
                       </ul>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 border-gray-200 text-xs"
+                        onClick={() => handleExportWidgetPdf(output.widgetId)}
+                        disabled={widgetPdfStates[output.widgetId]?.loading}
+                      >
+                        {widgetPdfStates[output.widgetId]?.loading ? "Exporting..." : "Export PDF"}
+                      </Button>
+                      {output.uiOnly && output.redirectLink && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8 border-gray-200 text-xs"
+                          onClick={() => handleOpenWidgetInBrowser(output.widgetId, output.redirectLink)}
+                        >
+                          Open in browser
+                        </Button>
+                      )}
+                      {widgetPdfStates[output.widgetId]?.pdfUrl && (
+                        <a
+                          href={widgetPdfStates[output.widgetId]?.pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-indigo-600 underline-offset-2 hover:underline"
+                        >
+                          Download PDF
+                        </a>
+                      )}
+                    </div>
+                    {widgetPdfStates[output.widgetId]?.error && (
+                      <p className="text-xs text-red-600">{widgetPdfStates[output.widgetId]?.error}</p>
                     )}
 
                     {/* Raw Output removed for user privacy */}
