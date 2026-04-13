@@ -1,6 +1,9 @@
 # Production Dockerfile for the SLUGGER backend service
 # NOTE: This Dockerfile must be built from the monorepo root with backend/ as context
 # Example: docker build -f backend/Dockerfile.prod --build-context root=. backend/
+#
+# Uses the root package-lock.json with `npm ci -w backend` because backend/package-lock.json
+# is not kept in sync with backend/package.json in this monorepo.
 
 FROM node:20-alpine
 
@@ -9,15 +12,21 @@ RUN apk add --no-cache python3 make g++ curl
 
 WORKDIR /app
 
-# Copy backend package manifest and lockfile
-COPY package.json ./
-COPY package-lock.json ./
+ENV NPM_CONFIG_FETCH_RETRIES=5 \
+    NPM_CONFIG_FETCH_RETRY_MINTIMEOUT=20000 \
+    NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT=120000
 
-# Install production dependencies only using backend lockfile
-RUN npm ci --omit=dev && npm cache clean --force
+# Monorepo root lockfile + all workspace package.json files required for npm ci
+COPY --from=root package.json package-lock.json ./
+COPY --from=root frontend/package.json ./frontend/
+COPY package.json ./backend/
 
-# Copy backend source code
-COPY . .
+RUN npm ci --omit=dev -w backend && npm cache clean --force
+
+# Copy backend source (build context is backend/)
+COPY . ./backend/
+
+WORKDIR /app/backend
 
 # Expose backend port
 EXPOSE 3001
