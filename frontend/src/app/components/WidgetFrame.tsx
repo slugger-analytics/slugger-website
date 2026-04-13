@@ -238,7 +238,7 @@ export function WidgetFrame({
       title={title}
       className={className}
       onLoad={handleLoad}
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
     />
   );
 }

@@ -1168,6 +1168,39 @@ const selectCountBasedPlayerInPage = async (page, rawPlayerName) => {
   return { label: "", foundInWidget: anyTermReturnedOptions };
 };
 
+const waitForPdfRenderStability = async (
+  page,
+  { timeoutMs = 12000, fallbackMs = 1800 } = {}
+) => {
+  let settledBySignal = false;
+
+  try {
+    await page.waitForFunction(
+      () => {
+        const body = document.body;
+        if (!body) return false;
+
+        const textLength = (body.innerText || "").trim().length;
+        if (textLength < 200) return false;
+
+        const loadingNode = document.querySelector(
+          '.shiny-busy, [aria-busy="true"], .spinner, .loading, .recalculating'
+        );
+        return !loadingNode;
+      },
+      { timeout: timeoutMs }
+    );
+    settledBySignal = true;
+  } catch {
+    // fall through to conservative fallback wait
+  }
+
+  // Keep a short settle delay so late paint/layout can complete.
+  await new Promise((resolve) =>
+    setTimeout(resolve, settledBySignal ? 700 : fallbackMs)
+  );
+};
+
 router.get("/exports/:fileName", async (req, res) => {
   try {
     const fileName = req.params.fileName;
@@ -1267,7 +1300,7 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
           waitUntil: "networkidle2",
           timeout: 180000, // 3 minutes
         }),
-        new Promise(resolve => setTimeout(resolve, 60000)) // 60s fallback
+        new Promise(resolve => setTimeout(resolve, 25000)) // 25s fallback
       ]);
     } catch (error) {
       console.log(`[PDF Export] Navigation timeout or error: ${error.message}, continuing anyway...`);
@@ -1276,7 +1309,7 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
     try {
       await page.waitForFunction(
         () => document?.body?.innerText?.length > 200,
-        { timeout: 45000 }
+        { timeout: 15000 }
       );
     } catch {
       // no-op fallback to timed wait below
@@ -1414,11 +1447,14 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
         });
       }
 
-      await new Promise((resolve) => setTimeout(resolve, isCountBasedWidget(widgetId, widgetName, redirectLink) ? 6000 : 7000));
+      await waitForPdfRenderStability(page, {
+        timeoutMs: isCountBasedWidget(widgetId, widgetName, redirectLink) ? 6000 : 7000,
+        fallbackMs: 2200,
+      });
     }
 
-    console.log(`[PDF Export] Page loaded, waiting 12 seconds for rendering and parameter hydration...`);
-    await new Promise(resolve => setTimeout(resolve, 12000));
+    console.log(`[PDF Export] Page loaded, waiting for render stability...`);
+    await waitForPdfRenderStability(page, { timeoutMs: 9000, fallbackMs: 2500 });
     console.log(`[PDF Export] Generating PDF to ${filePath}...`);
     
     await page.pdf({
