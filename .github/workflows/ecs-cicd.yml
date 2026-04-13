@@ -14,6 +14,9 @@ env:
   FRONTEND_REPOSITORY: slugger-frontend
   BACKEND_REPOSITORY: slugger-backend
   IMAGE_TAG: ${{ github.sha }}
+  NPM_CONFIG_FETCH_RETRIES: "5"
+  NPM_CONFIG_FETCH_RETRY_MINTIMEOUT: "20000"
+  NPM_CONFIG_FETCH_RETRY_MAXTIMEOUT: "120000"
 
 jobs:
   build-and-push:
@@ -32,7 +35,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: npm
 
       - name: Install workspace dependencies
