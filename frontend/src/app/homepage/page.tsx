@@ -171,7 +171,7 @@ export default function HomePage() {
                         </Link>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 gap-2 overflow-y-auto flex-1 min-h-0">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 overflow-y-auto flex-1 min-h-0">
                         {favoriteWidgets.map((widget) => (
                           <button
                             type="button"

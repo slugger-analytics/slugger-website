@@ -71,7 +71,7 @@ export default function Home() {
             <motion.h1
               variants={variants}
               custom={0.2}
-              className="text-7xl font-extrabold text-white drop-shadow-lg tracking-tight"
+              className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-white drop-shadow-lg tracking-tight"
             >
               Welcome to{" "}
               <span className="bg-white text-transparent bg-clip-text">
@@ -82,7 +82,7 @@ export default function Home() {
             <motion.p
               variants={variants}
               custom={0.4}
-              className="text-xl font-medium text-gray-300 mt-8 max-w-3xl leading-relaxed"
+              className="text-sm sm:text-xl font-medium text-gray-300 mt-4 sm:mt-8 max-w-3xl leading-relaxed px-4 sm:px-0"
             >
               Discover advanced insights and data that redefine your
               understanding of the game. Developed by the Johns Hopkins Sports
@@ -93,14 +93,14 @@ export default function Home() {
             <motion.div
               variants={variants}
               custom={0.6}
-              className="flex mt-16 space-x-8"
+              className="flex flex-col sm:flex-row mt-10 sm:mt-16 gap-4 sm:gap-0 sm:space-x-8"
             >
               <Link href="/sign-in">
                 <motion.button
                   whileHover="hover"
                   whileTap="tap"
                   variants={variants}
-                  className="text-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-700 px-12 py-4 rounded-lg shadow-lg hover:shadow-blue-500/25 transition duration-300"
+                  className="text-base sm:text-xl font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-700 px-10 sm:px-12 py-3 sm:py-4 rounded-lg shadow-lg hover:shadow-blue-500/25 transition duration-300 w-full sm:w-auto"
                 >
                   Sign In
                 </motion.button>
@@ -110,7 +110,7 @@ export default function Home() {
                   whileHover="hover"
                   whileTap="tap"
                   variants={variants}
-                  className="text-xl font-semibold text-blue-500 bg-white/10 backdrop-blur-sm px-12 py-4 rounded-lg border-2 border-blue-500/50 hover:bg-blue-500 hover:text-white transition duration-300"
+                  className="text-base sm:text-xl font-semibold text-blue-500 bg-white/10 backdrop-blur-sm px-10 sm:px-12 py-3 sm:py-4 rounded-lg border-2 border-blue-500/50 hover:bg-blue-500 hover:text-white transition duration-300 w-full sm:w-auto"
                 >
                   Register
                 </motion.button>

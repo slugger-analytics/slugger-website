@@ -50,15 +50,15 @@ function AroundLeagueContent() {
     <div className="w-full min-h-full">
 
       {/* ── CONTENT ── */}
-      <div className="w-full max-w-6xl mx-auto px-10 py-4 flex flex-col gap-6">
+      <div className="w-full max-w-6xl mx-auto px-3 sm:px-6 lg:px-10 py-4 flex flex-col gap-6">
 
-        {/* Title + filters row */}
-        <div className="flex items-center justify-between gap-4">
+        {/* Title + filters row - stacks on mobile */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <p className="text-2xl pt-6 font-bold text-gray-900">Around the League</p>
             <p className="text-xs text-gray-400 mt-0.5">Standings, stat leaders &amp; team history</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <SeasonDropdown value={season} onChange={handleSeasonChange} />
             <TeamDropdown value={teamFilter} onChange={setTeamFilter} />
           </div>

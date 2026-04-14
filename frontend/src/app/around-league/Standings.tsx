@@ -186,12 +186,12 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
   return (
     <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden"}`}>
       {!compact && (
-        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+        <div className="flex flex-wrap items-center justify-between gap-y-2 px-5 pt-4 pb-3 border-b border-gray-100">
           <Tabs defaultValue="OVERALL">
-            <TabsList>
+            <TabsList className="flex-wrap h-auto">
               <TabsTrigger value="OVERALL" onClick={() => setView("OVERALL")}>Overall</TabsTrigger>
-              <TabsTrigger value="FIRST HALF" onClick={() => setView("FIRST HALF")}>First Half</TabsTrigger>
-              <TabsTrigger value="SECOND HALF" onClick={() => setView("SECOND HALF")}>Second Half</TabsTrigger>
+              <TabsTrigger value="FIRST HALF" onClick={() => setView("FIRST HALF")}>1st Half</TabsTrigger>
+              <TabsTrigger value="SECOND HALF" onClick={() => setView("SECOND HALF")}>2nd Half</TabsTrigger>
             </TabsList>
           </Tabs>
           <button
@@ -221,8 +221,12 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
             {colHead("wins",    "W")}
             {colHead("losses",  "L")}
             {colHead("pct",     "PCT")}
-            {colHead("streak",  "STRK")}
-            {colHead("last10",  "L10", "text-center")}
+            <th className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap text-right hidden sm:table-cell`} onClick={() => handleSort("streak")}>
+              <span className="inline-flex items-center gap-0.5 justify-end">STRK {sortIcon("streak")}</span>
+            </th>
+            <th className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap text-center hidden sm:table-cell`} onClick={() => handleSort("last10")}>
+              <span className="inline-flex items-center gap-0.5">L10 {sortIcon("last10")}</span>
+            </th>
           </tr>
         </thead>
 
@@ -259,10 +263,10 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
                   <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums font-semibold text-gray-800`}>
                     {team.pct}
                   </td>
-                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-600`}>
+                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-600 hidden sm:table-cell`}>
                     {team.streak}
                   </td>
-                  <td className={`${compact ? "px-2 py-2" : "px-3 py-3"} text-center`}>
+                  <td className={`${compact ? "px-2 py-2" : "px-3 py-3"} text-center hidden sm:table-cell`}>
                     {!compact && team.last10
                       ? <PipBar value={team.last10} />
                       : <span className="tabular-nums text-xs text-gray-600">{team.last10}</span>

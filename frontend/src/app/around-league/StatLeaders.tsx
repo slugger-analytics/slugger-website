@@ -182,9 +182,10 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
     onClick: () => void,
     icon: React.ReactNode,
     align = "text-right",
+    hideOnMobile = false,
   ) => (
     <th
-      className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap ${align}`}
+      className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap ${align}${hideOnMobile ? " hidden sm:table-cell" : ""}`}
       onClick={onClick}
     >
       <span className={`inline-flex items-center gap-0.5 ${align === "text-right" ? "justify-end" : ""}`}>
@@ -196,11 +197,11 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden">
       {/* ── toolbar ── */}
-      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+      <div className="flex flex-wrap items-center justify-between gap-y-2 px-5 pt-4 pb-3 border-b border-gray-100">
         <Tabs defaultValue="batting">
           <TabsList>
-            <TabsTrigger value="batting" onClick={() => setStatView("Batting")}>Batting Leaders</TabsTrigger>
-            <TabsTrigger value="pitching" onClick={() => setStatView("Pitching")}>Pitching Leaders</TabsTrigger>
+            <TabsTrigger value="batting" onClick={() => setStatView("Batting")}>Batting</TabsTrigger>
+            <TabsTrigger value="pitching" onClick={() => setStatView("Pitching")}>Pitching</TabsTrigger>
           </TabsList>
         </Tabs>
         <button
@@ -222,11 +223,11 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
               <tr className="border-b border-gray-100">
                 {colHead("#",      () => handleBattingSort("rank"),       battingSortIcon("rank"),       "text-center")}
                 {colHead("Player", () => handleBattingSort("playername"), battingSortIcon("playername"), "text-left")}
-                {!teamFilter && colHead("Team", () => handleBattingSort("teamname"), battingSortIcon("teamname"), "text-left")}
+                {!teamFilter && colHead("Team", () => handleBattingSort("teamname"), battingSortIcon("teamname"), "text-left", true)}
                 {colHead("AVG",    () => handleBattingSort("avg"),        battingSortIcon("avg"))}
                 {colHead("HR",     () => handleBattingSort("hr"),         battingSortIcon("hr"))}
                 {colHead("RBI",    () => handleBattingSort("rbi"),        battingSortIcon("rbi"))}
-                {colHead("SB",     () => handleBattingSort("sb"),         battingSortIcon("sb"))}
+                {colHead("SB",     () => handleBattingSort("sb"),         battingSortIcon("sb"),         "text-right", true)}
               </tr>
             </thead>
             <tbody>
@@ -241,11 +242,11 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
                       {leagueRank}{teamFilter && <span className="ml-0.5 text-[10px] text-gray-400">(lg)</span>}
                     </td>
                     <td className="px-4 py-2.5 font-medium text-gray-800">{batter.playername}</td>
-                    {!teamFilter && <td className="px-3 py-2.5 text-gray-500 text-sm">{batter.teamname?.fullname ?? batter.teamname?.$t}</td>}
+                    {!teamFilter && <td className="px-3 py-2.5 text-gray-500 text-sm hidden sm:table-cell">{batter.teamname?.fullname ?? batter.teamname?.$t}</td>}
                     <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-800">{batter.avg}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{batter.hr}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{batter.rbi}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{batter.sb}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700 hidden sm:table-cell">{batter.sb}</td>
                   </tr>
                 );
               })}
@@ -264,11 +265,11 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
               <tr className="border-b border-gray-100">
                 {colHead("#",      () => handlePitchingSort("rank"),       pitchingSortIcon("rank"),       "text-center")}
                 {colHead("Player", () => handlePitchingSort("playername"), pitchingSortIcon("playername"), "text-left")}
-                {!teamFilter && colHead("Team", () => handlePitchingSort("teamname"), pitchingSortIcon("teamname"), "text-left")}
+                {!teamFilter && colHead("Team", () => handlePitchingSort("teamname"), pitchingSortIcon("teamname"), "text-left", true)}
                 {colHead("ERA",    () => handlePitchingSort("era"),        pitchingSortIcon("era"))}
                 {colHead("W",      () => handlePitchingSort("wins"),       pitchingSortIcon("wins"))}
                 {colHead("SO",     () => handlePitchingSort("so"),         pitchingSortIcon("so"))}
-                {colHead("IP",     () => handlePitchingSort("ip"),         pitchingSortIcon("ip"))}
+                {colHead("IP",     () => handlePitchingSort("ip"),         pitchingSortIcon("ip"),         "text-right", true)}
               </tr>
             </thead>
             <tbody>
@@ -283,11 +284,11 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
                       {leagueRank}{teamFilter && <span className="ml-0.5 text-[10px] text-gray-400">(lg)</span>}
                     </td>
                     <td className="px-4 py-2.5 font-medium text-gray-800">{pitcher.playername}</td>
-                    {!teamFilter && <td className="px-3 py-2.5 text-gray-500 text-sm">{pitcher.teamname?.fullname ?? pitcher.teamname?.$t}</td>}
+                    {!teamFilter && <td className="px-3 py-2.5 text-gray-500 text-sm hidden sm:table-cell">{pitcher.teamname?.fullname ?? pitcher.teamname?.$t}</td>}
                     <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-800">{pitcher.era}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.wins}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.so}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.ip}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700 hidden sm:table-cell">{pitcher.ip}</td>
                   </tr>
                 );
               })}

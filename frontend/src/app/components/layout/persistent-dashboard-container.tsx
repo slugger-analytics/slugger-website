@@ -7,6 +7,7 @@ import {
     SidebarInset,
     SidebarProvider,
 } from "@/app/components/ui/sidebar";
+import { TooltipProvider } from "@/app/components/ui/tooltip";
 import TabBar from "@/app/components/dashboard/tab-bar";
 import TabContent from "@/app/components/dashboard/tab-content";
 import DashboardLoading from "@/app/components/dashboard/dashboard-loading";
@@ -57,6 +58,7 @@ export default function PersistentDashboardContainer() {
             className="fixed inset-0 z-40"
             data-testid="persistent-dashboard-container"
         >
+            <TooltipProvider delayDuration={400}>
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset>
@@ -72,6 +74,7 @@ export default function PersistentDashboardContainer() {
                     )}
                 </SidebarInset>
             </SidebarProvider>
+            </TooltipProvider>
         </div>
     );
 }
