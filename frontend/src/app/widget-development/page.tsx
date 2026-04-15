@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
 } from "@/app/components/ui/sidebar";
 import ProtectedRoute from "../components/ProtectedRoutes";
-import { fetchAllDevelopersWithWidgets } from "@/api/developer";
+import { fetchAllDevelopersWithWidgets, fetchAllApprovedWidgets, ApprovedWidget } from "@/api/developer";
 import { DeveloperWithWidgets } from "@/data/types";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -23,41 +23,54 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { deleteUser } from "@/api/user";
+import { assignWidgetToDeveloper } from "@/api/widget";
 import { useToast } from "@/hooks/use-toast";
 
 export default function WidgetDevelopmentPage() {
   const [developers, setDevelopers] = useState<DeveloperWithWidgets[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Track current widget index for each developer
   const [widgetIndices, setWidgetIndices] = useState<Record<number, number>>({});
   const [deletingUserId, setDeletingUserId] = useState<number | null>(null);
+  const [allWidgets, setAllWidgets] = useState<ApprovedWidget[]>([]);
+  const [assignDialogDev, setAssignDialogDev] = useState<DeveloperWithWidgets | null>(null);
+  const [selectedWidgetId, setSelectedWidgetId] = useState<string>("");
+  const [assigning, setAssigning] = useState(false);
   const { toast } = useToast();
 
-  // Fetch all developers with their widgets
   useEffect(() => {
-    const loadDevelopers = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const data = await fetchAllDevelopersWithWidgets();
-        setDevelopers(data);
-        // Initialize widget indices to 0 for all developers
+        const [devData, widgetData] = await Promise.all([
+          fetchAllDevelopersWithWidgets(),
+          fetchAllApprovedWidgets(),
+        ]);
+        setDevelopers(devData);
+        setAllWidgets(widgetData);
         const initialIndices: Record<number, number> = {};
-        data.forEach((dev: DeveloperWithWidgets) => {
+        devData.forEach((dev: DeveloperWithWidgets) => {
           initialIndices[dev.user_id] = 0;
         });
         setWidgetIndices(initialIndices);
       } catch (error) {
-        console.error("Error fetching developers:", error);
+        console.error("Error fetching data:", error);
         setError("Error loading developers and widgets");
       } finally {
         setLoading(false);
       }
     };
 
-    loadDevelopers();
+    loadData();
   }, []);
 
   const handlePreviousWidget = (developerId: number, totalWidgets: number) => {
@@ -98,6 +111,39 @@ export default function WidgetDevelopmentPage() {
     }
   };
 
+  const assignableWidgets = assignDialogDev
+    ? allWidgets.filter(
+        (w) =>
+          !assignDialogDev.widgets?.some((dw) => dw.widget_id === w.widget_id),
+      )
+    : [];
+
+  const handleAssignWidget = async () => {
+    if (!assignDialogDev || !selectedWidgetId) return;
+    setAssigning(true);
+    try {
+      await assignWidgetToDeveloper(parseInt(selectedWidgetId), assignDialogDev.user_id);
+      const assignedWidget = allWidgets.find((w) => w.widget_id === parseInt(selectedWidgetId));
+      toast({
+        title: "Widget assigned",
+        description: `${assignedWidget?.widget_name} has been assigned to ${assignDialogDev.first_name} ${assignDialogDev.last_name}.`,
+        variant: "success",
+      });
+      const refreshed = await fetchAllDevelopersWithWidgets();
+      setDevelopers(refreshed);
+      setAssignDialogDev(null);
+      setSelectedWidgetId("");
+    } catch (error: any) {
+      toast({
+        title: "Assignment failed",
+        description: error.message || "There was a problem assigning the widget.",
+        variant: "destructive",
+      });
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   return (
     <ProtectedRoute role="admin">
       <SidebarProvider>
@@ -132,13 +178,26 @@ export default function WidgetDevelopmentPage() {
                       className="p-6 bg-white rounded-lg shadow-md border border-gray-200 flex flex-col"
                     >
                       <div className="mb-4 pb-4 border-b border-gray-200">
-                        <div className="flex justify-between items-start">
+                          <div className="flex justify-between items-start">
                           <div className="flex-grow">
                             <h2 className="text-xl font-bold text-gray-800">
                               {developer.first_name} {developer.last_name}
                             </h2>
                             <p className="text-gray-600 text-sm mt-1">{developer.email}</p>
                           </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              onClick={() => {
+                                setAssignDialogDev(developer);
+                                setSelectedWidgetId("");
+                              }}
+                              title="Assign widget"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
@@ -169,6 +228,7 @@ export default function WidgetDevelopmentPage() {
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
+                          </div>
                         </div>
                       </div>
 
@@ -261,6 +321,62 @@ export default function WidgetDevelopmentPage() {
           </div>
         </SidebarInset>
       </SidebarProvider>
+
+      {/* Assign Widget Dialog */}
+      <AlertDialog
+        open={!!assignDialogDev}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAssignDialogDev(null);
+            setSelectedWidgetId("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Assign Widget</AlertDialogTitle>
+            <AlertDialogDescription>
+              Select a widget to assign to{" "}
+              <span className="font-semibold text-gray-800">
+                {assignDialogDev?.first_name} {assignDialogDev?.last_name}
+              </span>{" "}
+              as a member.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            {assignableWidgets.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">
+                All available widgets are already assigned to this developer.
+              </p>
+            ) : (
+              <Select value={selectedWidgetId} onValueChange={setSelectedWidgetId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a widget..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {assignableWidgets.map((widget) => (
+                    <SelectItem key={widget.widget_id} value={String(widget.widget_id)}>
+                      {widget.widget_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={assigning}>Cancel</AlertDialogCancel>
+            {assignableWidgets.length > 0 && (
+              <AlertDialogAction
+                onClick={handleAssignWidget}
+                disabled={!selectedWidgetId || assigning}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {assigning ? "Assigning..." : "Assign Widget"}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </ProtectedRoute>
   );
 }

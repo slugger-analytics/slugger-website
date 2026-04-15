@@ -498,6 +498,28 @@ export async function addWidgetCollaborator(widgetId: number, email: string) {
   return data.data;
 }
 
+export async function assignWidgetToDeveloper(
+  widgetId: number,
+  developerId: number,
+): Promise<void> {
+  const response = await fetch(
+    `${API_URL}/api/widgets/${widgetId}/developers`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ developerId }),
+    },
+  );
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message);
+  }
+}
+
 export async function deleteWidget(widgetId: number) {
   try {
     const response = await fetch(`${API_URL}/api/widgets/${widgetId}`, {

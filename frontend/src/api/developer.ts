@@ -51,6 +51,24 @@ export const declineDeveloper = async (requestId: string) => {
   return data;
 };
 
+export interface ApprovedWidget {
+  widget_id: number;
+  widget_name: string;
+  visibility: string;
+  status: string;
+}
+
+export const fetchAllApprovedWidgets = async (): Promise<ApprovedWidget[]> => {
+  const response = await fetch(`${API_URL}/api/developers/widgets`, {
+    credentials: "include",
+  });
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message);
+  }
+  return data.data;
+};
+
 export const fetchAllDevelopersWithWidgets = async () => {
   const response = await fetch(`${API_URL}/api/developers`, {
     credentials: "include",

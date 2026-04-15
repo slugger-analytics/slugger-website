@@ -126,6 +126,16 @@ export async function getPendingDevelopers() {
   return result.rows;
 }
 
+export async function getAllApprovedWidgets() {
+  const result = await pool.query(`
+    SELECT widget_id, widget_name, visibility, status
+    FROM widgets
+    WHERE status = 'approved'
+    ORDER BY widget_name ASC
+  `);
+  return result.rows;
+}
+
 export async function getAllDevelopersWithWidgets() {
   const client = await pool.connect();
   try {

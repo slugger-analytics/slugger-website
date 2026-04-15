@@ -4,6 +4,7 @@ import {
   declineDeveloper,
   getPendingDevelopers,
   getAllDevelopersWithWidgets,
+  getAllApprovedWidgets,
 } from "../services/developerService.js";
 import { requireSiteAdmin } from "../middleware/permission-guards.js";
 
@@ -83,6 +84,19 @@ router.get("/pending", requireSiteAdmin, async (req, res) => {
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
     return handleServiceError(error, res, "getPendingDevelopers");
+  }
+});
+
+/**
+ * GET /developers/widgets
+ * Fetch all approved widgets (admin use — for assigning to developers).
+ */
+router.get("/widgets", requireSiteAdmin, async (req, res) => {
+  try {
+    const result = await getAllApprovedWidgets();
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    return handleServiceError(error, res, "getAllApprovedWidgets");
   }
 });
 
