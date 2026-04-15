@@ -402,7 +402,7 @@ export default function WidgetIframe({ tab, isVisible }: WidgetIframeProps) {
                     className="w-full h-full border-0"
                     onLoad={handleIframeLoad}
                     onError={handleIframeError}
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-top-navigation-by-user-activation"
                     allow="accelerometer; camera; encrypted-media; geolocation; gyroscope; microphone"
                     data-tab-id={tab.id}
                 />
