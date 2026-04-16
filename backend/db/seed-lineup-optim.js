@@ -31,7 +31,7 @@ async function seedLineupOptimWidget() {
              visibility = 'public',
              status = 'approved'
          WHERE widget_id = $3`,
-        [description, "https://www.alpb-analytics.com/widgets/lineup", widgetId]
+        [description, "https://www.alpb-analytics.com/widgets/lineup/", widgetId]
       );
       console.log(`Lineup Optimization widget already existed (widget_id: ${widgetId}) — updated.`);
     } else {
@@ -39,7 +39,7 @@ async function seedLineupOptimWidget() {
         `INSERT INTO widgets (widget_name, description, visibility, status, redirect_link, created_at)
          VALUES ($1, $2, 'public', 'approved', $3, NOW())
          RETURNING widget_id`,
-        ["Lineup Optimization", description, "https://www.alpb-analytics.com/widgets/lineup"]
+        ["Lineup Optimization", description, "https://www.alpb-analytics.com/widgets/lineup/"]
       );
       widgetId = result.rows[0].widget_id;
       console.log(`Lineup Optimization widget inserted with widget_id: ${widgetId}.`);
