@@ -18,6 +18,8 @@ interface Player {
   name: string;
   teamId: string | number;
   position: string;
+  externalId?: string | null;
+  sourceLabel?: string;
 }
 
 interface ParameterSelectorProps {

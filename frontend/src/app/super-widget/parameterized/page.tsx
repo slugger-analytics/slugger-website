@@ -24,6 +24,7 @@ interface Player {
   teamId: string | number;
   position: string;
   sourceLabel?: string;
+  externalId?: string | null;
 }
 
 interface WidgetPdfState {
@@ -31,6 +32,8 @@ interface WidgetPdfState {
   error?: string;
   pdfUrl?: string;
 }
+
+const SUPER_WIDGET_SELECTOR_PRIORITY_IDS = [93, 269, 270, 223, 268] as const;
 
 export default function SuperWidgetParameterizedPage() {
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
@@ -104,8 +107,9 @@ export default function SuperWidgetParameterizedPage() {
   );
 
   const selectorSourceWidgetId = useMemo(() => {
-    if (selectedWidgetIds.includes(93)) {
-      return 93;
+    const priorityWidgetId = SUPER_WIDGET_SELECTOR_PRIORITY_IDS.find((id) => selectedWidgetIds.includes(id));
+    if (priorityWidgetId) {
+      return priorityWidgetId;
     }
     return selectedWidgetIds.length === 1 ? selectedWidgetIds[0] : null;
   }, [selectedWidgetIds]);
@@ -114,6 +118,17 @@ export default function SuperWidgetParameterizedPage() {
     () => (selectorSourceWidgetId ? availableWidgets.find((widget) => widget.id === selectorSourceWidgetId) : null),
     [availableWidgets, selectorSourceWidgetId]
   );
+
+  const selectedTeamFilter = useMemo(() => {
+    const teamIds = selectedTeams.map((team) => team.id);
+    const teamNames = selectedTeams.map((team) => team.name);
+    const key = selectedTeams
+      .map((team) => `${String(team.id)}:${String(team.name)}`)
+      .sort()
+      .join("|");
+
+    return { teamIds, teamNames, key };
+  }, [selectedTeams]);
 
   useEffect(() => {
     if (!selectorSourceWidgetId) {
@@ -129,9 +144,10 @@ export default function SuperWidgetParameterizedPage() {
       try {
         setSelectorOptionsLoading(true);
         setSelectorOptionsError(null);
-        setSelectorTeams([]);
-        setSelectorPlayers([]);
-        const data = await fetchWidgetSelectorOptions(selectorSourceWidgetId);
+        const data = await fetchWidgetSelectorOptions(selectorSourceWidgetId, {
+          teamIds: selectedTeamFilter.teamIds,
+          teamNames: selectedTeamFilter.teamNames,
+        });
         const teams = (data.teams || []) as Team[];
         const players = (data.players || []) as Player[];
         const widgetName = data.widgetName || selectorSourceWidget?.name || "widget";
@@ -156,7 +172,7 @@ export default function SuperWidgetParameterizedPage() {
     };
 
     loadSelectorOptions();
-  }, [selectorSourceWidgetId, selectorSourceWidget?.name]);
+  }, [selectorSourceWidgetId, selectorSourceWidget?.name, selectedTeamFilter.key]);
 
   useEffect(() => {
     if (!selectorSourceWidgetId || !selectorTeams || !selectorPlayers) return;
@@ -164,8 +180,21 @@ export default function SuperWidgetParameterizedPage() {
     const validTeamIds = new Set(selectorTeams.map((team) => String(team.id)));
     const validPlayerIds = new Set(selectorPlayers.map((player) => String(player.id)));
 
-    setSelectedTeams((prev) => prev.filter((team) => validTeamIds.has(String(team.id))));
-    setSelectedPlayers((prev) => prev.filter((player) => validPlayerIds.has(String(player.id))));
+    setSelectedTeams((prev) => {
+      const filtered = prev.filter((team) => validTeamIds.has(String(team.id)));
+      const unchanged =
+        filtered.length === prev.length &&
+        filtered.every((team, index) => String(team.id) === String(prev[index]?.id));
+      return unchanged ? prev : filtered;
+    });
+
+    setSelectedPlayers((prev) => {
+      const filtered = prev.filter((player) => validPlayerIds.has(String(player.id)));
+      const unchanged =
+        filtered.length === prev.length &&
+        filtered.every((player, index) => String(player.id) === String(prev[index]?.id));
+      return unchanged ? prev : filtered;
+    });
   }, [selectorSourceWidgetId, selectorTeams, selectorPlayers]);
 
   useEffect(() => {
@@ -338,6 +367,9 @@ export default function SuperWidgetParameterizedPage() {
     const playerNames = selectedPlayers
       .map(player => player.sourceLabel || player.name)
       .filter(name => typeof name === "string" && name.trim().length > 0);
+    const playerExternalIds = selectedPlayers
+      .map(player => (typeof player.externalId === "string" ? player.externalId.trim() : ""))
+      .filter(value => value.length > 0);
 
     setWidgetPdfStates(prev => ({
       ...prev,
@@ -354,6 +386,7 @@ export default function SuperWidgetParameterizedPage() {
         playerIds,
         teamNames,
         playerNames,
+        playerExternalIds,
         source: "superwidget-parameterized-full-pdf"
       });
 

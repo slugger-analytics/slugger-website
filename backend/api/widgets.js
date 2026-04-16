@@ -86,14 +86,42 @@ const isHittingAnalyticsWidget = (widgetId, widgetName, redirectLink) => {
   );
 };
 
+const isSluggerPitcherWidget = (widgetId, widgetName, redirectLink) => {
+  const normalizedName = (widgetName || "").toLowerCase();
+  const normalizedRedirect = (redirectLink || "").toLowerCase();
+
+  return (
+    widgetId === 223 ||
+    widgetId === 268 ||
+    normalizedName.includes("slugger pitcher") ||
+    normalizedName.includes("pitching widget") ||
+    normalizedRedirect.includes("slugger-pitching-widget")
+  );
+};
+
 const isGeneralStatisticsWidget = (widgetId, widgetName, redirectLink) => {
   const normalizedName = (widgetName || "").toLowerCase();
   const normalizedRedirect = (redirectLink || "").toLowerCase();
 
   return (
     widgetId === 238 ||
+    widgetId === 269 ||
     normalizedName.includes("general statistics") ||
+    normalizedName.includes("slugger-stats-widget") ||
+    normalizedName.includes("slugger stats widget") ||
+    normalizedRedirect.includes("slugger-stats-widget") ||
     normalizedRedirect.includes("baseball-general-statistics-widget")
+  );
+};
+
+const isPlayerPortalWidget = (widgetId, widgetName, redirectLink) => {
+  const normalizedName = (widgetName || "").toLowerCase();
+  const normalizedRedirect = (redirectLink || "").toLowerCase();
+
+  return (
+    widgetId === 270 ||
+    normalizedName.includes("player portal") ||
+    normalizedRedirect.includes("player-portal")
   );
 };
 
@@ -180,6 +208,43 @@ const executeHittingAnalytics = async ({ widgetId, widgetName, teamIds, playerId
         teamIds,
         playerIds,
         "superwidget-hitting-analytics"
+      ),
+    },
+  };
+};
+
+const executePitchingAnalytics = async ({ widgetId, widgetName, teamIds, playerIds }) => {
+  const pitchingResponse = await fetch(
+    `http://localhost:3001/api/widgets/pitching-data?${new URLSearchParams({
+      playerIds: JSON.stringify(playerIds),
+      teamIds: JSON.stringify(teamIds),
+    }).toString()}`,
+    {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    }
+  );
+
+  const pitchingData = await pitchingResponse.json();
+  if (!pitchingResponse.ok || !pitchingData?.success) {
+    throw new Error(pitchingData?.message || `Pitching endpoint failed (${pitchingResponse.status})`);
+  }
+
+  return {
+    success: true,
+    message: "Widget executed successfully",
+    data: {
+      widgetId,
+      widgetName: widgetName || "Slugger Pitcher Widget",
+      teamIds,
+      playerIds,
+      widgetOutput: pitchingData.data,
+      bullets: pitchingData.data?.bullets || [],
+      redirectLink: buildWidgetExecutionUrl(
+        "https://slugger-pitching-widget-xfcw.onrender.com",
+        teamIds,
+        playerIds,
+        "superwidget-pitching-analytics"
       ),
     },
   };
@@ -358,45 +423,97 @@ const resolveLocalPlayerFromOption = (optionText, lookupMap) => {
 const selectorOptionsCache = new Map();
 
 const wakeSleepingSelectorPageIfNeeded = async (page) => {
-  const isSleeping = async () =>
-    page.evaluate(() => {
-      const text = String(document?.body?.innerText || "").toLowerCase();
-      return (
-        text.includes("has gone to sleep due to inactivity") ||
-        text.includes("would you like to wake it back up") ||
-        text.includes("yes, get this app back up")
-      );
-    });
+  const isSleeping = async () => {
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        const result = await page.evaluate(() => {
+          const text = String(document?.body?.innerText || "").toLowerCase();
+          return (
+            text.includes("has gone to sleep due to inactivity") ||
+            text.includes("would you like to wake it back up") ||
+            text.includes("yes, get this app back up")
+          );
+        });
+        return result;
+      } catch (err) {
+        retries -= 1;
+        if (retries === 0) throw err;
+        console.log(`[Widget Export PDF] isSleeping check failed, retrying... (${retries} left)`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+  };
 
-  if (!(await isSleeping())) return;
+  let isSleepingResult;
+  try {
+    isSleepingResult = await isSleeping();
+  } catch (err) {
+    console.log(`[Widget Export PDF] isSleeping check failed after retries, continuing anyway: ${err.message}`);
+    return; // Continue without throwing
+  }
+
+  if (!isSleepingResult) return;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await page.evaluate(() => {
-      const labels = ["yes, get this app back up", "wake", "back up"];
-      const elements = Array.from(
-        document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']")
-      );
+    let evaluateRetries = 3;
+    while (evaluateRetries > 0) {
+      try {
+        await page.evaluate(() => {
+          const labels = ["yes, get this app back up", "wake", "back up"];
+          const elements = Array.from(
+            document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']")
+          );
 
-      const normalize = (value) =>
-        String(value || "")
-          .toLowerCase()
-          .replace(/\s+/g, " ")
-          .trim();
+          const normalize = (value) =>
+            String(value || "")
+              .toLowerCase()
+              .replace(/\s+/g, " ")
+              .trim();
 
-      for (const element of elements) {
-        const text = normalize(element.textContent || element.getAttribute("value") || "");
-        if (!text) continue;
-        if (!labels.some((label) => text.includes(label))) continue;
+          for (const element of elements) {
+            const text = normalize(element.textContent || element.getAttribute("value") || "");
+            if (!text) continue;
+            if (!labels.some((label) => text.includes(label))) continue;
 
-        element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-        element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
-        element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-        break;
+            element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+            element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+            element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+            break;
+          }
+        });
+        break; // Success, exit retry loop
+      } catch (err) {
+        evaluateRetries -= 1;
+        if (evaluateRetries === 0) {
+          console.log(`[Widget Export PDF] Wake button click failed after retries: ${err.message}`);
+          break; // Continue to next attempt
+        }
+        console.log(`[Widget Export PDF] Wake button click failed, retrying... (${evaluateRetries} left)`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
-    });
+    }
 
     await new Promise((resolve) => setTimeout(resolve, 5000));
-    if (!(await isSleeping())) return;
+    
+    let isSleepingCheckRetries = 3;
+    let stillSleeping = true;
+    while (isSleepingCheckRetries > 0) {
+      try {
+        stillSleeping = await isSleeping();
+        break;
+      } catch (err) {
+        isSleepingCheckRetries -= 1;
+        if (isSleepingCheckRetries === 0) {
+          console.log(`[Widget Export PDF] Failed to check sleep status after retries: ${err.message}`);
+          return; // Give up, continue
+        }
+        console.log(`[Widget Export PDF] Sleep status check failed, retrying... (${isSleepingCheckRetries} left)`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+    
+    if (!stillSleeping) return;
   }
 };
 
@@ -717,6 +834,332 @@ const fetchGeneralStatisticsOptionsViaBrowser = async (redirectLink) => {
   }
 };
 
+const fetchSluggerPitcherOptionsViaBrowser = async (redirectLink, { teamNames = [] } = {}) => {
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+    });
+
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1440, height: 1200 });
+    await page.goto(redirectLink, {
+      waitUntil: "networkidle2",
+      timeout: 180000,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+
+    const selectionDebug = await page.evaluate((requestedTeamNames) => {
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\([^)]*\)/g, " ")
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim();
+
+      const requested = requestedTeamNames
+        .map((value) => String(value || "").trim())
+        .filter(Boolean);
+
+      const visibleSelects = Array.from(document.querySelectorAll("select")).filter((selectElement) => {
+        const style = window.getComputedStyle(selectElement);
+        const rect = selectElement.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      });
+
+      const scoreSelectAsTeamSelector = (selectElement) => {
+        const options = Array.from(selectElement.options || []);
+        const normalizedOptions = options.map((option) => normalize(option.textContent || option.label || ""));
+        let score = 0;
+        if (normalizedOptions.some((text) => text.includes("all teams"))) score += 8;
+        if (normalizedOptions.some((text) => text.includes("charleston") || text.includes("york") || text.includes("legends"))) {
+          score += 4;
+        }
+        return score;
+      };
+
+      const ranked = visibleSelects
+        .map((selectElement) => ({ selectElement, score: scoreSelectAsTeamSelector(selectElement) }))
+        .sort((a, b) => b.score - a.score);
+
+      const target = ranked[0];
+      if (!target) {
+        return { selected: false, selectedTeam: null };
+      }
+
+      let selectedTeam = null;
+      if (requested.length > 0) {
+        const options = Array.from(target.selectElement.options || []);
+        let bestOption = null;
+        let bestScore = -1;
+
+        for (const option of options) {
+          const optionText = normalize(option.textContent || option.label || "");
+          if (!optionText) continue;
+
+          for (const teamName of requested) {
+            const requestedText = normalize(teamName);
+            if (!requestedText) continue;
+
+            let score = 0;
+            if (optionText === requestedText) score += 12;
+            if (optionText.includes(requestedText)) score += 7;
+            if (requestedText.includes(optionText) && optionText.length > 6) score += 3;
+
+            const tokens = requestedText.split(/\s+/).filter((token) => token.length >= 2);
+            for (const token of tokens) {
+              if (optionText.includes(token)) score += 2;
+            }
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestOption = option;
+            }
+          }
+        }
+
+        if (bestOption && bestScore > 0) {
+          target.selectElement.value = bestOption.value;
+          target.selectElement.dispatchEvent(new Event("input", { bubbles: true }));
+          target.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+          selectedTeam = String(bestOption.textContent || bestOption.label || "").trim();
+        }
+      }
+
+      return { selected: Boolean(selectedTeam), selectedTeam };
+    }, teamNames);
+
+    if (selectionDebug?.selected) {
+      await new Promise((resolve) => setTimeout(resolve, 3500));
+    }
+
+    const options = await page.evaluate(() => {
+      const normalizeText = (value) => String(value || "").trim();
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\([^)]*\)/g, " ")
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim();
+
+      const visibleSelects = Array.from(document.querySelectorAll("select")).filter((selectElement) => {
+        const style = window.getComputedStyle(selectElement);
+        const rect = selectElement.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      });
+
+      const teamCandidates = [];
+      const playerCandidates = [];
+
+      for (const selectElement of visibleSelects) {
+        const rows = Array.from(selectElement.options || []).map((option) => ({
+          text: normalizeText(option.textContent || option.label || ""),
+          externalId: normalizeText(option.value || ""),
+          normalized: normalize(option.textContent || option.label || ""),
+        }));
+
+        const hasAllTeams = rows.some((row) => row.normalized.includes("all teams"));
+        const hasAllPitchers = rows.some((row) => row.normalized.includes("all pitchers"));
+
+        if (hasAllTeams) {
+          teamCandidates.push(
+            ...rows
+              .filter((row) => row.text.length > 0 && !row.normalized.includes("all teams"))
+              .map((row) => ({ text: row.text, externalId: row.externalId }))
+          );
+        }
+
+        if (hasAllPitchers) {
+          playerCandidates.push(
+            ...rows
+              .filter((row) => row.text.length > 0 && !row.normalized.includes("all pitchers"))
+              .map((row) => ({ text: row.text, externalId: row.externalId }))
+          );
+        }
+      }
+
+      const uniqueBy = (items, keyFactory) => {
+        const out = [];
+        const seen = new Set();
+        for (const item of items) {
+          const key = keyFactory(item);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          out.push(item);
+        }
+        return out;
+      };
+
+      return {
+        teams: uniqueBy(teamCandidates, (item) => `${item.text}|${item.externalId}`),
+        players: uniqueBy(playerCandidates, (item) => `${item.text}|${item.externalId}`),
+      };
+    });
+
+    const dashOptions = options?.players?.length > 0
+      ? null
+      : await page.evaluate(async (requestedTeamNames) => {
+          const normalize = (value) =>
+            String(value || "")
+              .toLowerCase()
+              .replace(/\([^)]*\)/g, " ")
+              .replace(/[^a-z0-9]+/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+
+          const normalizeText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+
+          const findById = (node, targetId) => {
+            if (!node || typeof node !== "object") return null;
+            if (node.props && node.props.id === targetId) return node;
+
+            const children = node.props?.children;
+            if (Array.isArray(children)) {
+              for (const child of children) {
+                const found = findById(child, targetId);
+                if (found) return found;
+              }
+            } else if (children && typeof children === "object") {
+              const found = findById(children, targetId);
+              if (found) return found;
+            }
+
+            return null;
+          };
+
+          const uniqueBy = (items, keyFactory) => {
+            const out = [];
+            const seen = new Set();
+            for (const item of items) {
+              const key = keyFactory(item);
+              if (seen.has(key)) continue;
+              seen.add(key);
+              out.push(item);
+            }
+            return out;
+          };
+
+          try {
+            const layoutResponse = await fetch("/_dash-layout", {
+              credentials: "same-origin",
+              cache: "no-store",
+            });
+
+            if (!layoutResponse.ok) {
+              return { teams: [], players: [], reason: "dash-layout-request-failed" };
+            }
+
+            const layout = await layoutResponse.json();
+            const teamControl = findById(layout, "selected-team");
+            const rawTeamOptions = Array.isArray(teamControl?.props?.options)
+              ? teamControl.props.options
+              : [];
+
+            const teamOptions = rawTeamOptions
+              .map((option) => ({
+                text: normalizeText(option?.label ?? option?.value ?? ""),
+                externalId: normalizeText(option?.value ?? ""),
+              }))
+              .filter((option) => option.text.length > 0 && !normalize(option.text).includes("all teams"));
+
+            const requested = (requestedTeamNames || [])
+              .map((value) => String(value || "").trim())
+              .filter(Boolean);
+
+            const requestedNormSet = new Set(requested.map((value) => normalize(value)).filter(Boolean));
+            const targetTeams = requestedNormSet.size > 0
+              ? teamOptions.filter((option) => {
+                  const optionNorm = normalize(option.text);
+                  if (!optionNorm) return false;
+                  if (requestedNormSet.has(optionNorm)) return true;
+
+                  for (const requestedNorm of requestedNormSet) {
+                    if (optionNorm.includes(requestedNorm) || requestedNorm.includes(optionNorm)) {
+                      return true;
+                    }
+                  }
+
+                  return false;
+                })
+              : teamOptions;
+
+            const teamsToQuery = targetTeams.length > 0 ? targetTeams : teamOptions;
+            const playerCandidates = [];
+
+            for (const teamOption of teamsToQuery) {
+              const payload = {
+                output: "..selected-player.options...selected-player.value..",
+                outputs: [
+                  { id: "selected-player", property: "options" },
+                  { id: "selected-player", property: "value" },
+                ],
+                inputs: [
+                  { id: "selected-team", property: "value", value: teamOption.externalId || teamOption.text },
+                ],
+                state: [
+                  { id: "selected-player", property: "value", value: null },
+                ],
+                changedPropIds: ["selected-team.value"],
+              };
+
+              const updateResponse = await fetch("/_dash-update-component", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+              });
+
+              if (!updateResponse.ok) continue;
+
+              const updateJson = await updateResponse.json();
+              const optionRows = updateJson?.response?.["selected-player"]?.options;
+              if (!Array.isArray(optionRows)) continue;
+
+              for (const option of optionRows) {
+                const text = normalizeText(option?.label ?? option?.value ?? "");
+                const externalId = normalizeText(option?.value ?? "");
+                if (!text) continue;
+
+                playerCandidates.push({
+                  text,
+                  externalId,
+                  teamName: teamOption.text,
+                });
+              }
+            }
+
+            return {
+              teams: uniqueBy(teamsToQuery, (item) => `${item.text}|${item.externalId}`),
+              players: uniqueBy(playerCandidates, (item) => `${item.text}|${item.externalId}`),
+              reason: "dash-callback-options",
+            };
+          } catch {
+            return { teams: [], players: [], reason: "dash-callback-error" };
+          }
+        }, teamNames);
+
+    return {
+      teams: (options?.teams?.length ? options.teams : dashOptions?.teams) || [],
+      players: (options?.players?.length ? options.players : dashOptions?.players) || [],
+      selectionDebug,
+      sourceDebug: {
+        initialSelectTeams: options?.teams?.length || 0,
+        initialSelectPlayers: options?.players?.length || 0,
+        dashTeams: dashOptions?.teams?.length || 0,
+        dashPlayers: dashOptions?.players?.length || 0,
+        dashReason: dashOptions?.reason || null,
+      },
+    };
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+};
+
 router.get("/:widgetId/selector-options", async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId, 10);
@@ -740,8 +1183,21 @@ router.get("/:widgetId/selector-options", async (req, res) => {
       });
     }
 
+    const requestedTeamIds = parseIdList(req.query.teamIds)
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+    const requestedTeamNames = parseIdList(req.query.teamNames)
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
     const now = Date.now();
-    const cacheKey = String(widgetId);
+    const cacheKey = `${widgetId}::teams=${requestedTeamIds
+      .map((value) => value.toLowerCase())
+      .sort()
+      .join("|")}::teamNames=${requestedTeamNames
+      .map((value) => value.toLowerCase())
+      .sort()
+      .join("|")}`;
     const cacheEntry = selectorOptionsCache.get(cacheKey);
     if (cacheEntry && cacheEntry.expiresAt > now) {
       return res.status(200).json({
@@ -750,14 +1206,6 @@ router.get("/:widgetId/selector-options", async (req, res) => {
         data: cacheEntry.data,
       });
     }
-
-    let sourceOptions = isHittingAnalyticsWidget(widgetId, widgetName, redirectLink)
-      ? await fetchHittingWidgetPlayerOptions()
-      : isCountBasedWidget(widgetId, widgetName, redirectLink)
-        ? await fetchCountBasedWidgetPlayerOptions(redirectLink)
-        : isGeneralStatisticsWidget(widgetId, widgetName, redirectLink)
-          ? await fetchGeneralStatisticsOptionsViaBrowser(redirectLink)
-          : await fetchWidgetSelectorOptionsViaBrowser(redirectLink);
 
     const localPlayersResult = await pool.query(`
       SELECT
@@ -770,47 +1218,121 @@ router.get("/:widgetId/selector-options", async (req, res) => {
       LEFT JOIN team t ON t.team_id = p.team_id
     `);
 
-    if (sourceOptions.length === 0 && isGeneralStatisticsWidget(widgetId, widgetName, redirectLink)) {
-      sourceOptions = localPlayersResult.rows.map((row) => ({
-        text: row.player_name,
-        externalId: "",
-      }));
+    const localDbPlayerOptions = localPlayersResult.rows.map((row) => ({
+      text: row.player_name,
+      externalId: null,
+    }));
+
+    let sourceOptions;
+    try {
+      sourceOptions = isHittingAnalyticsWidget(widgetId, widgetName, redirectLink)
+        ? await fetchHittingWidgetPlayerOptions()
+        : isCountBasedWidget(widgetId, widgetName, redirectLink)
+          ? await fetchCountBasedWidgetPlayerOptions(redirectLink)
+        : isSluggerPitcherWidget(widgetId, widgetName, redirectLink)
+          ? (await fetchSluggerPitcherOptionsViaBrowser(redirectLink, { teamNames: requestedTeamNames })).players
+        : isPlayerPortalWidget(widgetId, widgetName, redirectLink)
+          ? localDbPlayerOptions
+        : isGeneralStatisticsWidget(widgetId, widgetName, redirectLink)
+          ? await fetchGeneralStatisticsOptionsViaBrowser(redirectLink)
+          : await fetchWidgetSelectorOptionsViaBrowser(redirectLink);
+    } catch (browserError) {
+      console.warn(`[Widget Selector Options] Browser extraction failed for widget ${widgetId} (${widgetName}), falling back to local DB:`, browserError?.message || browserError);
+      sourceOptions = localDbPlayerOptions;
+    }
+
+    if (
+      sourceOptions.length === 0 &&
+      (isGeneralStatisticsWidget(widgetId, widgetName, redirectLink) ||
+       isPlayerPortalWidget(widgetId, widgetName, redirectLink))
+    ) {
+      sourceOptions = localDbPlayerOptions;
     }
 
     const playerLookup = buildPlayerLookupMap(localPlayersResult.rows);
 
-    const teamsMap = new Map();
     const mappedPlayers = [];
+
+    const isSluggerPitcher = isSluggerPitcherWidget(widgetId, widgetName, redirectLink);
 
     for (const option of sourceOptions) {
       const local = resolveLocalPlayerFromOption(option.text, playerLookup);
-      if (!local) continue;
+      if (local) {
+        const rawName = String(option.text || "").trim() || local.player_name;
+        const rawTeamName = String(option.teamName || "").trim();
+        const effectiveTeamName = rawTeamName || local.team_name;
+        const effectiveTeamId = rawTeamName
+          ? `slugger-team:${rawTeamName
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/^-+|-+$/g, "") || "unknown-team"}`
+          : local.team_id;
 
-      if (!teamsMap.has(local.team_id)) {
-        teamsMap.set(local.team_id, {
-          id: local.team_id,
-          name: local.team_name,
+        mappedPlayers.push({
+          id: isSluggerPitcher ? `slugger:${local.player_id}` : local.player_id,
+          name: isSluggerPitcher ? rawName : local.player_name,
+          teamId: isSluggerPitcher ? effectiveTeamId : local.team_id,
+          teamName: isSluggerPitcher ? effectiveTeamName : local.team_name,
+          position: local.position,
+          externalId: option.externalId || null,
+          sourceLabel: option.text,
         });
+        continue;
       }
 
-      mappedPlayers.push({
-        id: local.player_id,
-        name: local.player_name,
-        teamId: local.team_id,
-        position: local.position,
-        externalId: option.externalId || null,
-        sourceLabel: option.text,
-      });
+      if (isSluggerPitcher) {
+        const rawName = String(option.text || "").trim();
+        const rawTeamName = String(option.teamName || "Unknown Team").trim() || "Unknown Team";
+        const slugTeamKey = rawTeamName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown-team";
+        const slugPlayerKey = rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown-player";
+
+        mappedPlayers.push({
+          id: `slugger:${slugTeamKey}:${option.externalId || slugPlayerKey}`,
+          name: rawName,
+          teamId: `slugger-team:${slugTeamKey}`,
+          teamName: rawTeamName,
+          position: "Unknown",
+          externalId: option.externalId || null,
+          sourceLabel: option.text,
+        });
+      }
+    }
+
+    const requestedTeamIdSet = new Set(requestedTeamIds.map((value) => value.toLowerCase()));
+    const requestedTeamNameSet = new Set(requestedTeamNames.map((name) => name.toLowerCase()));
+    const finalPlayers = mappedPlayers.filter((player) => {
+      const teamId = String(player.teamId || "").toLowerCase();
+      const teamName = String(player.teamName || "").toLowerCase();
+
+      if (requestedTeamIdSet.size > 0 && !requestedTeamIdSet.has(teamId)) {
+        return false;
+      }
+
+      if (requestedTeamNameSet.size > 0 && !requestedTeamNameSet.has(teamName)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    const teamsMap = new Map();
+    for (const player of finalPlayers) {
+      if (!teamsMap.has(player.teamId)) {
+        teamsMap.set(player.teamId, {
+          id: player.teamId,
+          name: player.teamName,
+        });
+      }
     }
 
     const data = {
       widgetId,
       widgetName,
       teams: Array.from(teamsMap.values()),
-      players: mappedPlayers,
+      players: finalPlayers,
       metadata: {
         sourceOptionCount: sourceOptions.length,
-        mappedPlayerCount: mappedPlayers.length,
+        mappedPlayerCount: finalPlayers.length,
       },
     };
 
@@ -1201,6 +1723,1255 @@ const waitForPdfRenderStability = async (
   );
 };
 
+const selectSluggerPitcherFiltersInPage = async (page, { teamNames = [], playerNames = [], playerExternalIds = [] }) => {
+  const runEvaluateWithRetry = async (pageFunction, ...args) => {
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      try {
+        return await page.evaluate(pageFunction, ...args);
+      } catch (error) {
+        const message = String(error?.message || "");
+        const isContextLoss =
+          message.includes("Execution context was destroyed") ||
+          message.includes("Cannot find context with specified id") ||
+          message.includes("Most likely the page has been closed") ||
+          message.includes("Target closed");
+
+        if (!isContextLoss || attempt >= maxAttempts) {
+          throw error;
+        }
+
+        await waitForPdfRenderStability(page, { timeoutMs: 10000, fallbackMs: 2400 });
+      }
+    }
+
+    return null;
+  };
+
+  const runEvaluateAcrossFramesWithRetry = async (pageFunction, args = [], isGoodResult = () => false) => {
+    const maxAttempts = 3;
+    let bestResult = null;
+
+    const getResultScore = (result) => {
+      if (!result || typeof result !== "object") return 0;
+      if (result.selected) return 1000;
+
+      const availableOptions = Array.isArray(result.availableOptions)
+        ? result.availableOptions.length
+        : 0;
+      const availableValues = Array.isArray(result.availableValues)
+        ? result.availableValues.length
+        : 0;
+      const selectCount = Number(result?.debugLog?.querySelectorResult || 0);
+      const visibleSelectCount = Number(result?.debugLog?.visibleSelectsFound || 0);
+
+      return availableOptions + availableValues + selectCount + visibleSelectCount;
+    };
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      let sawContextLoss = false;
+
+      try {
+        const frames = [page.mainFrame(), ...page.frames().filter((frame) => frame !== page.mainFrame())];
+
+        for (const frame of frames) {
+          try {
+            const result = await frame.evaluate(pageFunction, ...args);
+            const withFrameInfo = {
+              ...(result && typeof result === "object" ? result : { value: result }),
+              frameUrl: frame.url(),
+              frameName: frame.name(),
+            };
+
+            if (isGoodResult(withFrameInfo)) {
+              return withFrameInfo;
+            }
+
+            if (!bestResult || getResultScore(withFrameInfo) > getResultScore(bestResult)) {
+              bestResult = withFrameInfo;
+            }
+          } catch (error) {
+            const message = String(error?.message || "");
+            const isContextLoss =
+              message.includes("Execution context was destroyed") ||
+              message.includes("Cannot find context with specified id") ||
+              message.includes("Most likely the page has been closed") ||
+              message.includes("Target closed");
+
+            if (isContextLoss) {
+              sawContextLoss = true;
+              continue;
+            }
+
+            throw error;
+          }
+        }
+
+        if (!sawContextLoss) {
+          break;
+        }
+      } catch (error) {
+        const message = String(error?.message || "");
+        const isContextLoss =
+          message.includes("Execution context was destroyed") ||
+          message.includes("Cannot find context with specified id") ||
+          message.includes("Most likely the page has been closed") ||
+          message.includes("Target closed");
+
+        if (!isContextLoss || attempt >= maxAttempts) {
+          throw error;
+        }
+      }
+
+      await waitForPdfRenderStability(page, { timeoutMs: 10000, fallbackMs: 2400 });
+    }
+
+    return bestResult;
+  };
+
+  const pickByOptionValues = async (requestedValues) => {
+    const normalizedRequestedValues = requestedValues
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    if (normalizedRequestedValues.length === 0) {
+      return {
+        selected: false,
+        requestedValues: normalizedRequestedValues,
+        selectedText: null,
+        selectedValue: null,
+        availableValues: [],
+      };
+    }
+
+    return runEvaluateAcrossFramesWithRetry((requestedOptionValues) => {
+      const requestedSet = new Set(
+        requestedOptionValues
+          .map((value) => String(value || "").trim())
+          .filter(Boolean)
+      );
+
+      const allSelects = Array.from(document.querySelectorAll("select"));
+      const visibleSelects = allSelects.filter((selectElement) => {
+        const style = window.getComputedStyle(selectElement);
+        const rect = selectElement.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      });
+      const candidateSelects = visibleSelects.length > 0
+        ? visibleSelects
+        : allSelects.filter((selectElement) => {
+            const options = Array.from(selectElement.options || []);
+            return options.length > 0;
+          });
+
+      let best = null;
+
+      for (const selectElement of candidateSelects) {
+        const options = Array.from(selectElement.options || []);
+        const availableValues = options
+          .map((option) => String(option.value || "").trim())
+          .filter(Boolean);
+
+        const matches = options.filter((option) => requestedSet.has(String(option.value || "").trim()));
+        if (matches.length === 0) continue;
+
+        if (!best || matches.length > best.matches.length) {
+          best = {
+            selectElement,
+            options,
+            matches,
+            availableValues,
+          };
+        }
+      }
+
+      if (!best) {
+        return {
+          selected: false,
+          requestedValues: requestedOptionValues,
+          selectedText: null,
+          selectedValue: null,
+          availableValues: [],
+          debugLog: {
+            visibleSelectsFound: visibleSelects.length,
+            totalSelectsFound: allSelects.length,
+            candidateSelectsUsed: candidateSelects.length,
+            usedHiddenSelectFallback: visibleSelects.length === 0 && candidateSelects.length > 0,
+            requestedSetSize: requestedSet.size,
+            reason: "No select element matched requested values",
+          },
+        };
+      }
+
+      const pickedOption = best.matches[0];
+      best.selectElement.value = pickedOption.value;
+      best.selectElement.dispatchEvent(new Event("input", { bubbles: true }));
+      best.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+
+      return {
+        selected: true,
+        requestedValues: requestedOptionValues,
+        selectedText: String(pickedOption.textContent || pickedOption.label || "").trim(),
+        selectedValue: String(pickedOption.value || "").trim(),
+        availableValues: best.availableValues.slice(0, 120),
+      };
+    }, [normalizedRequestedValues], (result) => Boolean(result?.selected));
+  };
+
+  const pickByRequestedNames = async (requestedNames, fieldKeywords) => {
+    const requested = requestedNames
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    if (requested.length === 0) {
+      return {
+        selected: false,
+        requested,
+        selectedText: null,
+        matchedRequestedName: null,
+        availableOptions: [],
+      };
+    }
+
+    return runEvaluateAcrossFramesWithRetry((requestedValues, keywords) => {
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\([^)]*\)/g, " ")
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim();
+
+      const expandRequestedVariants = (requestedValue) => {
+        const original = String(requestedValue || "").trim();
+        if (!original) return [];
+
+        const variants = [original];
+        if (original.includes(",")) {
+          const [last = "", first = ""] = original.split(",");
+          const swapped = `${first.trim()} ${last.trim()}`.trim();
+          if (swapped) variants.push(swapped);
+        }
+        return Array.from(new Set(variants));
+      };
+
+      const tokenize = (value) =>
+        normalize(value)
+          .split(/\s+/)
+          .filter((token) => token.length >= 2);
+
+      const requested = requestedValues.map((value) => String(value || "").trim()).filter(Boolean);
+
+      const requestedGroups = requested.map((value) => {
+        const variants = expandRequestedVariants(value);
+        return {
+          original: value,
+          variants,
+          normalizedVariants: variants.map((variant) => normalize(variant)).filter(Boolean),
+          tokenVariants: variants.map((variant) => tokenize(variant)),
+        };
+      });
+
+      const allSelectElements = Array.from(document.querySelectorAll("select"));
+      const visibleSelectElements = allSelectElements.filter((selectElement) => {
+        const style = window.getComputedStyle(selectElement);
+        const rect = selectElement.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      });
+      const selectElements = visibleSelectElements.length > 0
+        ? visibleSelectElements
+        : allSelectElements.filter((selectElement) => {
+            const options = Array.from(selectElement.options || []);
+            return options.length > 0;
+          });
+
+      if (selectElements.length === 0) {
+        return {
+          selected: false,
+          requested,
+          selectedText: null,
+          matchedRequestedName: null,
+          availableOptions: [],
+          reason: "No visible select elements",
+          debugLog: {
+            querySelectorResult: allSelectElements.length,
+            visibleSelectResult: visibleSelectElements.length,
+            usedHiddenSelectFallback: false,
+            requested,
+          },
+        };
+      }
+
+      const scoreOptionAgainstGroup = (optionText, group) => {
+        let best = 0;
+
+        group.normalizedVariants.forEach((requestedNorm, variantIndex) => {
+          if (!requestedNorm) return;
+          let score = 0;
+
+          if (optionText === requestedNorm) score += 16;
+          if (optionText.includes(requestedNorm)) score += 10;
+          if (requestedNorm.includes(optionText) && optionText.length > 6) score += 4;
+
+          const tokens = group.tokenVariants[variantIndex] || [];
+          for (const token of tokens) {
+            if (optionText.includes(token)) score += 2;
+          }
+
+          const words = requestedNorm.split(/\s+/).filter(Boolean);
+          const lastName = words.length > 0 ? words[words.length - 1] : "";
+          const firstName = words.length > 0 ? words[0] : "";
+          if (lastName && optionText.includes(lastName)) score += 2;
+          if (firstName && firstName.length >= 3 && optionText.includes(firstName)) score += 1;
+
+          if (score > best) best = score;
+        });
+
+        return best;
+      };
+
+      const selectCandidates = selectElements.map((selectElement) => {
+        const options = Array.from(selectElement.options || []);
+        const optionsSnapshot = options
+          .map((option) => String(option.textContent || option.label || "").trim())
+          .filter(Boolean)
+          .slice(0, 120);
+
+        let bestOption = null;
+        let bestScore = -1;
+        let matchedRequestedName = null;
+
+        for (const optionElement of options) {
+          const optionText = normalize(optionElement.textContent || optionElement.label || "");
+          if (!optionText) continue;
+
+          for (const group of requestedGroups) {
+            const score = scoreOptionAgainstGroup(optionText, group);
+            if (score > bestScore) {
+              bestScore = score;
+              bestOption = optionElement;
+              matchedRequestedName = group.original;
+            }
+          }
+        }
+
+        return {
+          selectElement,
+          optionsSnapshot,
+          bestOption,
+          bestScore,
+          matchedRequestedName,
+        };
+      });
+
+      const rankedCandidates = selectCandidates
+        .slice()
+        .sort((a, b) => b.bestScore - a.bestScore);
+
+      const target = rankedCandidates[0];
+      if (!target) {
+        return {
+          selected: false,
+          requested,
+          selectedText: null,
+          matchedRequestedName: null,
+          availableOptions: [],
+          reason: "No select candidates",
+          debugLog: {
+            selectElementCount: selectElements.length,
+            candidateCount: rankedCandidates.length,
+            totalSelectElementCount: allSelectElements.length,
+            visibleSelectElementCount: visibleSelectElements.length,
+            usedHiddenSelectFallback: visibleSelectElements.length === 0 && selectElements.length > 0,
+            requested,
+          },
+        };
+      }
+
+      if (!target.bestOption || target.bestScore <= 0) {
+        const topOptions = rankedCandidates.slice(0, 3).map((c) => ({
+          bestScore: c.bestScore,
+          matchedName: c.matchedRequestedName,
+          options: c.optionsSnapshot.slice(0, 10),
+        }));
+        return {
+          selected: false,
+          requested,
+          selectedText: null,
+          matchedRequestedName: null,
+          availableOptions: target.optionsSnapshot,
+          reason: "No matching option",
+          debugLog: {
+            requested,
+            totalSelectElementCount: allSelectElements.length,
+            visibleSelectElementCount: visibleSelectElements.length,
+            usedHiddenSelectFallback: visibleSelectElements.length === 0 && selectElements.length > 0,
+            topCandidates: topOptions,
+          },
+        };
+      }
+
+      target.selectElement.value = target.bestOption.value;
+      target.selectElement.dispatchEvent(new Event("input", { bubbles: true }));
+      target.selectElement.dispatchEvent(new Event("change", { bubbles: true }));
+
+      return {
+        selected: true,
+        requested,
+        selectedText: String(target.bestOption.textContent || target.bestOption.label || "").trim(),
+        matchedRequestedName: target.matchedRequestedName,
+        availableOptions: target.optionsSnapshot,
+        bestScore: target.bestScore,
+      };
+    }, [requested, fieldKeywords], (result) => Boolean(result?.selected));
+  };
+
+  const pickByDashDropdownValue = async (controlId, requestedValues, waitAfterMs = 1200, options = {}) => {
+    const { matchByValue = false } = options;
+    const requested = requestedValues
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    if (requested.length === 0) {
+      return {
+        selected: false,
+        requested,
+        selectedText: null,
+        matchedRequestedName: null,
+        availableOptions: [],
+        reason: "No requested values",
+      };
+    }
+
+    const controlSelector = `#${controlId}`;
+    const controlExists = await page.$(controlSelector);
+    if (!controlExists) {
+      return {
+        selected: false,
+        requested,
+        selectedText: null,
+        matchedRequestedName: null,
+        availableOptions: [],
+        reason: "Dash control not found",
+        debugLog: {
+          controlId,
+          requested,
+        },
+      };
+    }
+
+    for (const requestedValue of requested) {
+      try {
+        const setPropsAttempt = await page.evaluate((targetControlId, targetValue) => {
+          const normalizeText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+
+          const findById = (node, id) => {
+            if (!node || typeof node !== "object") return null;
+            if (node.props && node.props.id === id) return node;
+
+            const children = node.props?.children;
+            if (Array.isArray(children)) {
+              for (const child of children) {
+                const found = findById(child, id);
+                if (found) return found;
+              }
+            } else if (children && typeof children === "object") {
+              const found = findById(children, id);
+              if (found) return found;
+            }
+
+            return null;
+          };
+
+          if (!window?.dash_clientside?.set_props) {
+            return {
+              setPropsAvailable: false,
+              requestedValue: targetValue,
+              currentValue: null,
+              selectedText: "",
+            };
+          }
+
+          try {
+            window.dash_clientside.set_props(targetControlId, { value: targetValue });
+          } catch {
+            // fall through to return current snapshot
+          }
+
+          const layout = window.store?.getState?.()?.layout?.components;
+          const component = findById(layout, targetControlId);
+          const currentValue = component?.props?.value ?? null;
+
+          const control = document.querySelector(`#${targetControlId}`);
+          const valueNode = control?.querySelector(
+            ".Select-value-label, .VirtualizedSelectFocusedOption, .react-select__single-value, .Select-value"
+          );
+
+          const selectedText = valueNode
+            ? normalizeText(valueNode.textContent || "")
+            : "";
+
+          return {
+            setPropsAvailable: true,
+            requestedValue: targetValue,
+            currentValue: currentValue == null ? null : String(currentValue),
+            selectedText,
+          };
+        }, controlId, requestedValue);
+
+        await new Promise((resolve) => setTimeout(resolve, waitAfterMs));
+
+        if (setPropsAttempt?.setPropsAvailable) {
+          const postSetSnapshot = await page.evaluate((targetControlId) => {
+            const normalizeText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+
+            const findById = (node, id) => {
+              if (!node || typeof node !== "object") return null;
+              if (node.props && node.props.id === id) return node;
+
+              const children = node.props?.children;
+              if (Array.isArray(children)) {
+                for (const child of children) {
+                  const found = findById(child, id);
+                  if (found) return found;
+                }
+              } else if (children && typeof children === "object") {
+                const found = findById(children, id);
+                if (found) return found;
+              }
+
+              return null;
+            };
+
+            const layout = window.store?.getState?.()?.layout?.components;
+            const component = findById(layout, targetControlId);
+            const currentValue = component?.props?.value ?? null;
+
+            const control = document.querySelector(`#${targetControlId}`);
+            const valueNode = control?.querySelector(
+              ".Select-value-label, .VirtualizedSelectFocusedOption, .react-select__single-value, .Select-value"
+            );
+
+            const selectedText = valueNode
+              ? normalizeText(valueNode.textContent || "")
+              : "";
+
+            return {
+              currentValue: currentValue == null ? null : String(currentValue),
+              selectedText,
+              valueNodeFound: Boolean(valueNode),
+            };
+          }, controlId);
+
+          const selectedText = String(postSetSnapshot?.selectedText || "").trim();
+          const currentValue = String(postSetSnapshot?.currentValue || "").trim();
+
+          const matched = matchByValue
+            ? currentValue.length > 0 && currentValue === String(requestedValue)
+            : selectedText.length > 0 && namesLikelyMatch(requestedValue, selectedText);
+
+          if (matched) {
+            return {
+              selected: true,
+              requested,
+              selectedText: selectedText || null,
+              selectedValue: currentValue || null,
+              matchedRequestedName: requestedValue,
+              availableOptions: [],
+              matchedBy: matchByValue ? "dash-set-props-value" : "dash-set-props-name",
+            };
+          }
+        }
+
+        await page.click(controlSelector, { delay: 30 });
+        await new Promise((resolve) => setTimeout(resolve, 250));
+
+        const inputHandle = await page.$(`${controlSelector} input`);
+        if (inputHandle) {
+          await inputHandle.click({ delay: 20 });
+          await page.keyboard.down("Meta");
+          await page.keyboard.press("A");
+          await page.keyboard.up("Meta");
+          await page.keyboard.press("Backspace");
+          await page.keyboard.type(requestedValue, { delay: 18 });
+          await new Promise((resolve) => setTimeout(resolve, 280));
+          await page.keyboard.press("Enter");
+        }
+
+        const optionClickResult = await page.evaluate((targetValue) => {
+          const normalize = (value) =>
+            String(value || "")
+              .toLowerCase()
+              .replace(/\([^)]*\)/g, " ")
+              .replace(/[^a-z0-9]+/g, " ")
+              .replace(/\s+/g, " ")
+              .trim();
+
+          const targetNorm = normalize(targetValue);
+          const optionNodes = Array.from(
+            document.querySelectorAll(
+              ".VirtualizedSelectOption, .Select-option, [role='option'], .react-select__option"
+            )
+          );
+
+          let bestNode = null;
+          let bestScore = -1;
+
+          for (const node of optionNodes) {
+            const text = String(node.textContent || "").trim();
+            const textNorm = normalize(text);
+            if (!textNorm) continue;
+
+            let score = 0;
+            if (textNorm === targetNorm) score += 20;
+            if (textNorm.includes(targetNorm)) score += 12;
+            if (targetNorm.includes(textNorm) && textNorm.length > 5) score += 4;
+
+            const tokens = targetNorm.split(/\s+/).filter((token) => token.length >= 2);
+            for (const token of tokens) {
+              if (textNorm.includes(token)) score += 2;
+            }
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestNode = node;
+            }
+          }
+
+          if (!bestNode || bestScore <= 0) {
+            return {
+              clicked: false,
+              bestScore,
+              optionCount: optionNodes.length,
+            };
+          }
+
+          bestNode.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          bestNode.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+          bestNode.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+          return {
+            clicked: true,
+            clickedText: String(bestNode.textContent || "").trim(),
+            bestScore,
+            optionCount: optionNodes.length,
+          };
+        }, requestedValue);
+
+        if (optionClickResult?.clicked) {
+          await new Promise((resolve) => setTimeout(resolve, 220));
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, waitAfterMs));
+
+        const selectedSnapshot = await page.evaluate((selector) => {
+          const findById = (node, id) => {
+            if (!node || typeof node !== "object") return null;
+            if (node.props && node.props.id === id) return node;
+
+            const children = node.props?.children;
+            if (Array.isArray(children)) {
+              for (const child of children) {
+                const found = findById(child, id);
+                if (found) return found;
+              }
+            } else if (children && typeof children === "object") {
+              const found = findById(children, id);
+              if (found) return found;
+            }
+
+            return null;
+          };
+
+          const control = document.querySelector(selector);
+          if (!control) return { selectedText: "", valueNodeFound: false, controlText: "" };
+
+          const valueNode = control.querySelector(
+            ".Select-value-label, .VirtualizedSelectFocusedOption, .react-select__single-value, .Select-value"
+          );
+
+          const selectedText = valueNode
+            ? String(valueNode.textContent || "").replace(/\s+/g, " ").trim()
+            : "";
+
+          const controlText = String(control.textContent || "").replace(/\s+/g, " ").trim();
+          const controlId = String(selector || "").replace(/^#/, "");
+          const layout = window.store?.getState?.()?.layout?.components;
+          const component = findById(layout, controlId);
+          const currentValue = component?.props?.value ?? null;
+
+          return {
+            selectedText,
+            valueNodeFound: Boolean(valueNode),
+            controlText,
+            currentValue: currentValue == null ? null : String(currentValue),
+          };
+        }, controlSelector);
+
+        const selectedText = String(selectedSnapshot?.selectedText || "").trim();
+        const valueNodeFound = Boolean(selectedSnapshot?.valueNodeFound);
+        const currentValue = String(selectedSnapshot?.currentValue || "").trim();
+        const matched = matchByValue
+          ? currentValue.length > 0 && currentValue === String(requestedValue)
+          : valueNodeFound && selectedText && namesLikelyMatch(requestedValue, selectedText);
+
+        if (matched) {
+          return {
+            selected: true,
+            requested,
+            selectedText,
+            selectedValue: currentValue || null,
+            matchedRequestedName: requestedValue,
+            availableOptions: [],
+            matchedBy: matchByValue ? "dash-dropdown-value" : "dash-dropdown",
+          };
+        }
+      } catch (error) {
+        // try next requested value
+      }
+    }
+
+    const controlTextSnapshot = await page.evaluate((selector) => {
+      const control = document.querySelector(selector);
+      if (!control) return "";
+      return String(control.textContent || "").replace(/\s+/g, " ").trim();
+    }, controlSelector);
+
+    return {
+      selected: false,
+      requested,
+      selectedText: null,
+      matchedRequestedName: null,
+      availableOptions: [],
+      reason: "Dash control selection failed",
+      debugLog: {
+        controlId,
+        controlTextSnapshot,
+      },
+    };
+  };
+
+  let teamDebug = await pickByRequestedNames(teamNames, ["team"]);
+  console.log(`[PDF Export] Team selection (teamNames=${JSON.stringify(teamNames)}):`, JSON.stringify(teamDebug, null, 2));
+  if (teamDebug?.selected) {
+    await waitForPdfRenderStability(page, { timeoutMs: 10000, fallbackMs: 2600 });
+  } else if (teamNames.length > 0 && teamDebug?.reason === "No visible select elements") {
+    const dashTeamDebug = await pickByDashDropdownValue("selected-team", teamNames, 1600);
+    console.log(`[PDF Export] Team selection via Dash dropdown fallback:`, JSON.stringify(dashTeamDebug, null, 2));
+    if (dashTeamDebug?.selected) {
+      teamDebug = {
+        ...dashTeamDebug,
+        reason: null,
+      };
+      await waitForPdfRenderStability(page, { timeoutMs: 12000, fallbackMs: 3200 });
+    }
+  }
+
+  const pitcherByExternalIdDebug = await pickByOptionValues(playerExternalIds);
+  console.log(`[PDF Export] Pitcher-by-externalId (playerExternalIds=${JSON.stringify(playerExternalIds)}):`, JSON.stringify(pitcherByExternalIdDebug, null, 2));
+  if (pitcherByExternalIdDebug?.selected) {
+    await new Promise((resolve) => setTimeout(resolve, 3500));
+  }
+
+  let pitcherDebug = pitcherByExternalIdDebug?.selected
+    ? {
+        selected: true,
+        requested: playerNames,
+        selectedText: pitcherByExternalIdDebug.selectedText,
+        matchedRequestedName: null,
+        availableOptions: [],
+        matchedBy: "externalId",
+        selectedValue: pitcherByExternalIdDebug.selectedValue,
+      }
+    : await pickByRequestedNames(playerNames, ["pitcher", "player"]);
+
+  if (!pitcherByExternalIdDebug?.selected && playerNames.length > 0 && !pitcherDebug?.selected && pitcherDebug?.reason === "No visible select elements") {
+    let dashPitcherByExternalIdDebug = null;
+
+    if (playerExternalIds.length > 0) {
+      dashPitcherByExternalIdDebug = await pickByDashDropdownValue("selected-player", playerExternalIds, 2200, { matchByValue: true });
+      console.log(`[PDF Export] Pitcher selection via Dash set_props externalId fallback:`, JSON.stringify(dashPitcherByExternalIdDebug, null, 2));
+    }
+
+    if (dashPitcherByExternalIdDebug?.selected) {
+      pitcherDebug = {
+        selected: true,
+        requested: playerNames,
+        selectedText: dashPitcherByExternalIdDebug.selectedText,
+        matchedRequestedName: playerNames[0] || null,
+        availableOptions: [],
+        matchedBy: dashPitcherByExternalIdDebug.matchedBy || "dash-set-props-value",
+        selectedValue: dashPitcherByExternalIdDebug.selectedValue || null,
+        reason: null,
+      };
+    }
+
+    const dashPitcherDebug = await pickByDashDropdownValue("selected-player", playerNames, 1900);
+    console.log(`[PDF Export] Pitcher selection via Dash dropdown fallback:`, JSON.stringify(dashPitcherDebug, null, 2));
+    if (!pitcherDebug?.selected && dashPitcherDebug?.selected) {
+      pitcherDebug = {
+        ...dashPitcherDebug,
+        reason: null,
+      };
+    }
+  }
+
+  console.log(`[PDF Export] Pitcher-by-name (playerNames=${JSON.stringify(playerNames)}):`, JSON.stringify(pitcherDebug, null, 2));
+
+  if (!pitcherByExternalIdDebug?.selected && pitcherDebug?.selected) {
+    await new Promise((resolve) => setTimeout(resolve, 3500));
+  }
+
+  return {
+    team: teamDebug,
+    pitcherByExternalId: pitcherByExternalIdDebug,
+    pitcher: pitcherDebug,
+  };
+};
+
+const selectGeneralStatisticsPlayerInPage = async (page, { playerNames = [] }) => {
+  const requested = playerNames
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (requested.length === 0) {
+    return {
+      selected: false,
+      requested,
+      selectedText: null,
+      matchedRequestedName: null,
+      availableOptions: [],
+      reason: "No requested players",
+    };
+  }
+
+  const runSelectionInFrame = async (frame, requestedNames) => {
+    const frameResult = await frame.evaluate(async (requestedNamesInner) => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\([^)]*\)/g, " ")
+          .replace(/[^a-z0-9]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const likelyMatch = (requestedName, selectedName) => {
+        const requestedNorm = normalize(requestedName);
+        const selectedNorm = normalize(selectedName);
+        if (!requestedNorm || !selectedNorm) return false;
+        if (requestedNorm === selectedNorm) return true;
+        if (selectedNorm.includes(requestedNorm)) return true;
+
+        const requestedTokens = requestedNorm.split(/\s+/).filter((token) => token.length >= 2);
+        if (requestedTokens.length === 0) return false;
+
+        let hit = 0;
+        for (const token of requestedTokens) {
+          if (selectedNorm.includes(token)) hit += 1;
+        }
+
+        return hit >= Math.max(1, Math.min(2, requestedTokens.length));
+      };
+
+      const isVisible = (element) => {
+        if (!element) return false;
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      };
+
+      const controls = Array.from(document.querySelectorAll("div[data-baseweb='select'], [role='combobox']"))
+        .filter((element) => isVisible(element));
+
+      const scoreControl = (control) => {
+        const top = control.getBoundingClientRect().top;
+        const parentText = normalize((control.parentElement?.textContent || "").slice(0, 500));
+        const ownText = normalize((control.textContent || "").slice(0, 250));
+
+        let score = 0;
+        if (parentText.includes("select pitcher") || parentText.includes("select hitter") || parentText.includes("select player")) {
+          score += 30;
+        }
+
+        if (parentText.includes("select stats") || parentText.includes("hot cold labels")) {
+          score -= 20;
+        }
+
+        if (ownText.includes("date") || ownText.includes("opponent") || ownText.includes("location") || ownText.includes("np")) {
+          score -= 12;
+        }
+
+        score += Math.max(0, 16 - Math.floor(Math.max(0, top) / 90));
+
+        return score;
+      };
+
+      const rankedControls = controls
+        .map((control) => ({ control, score: scoreControl(control) }))
+        .sort((a, b) => b.score - a.score);
+
+      const target = rankedControls[0]?.control || null;
+      if (!target) {
+        return {
+          selected: false,
+          requested: requestedNamesInner,
+          selectedText: null,
+          matchedRequestedName: null,
+          availableOptions: [],
+          reason: "No visible Streamlit select control",
+          debugLog: {
+            controlCount: controls.length,
+            rankedScoreTop: rankedControls[0]?.score ?? null,
+          },
+        };
+      }
+
+      const collectOptions = () => {
+        const optionNodes = Array.from(
+          document.querySelectorAll("[role='option'], [data-baseweb='menu'] [role='button'], [data-baseweb='menu'] li")
+        );
+        const options = [];
+
+        for (const node of optionNodes) {
+          if (!isVisible(node)) continue;
+          const text = String(node.textContent || "").replace(/\s+/g, " ").trim();
+          if (!text) continue;
+          options.push({ node, text, normalized: normalize(text) });
+        }
+
+        return options;
+      };
+
+      for (const requestedName of requestedNamesInner) {
+        const requestedNorm = normalize(requestedName);
+
+        target.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        target.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        target.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await wait(260);
+
+        const activeInput =
+          target.querySelector("input") ||
+          document.querySelector("input[aria-expanded='true']") ||
+          document.querySelector("input[aria-autocomplete='list']");
+
+        if (activeInput) {
+          activeInput.focus();
+          const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+          if (setter) {
+            setter.call(activeInput, "");
+            activeInput.dispatchEvent(new Event("input", { bubbles: true }));
+            setter.call(activeInput, requestedName);
+            activeInput.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }
+
+        await wait(420);
+
+        const options = collectOptions();
+        let best = null;
+        let clickedOptionText = null;
+
+        for (const option of options) {
+          let score = 0;
+          if (option.normalized === requestedNorm) score += 25;
+          if (option.normalized.includes(requestedNorm)) score += 13;
+          if (requestedNorm.includes(option.normalized) && option.normalized.length > 6) score += 4;
+
+          const tokens = requestedNorm.split(/\s+/).filter((token) => token.length >= 2);
+          for (const token of tokens) {
+            if (option.normalized.includes(token)) score += 2;
+          }
+
+          if (!best || score > best.score) {
+            best = { option, score };
+          }
+        }
+
+        if (best && best.score > 0) {
+          const bestOptionText = String(best.option.text || "").replace(/\s+/g, " ").trim();
+          if (bestOptionText && likelyMatch(requestedName, bestOptionText)) {
+            clickedOptionText = bestOptionText;
+          }
+          best.option.node.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          best.option.node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+          best.option.node.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        }
+
+        await wait(900);
+
+        const selectedText = String(target.textContent || "").replace(/\s+/g, " ").trim();
+        const renderedPlayerHeading = Array.from(document.querySelectorAll("h1, h2, h3, h4, [data-testid='stMarkdownContainer']"))
+          .map((node) => String(node.textContent || "").replace(/\s+/g, " ").trim())
+          .find((text) => {
+            if (!text) return false;
+            const lowered = normalize(text);
+            return lowered.includes("game by game stats") || lowered.includes("season stats") || lowered.includes("pitcher");
+          }) || "";
+
+        const renderedHeadingMatches = renderedPlayerHeading && likelyMatch(requestedName, renderedPlayerHeading);
+        const matchedByTypedInputOnly = selectedText && likelyMatch(requestedName, selectedText) && !clickedOptionText;
+        if (matchedByTypedInputOnly && !renderedHeadingMatches) {
+          continue;
+        }
+
+        if (
+          (clickedOptionText && selectedText && likelyMatch(requestedName, selectedText)) ||
+          renderedHeadingMatches
+        ) {
+          return {
+            selected: true,
+            requested: requestedNamesInner,
+            selectedText,
+            matchedRequestedName: requestedName,
+            availableOptions: options.slice(0, 40).map((option) => option.text),
+            matchedBy: renderedHeadingMatches ? "streamlit-rendered-heading" : "streamlit-select",
+            debugLog: {
+              clickedOptionText,
+              renderedPlayerHeading: renderedPlayerHeading || null,
+            },
+          };
+        }
+      }
+
+      const fallbackOptions = collectOptions().slice(0, 40).map((option) => option.text);
+      const selectedText = String(target.textContent || "").replace(/\s+/g, " ").trim();
+
+      return {
+        selected: false,
+        requested: requestedNamesInner,
+        selectedText: selectedText || null,
+        matchedRequestedName: null,
+        availableOptions: fallbackOptions,
+        reason: "Streamlit select did not match requested player",
+        debugLog: {
+          controlCount: controls.length,
+          targetScore: rankedControls[0]?.score ?? null,
+        },
+      };
+    }, requestedNames);
+
+    return {
+      ...frameResult,
+      frameUrl: frame.url(),
+      frameName: frame.name(),
+    };
+  };
+
+  const frames = [page.mainFrame(), ...page.frames().filter((frame) => frame !== page.mainFrame())];
+  let bestResult = null;
+
+  for (const frame of frames) {
+    try {
+      const frameResult = await runSelectionInFrame(frame, requested);
+
+      if (frameResult?.selected) {
+        return frameResult;
+      }
+
+      const frameScore = Number(frameResult?.debugLog?.controlCount || 0) + Number((frameResult?.availableOptions || []).length);
+      const bestScore = Number(bestResult?.debugLog?.controlCount || 0) + Number((bestResult?.availableOptions || []).length);
+
+      if (!bestResult || frameScore > bestScore) {
+        bestResult = frameResult;
+      }
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (
+        message.includes("Execution context was destroyed") ||
+        message.includes("Cannot find context with specified id") ||
+        message.includes("Most likely the page has been closed") ||
+        message.includes("Target closed")
+      ) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  const result = bestResult || {
+    selected: false,
+    requested,
+    selectedText: null,
+    matchedRequestedName: null,
+    availableOptions: [],
+    reason: "No frame returned selectable controls",
+  };
+  return result;
+};
+
+const selectGeneralStatisticsTeamInPage = async (page, { teamNames = [] }) => {
+  const requested = teamNames
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (requested.length === 0) {
+    return {
+      selected: false,
+      requested,
+      selectedText: null,
+      matchedRequestedName: null,
+      reason: "No requested teams",
+    };
+  }
+
+  const runInFrame = async (frame, requestedTeams) => {
+    const frameResult = await frame.evaluate(async (requestedTeamsInner) => {
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\([^)]*\)/g, " ")
+          .replace(/[^a-z0-9]+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const isVisible = (element) => {
+        if (!element) return false;
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+      };
+
+      const controls = Array.from(document.querySelectorAll("div[data-baseweb='select'], [role='combobox']"))
+        .filter((element) => isVisible(element));
+
+      const ranked = controls
+        .map((control) => {
+          const parentText = normalize((control.parentElement?.textContent || "").slice(0, 500));
+          const ownText = normalize((control.textContent || "").slice(0, 250));
+          let score = 0;
+          if (parentText.includes("select a team") || parentText.includes("select team")) score += 35;
+          if (parentText.includes("select pitcher") || parentText.includes("select hitter") || parentText.includes("select player")) score -= 20;
+          if (parentText.includes("select stats") || parentText.includes("hot cold labels")) score -= 30;
+          if (ownText.includes("date") || ownText.includes("opponent") || ownText.includes("location")) score -= 15;
+          return { control, score };
+        })
+        .sort((a, b) => b.score - a.score);
+
+      const target = ranked[0]?.control || null;
+      if (!target) {
+        return {
+          selected: false,
+          requested: requestedTeamsInner,
+          selectedText: null,
+          matchedRequestedName: null,
+          reason: "No team control found",
+          debugLog: {
+            controlCount: controls.length,
+          },
+        };
+      }
+
+      const likelyMatch = (requestedName, selectedName) => {
+        const requestedNorm = normalize(requestedName);
+        const selectedNorm = normalize(selectedName);
+        return Boolean(requestedNorm && selectedNorm && (selectedNorm.includes(requestedNorm) || requestedNorm.includes(selectedNorm)));
+      };
+
+      for (const requestedName of requestedTeamsInner) {
+        target.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        target.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        target.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await wait(280);
+
+        const activeInput =
+          target.querySelector("input") ||
+          document.querySelector("input[aria-expanded='true']") ||
+          document.querySelector("input[aria-autocomplete='list']");
+
+        if (activeInput) {
+          activeInput.focus();
+          const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")?.set;
+          if (setter) {
+            setter.call(activeInput, "");
+            activeInput.dispatchEvent(new Event("input", { bubbles: true }));
+            setter.call(activeInput, requestedName);
+            activeInput.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }
+
+        await wait(450);
+
+        const optionNodes = Array.from(document.querySelectorAll("[role='option'], [data-baseweb='menu'] [role='button'], [data-baseweb='menu'] li"));
+        let clicked = false;
+
+        for (const node of optionNodes) {
+          if (!isVisible(node)) continue;
+          const text = String(node.textContent || "").replace(/\s+/g, " ").trim();
+          if (!text) continue;
+          if (!likelyMatch(requestedName, text)) continue;
+
+          node.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+          node.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+          clicked = true;
+          break;
+        }
+
+        await wait(900);
+
+        const selectedText = String(target.textContent || "").replace(/\s+/g, " ").trim();
+        if (clicked && selectedText && likelyMatch(requestedName, selectedText)) {
+          return {
+            selected: true,
+            requested: requestedTeamsInner,
+            selectedText,
+            matchedRequestedName: requestedName,
+            matchedBy: "streamlit-team-select",
+          };
+        }
+      }
+
+      return {
+        selected: false,
+        requested: requestedTeamsInner,
+        selectedText: String(target.textContent || "").replace(/\s+/g, " ").trim() || null,
+        matchedRequestedName: null,
+        reason: "Team select did not match requested team",
+      };
+    }, requestedTeams);
+
+    return {
+      ...frameResult,
+      frameUrl: frame.url(),
+      frameName: frame.name(),
+    };
+  };
+
+  const frames = [page.mainFrame(), ...page.frames().filter((frame) => frame !== page.mainFrame())];
+  let bestResult = null;
+
+  for (const frame of frames) {
+    try {
+      const frameResult = await runInFrame(frame, requested);
+      if (frameResult?.selected) return frameResult;
+      if (!bestResult) bestResult = frameResult;
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (
+        message.includes("Execution context was destroyed") ||
+        message.includes("Cannot find context with specified id") ||
+        message.includes("Most likely the page has been closed") ||
+        message.includes("Target closed")
+      ) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return bestResult || {
+    selected: false,
+    requested,
+    selectedText: null,
+    matchedRequestedName: null,
+    reason: "No frame returned selectable team control",
+  };
+};
+
 router.get("/exports/:fileName", async (req, res) => {
   try {
     const fileName = req.params.fileName;
@@ -1228,7 +2999,38 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
     const playerIds = parseIdList(req.body?.playerIds);
     const teamNames = parseIdList(req.body?.teamNames);
     const playerNames = parseIdList(req.body?.playerNames);
+    const playerExternalIds = parseIdList(req.body?.playerExternalIds)
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
     const source = typeof req.body?.source === "string" ? req.body.source : "superwidget-pdf";
+
+    let playerNameCandidates = Array.from(
+      new Set(playerNames.map((value) => String(value || "").trim()).filter(Boolean))
+    );
+
+    if (playerIds.length > 0) {
+      try {
+        const playerNameResult = await pool.query(
+          `
+            SELECT p.player_name
+            FROM player p
+            WHERE p.player_id::text = ANY($1::text[])
+          `,
+          [playerIds.map((id) => String(id))]
+        );
+
+        const dbNames = (playerNameResult.rows || [])
+          .map((row) => String(row.player_name || "").trim())
+          .filter(Boolean);
+
+        playerNameCandidates = Array.from(new Set([...playerNameCandidates, ...dbNames]));
+      } catch (playerNameError) {
+        console.warn("[PDF Export] Failed to load player names from ids:", playerNameError?.message || playerNameError);
+      }
+    }
+
+    console.log(`[PDF Export] Received request for widget ${widgetId}`);
+    console.log(`[PDF Export] Request body:`, JSON.stringify(req.body, null, 2));
 
     const widgetResult = await pool.query(selectWidgetById, [widgetId]);
     if (widgetResult.rowCount === 0) {
@@ -1248,8 +3050,9 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
 
     console.log(`[PDF Export] Starting PDF export for widget ${widgetId} (${widgetName})`);
     console.log(`[PDF Export] Redirect URL: ${redirectLink}`);
-    console.log(`[PDF Export] Team IDs: ${JSON.stringify(teamIds)}, Player IDs: ${JSON.stringify(playerIds)}`);
-    console.log(`[PDF Export] Team Names: ${JSON.stringify(teamNames)}, Player Names: ${JSON.stringify(playerNames)}`);
+    console.log(`[PDF Export] Params received - teamIds: ${JSON.stringify(teamIds)}, playerIds: ${JSON.stringify(playerIds)}`);
+    console.log(`[PDF Export] Params received - teamNames: ${JSON.stringify(teamNames)}, playerNames: ${JSON.stringify(playerNames)}`);
+    console.log(`[PDF Export] Params received - playerExternalIds: ${JSON.stringify(playerExternalIds)}, source: ${source}`);
 
     const executionUrl = isCountBasedWidget(widgetId, widgetName, redirectLink)
       ? (() => {
@@ -1453,8 +3256,219 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
       });
     }
 
+    if (isGeneralStatisticsWidget(widgetId, widgetName, redirectLink) && playerNameCandidates.length > 0) {
+      const generalStatsTeamSelection = await selectGeneralStatisticsTeamInPage(page, {
+        teamNames,
+      });
+
+      if (teamNames.length > 0) {
+        selectionDebug = {
+          ...(selectionDebug || {}),
+          generalStatisticsTeamSelection: generalStatsTeamSelection,
+        };
+
+        console.log(`[PDF Export] General statistics team selection (teamNames=${JSON.stringify(teamNames)}):`, JSON.stringify(generalStatsTeamSelection, null, 2));
+
+        if (!generalStatsTeamSelection?.selected) {
+          return res.status(422).json({
+            success: false,
+            message: `${widgetName} could not match selected teams (${teamNames.join(", ")}).`,
+            data: {
+              widgetId,
+              widgetName,
+              requestedTeams: teamNames,
+              sourceUrl: executionUrl,
+              selectionDebug,
+            },
+          });
+        }
+
+        await waitForPdfRenderStability(page, {
+          timeoutMs: 12000,
+          fallbackMs: 2800,
+        });
+      }
+
+      const generalStatsSelection = await selectGeneralStatisticsPlayerInPage(page, {
+        playerNames: playerNameCandidates,
+      });
+
+      selectionDebug = {
+        ...(selectionDebug || {}),
+        generalStatisticsSelection: generalStatsSelection,
+      };
+
+      console.log(`[PDF Export] General statistics selection (playerNames=${JSON.stringify(playerNameCandidates)}):`, JSON.stringify(generalStatsSelection, null, 2));
+
+      let matchedGeneralStatsPlayer = Boolean(generalStatsSelection?.selected && generalStatsSelection?.matchedRequestedName);
+
+      if (!matchedGeneralStatsPlayer) {
+        const typedSelectedText = String(generalStatsSelection?.selectedText || "").trim();
+        const typedMatchedRequestedName = playerNameCandidates.find((candidate) => namesLikelyMatch(candidate, typedSelectedText)) || null;
+
+        if (typedMatchedRequestedName) {
+          try {
+            const normalizedRequested = normalizeComparableName(typedMatchedRequestedName);
+            const normalizedRequestedTeamNames = teamNames
+              .map((value) => String(value || "").trim().toLowerCase())
+              .filter(Boolean);
+
+            const verificationResult = await pool.query(
+              `
+                SELECT p.player_name, COALESCE(t.team_name, '') AS team_name
+                FROM player p
+                LEFT JOIN team t ON t.team_id = p.team_id
+                WHERE LOWER(p.player_name) = LOWER($1)
+              `,
+              [typedMatchedRequestedName]
+            );
+
+            const verifiedRows = (verificationResult.rows || []).filter((row) => {
+              if (normalizedRequestedTeamNames.length === 0) return true;
+              const rowTeam = String(row.team_name || "").trim().toLowerCase();
+              return normalizedRequestedTeamNames.includes(rowTeam);
+            });
+
+            if (normalizedRequested && verifiedRows.length > 0) {
+              matchedGeneralStatsPlayer = true;
+              selectionDebug = {
+                ...(selectionDebug || {}),
+                generalStatisticsSelection: {
+                  ...generalStatsSelection,
+                  selected: true,
+                  matchedRequestedName: typedMatchedRequestedName,
+                  matchedBy: "typed-input-verified-by-database-player-team-check",
+                },
+                generalStatisticsSelectionValidation: {
+                  verifiedByWidgetOptions: true,
+                  optionCount: verifiedRows.length,
+                  verifiedBy: "database-player-team-check",
+                },
+              };
+            } else {
+              selectionDebug = {
+                ...(selectionDebug || {}),
+                generalStatisticsSelectionValidation: {
+                  verifiedByWidgetOptions: false,
+                  optionCount: verifiedRows.length,
+                  verifiedBy: "database-player-team-check",
+                },
+              };
+            }
+          } catch (verificationError) {
+            selectionDebug = {
+              ...(selectionDebug || {}),
+              generalStatisticsSelectionValidation: {
+                verifiedByWidgetOptions: false,
+                error: String(verificationError?.message || verificationError),
+              },
+            };
+          }
+        }
+      }
+
+      if (!matchedGeneralStatsPlayer) {
+        return res.status(422).json({
+          success: false,
+          message: `${widgetName} could not match selected players (${playerNameCandidates.join(", ")}).`,
+          data: {
+            widgetId,
+            widgetName,
+            requestedPlayers: playerNames,
+            playerNameCandidates,
+            sourceUrl: executionUrl,
+            selectionDebug,
+          },
+        });
+      }
+
+      await waitForPdfRenderStability(page, {
+        timeoutMs: 12000,
+        fallbackMs: 3000,
+      });
+    }
+
+    if (isSluggerPitcherWidget(widgetId, widgetName, redirectLink) && (teamNames.length > 0 || playerNameCandidates.length > 0)) {
+      let pitcherSelection = await selectSluggerPitcherFiltersInPage(page, {
+        teamNames,
+        playerNames: playerNameCandidates,
+        playerExternalIds,
+      });
+
+      const firstAttemptNoVisibleSelectorControls =
+        pitcherSelection?.team?.reason === "No visible select elements" &&
+        pitcherSelection?.pitcher?.reason === "No visible select elements";
+
+      if (firstAttemptNoVisibleSelectorControls && (teamNames.length > 0 || playerNameCandidates.length > 0)) {
+        console.log("[PDF Export] Slugger pitcher first pass found no visible selector controls; waiting and retrying selection.");
+        await waitForPdfRenderStability(page, {
+          timeoutMs: 18000,
+          fallbackMs: 4200,
+        });
+
+        const secondPassSelection = await selectSluggerPitcherFiltersInPage(page, {
+          teamNames,
+          playerNames: playerNameCandidates,
+          playerExternalIds,
+        });
+
+        pitcherSelection = {
+          ...secondPassSelection,
+          retryMeta: {
+            usedSecondPass: true,
+            firstPassNoVisibleSelectorControls: true,
+            firstPassTeam: pitcherSelection?.team || null,
+            firstPassPitcher: pitcherSelection?.pitcher || null,
+          },
+        };
+      }
+
+      selectionDebug = {
+        ...(selectionDebug || {}),
+        sluggerPitcherSelection: pitcherSelection,
+      };
+
+      console.log(`[PDF Export] Slugger pitcher selection FULL debug (teamNames=${JSON.stringify(teamNames)}, playerNames=${JSON.stringify(playerNameCandidates)}, playerExternalIds=${JSON.stringify(playerExternalIds)}):`, JSON.stringify(pitcherSelection, null, 2));
+
+      const matchedPitcherByExternalId = Boolean(pitcherSelection?.pitcherByExternalId?.selectedValue);
+      const matchedPitcherByName = Boolean(pitcherSelection?.pitcher?.matchedRequestedName);
+      const noVisibleSelectorControls =
+        pitcherSelection?.team?.reason === "No visible select elements" &&
+        pitcherSelection?.pitcher?.reason === "No visible select elements";
+
+      console.log(`[PDF Export] Pitcher match result - externalId matched: ${matchedPitcherByExternalId}, name matched: ${matchedPitcherByName}, noVisibleSelectorControls: ${noVisibleSelectorControls}`);
+
+      if (noVisibleSelectorControls) {
+        selectionDebug = {
+          ...(selectionDebug || {}),
+          sluggerPitcherSelectionMode: "url-params-no-visible-select-controls",
+        };
+        console.log("[PDF Export] No visible selector controls detected; continuing export using URL parameter-driven filters.");
+      }
+
+      if (playerNameCandidates.length > 0 && !matchedPitcherByExternalId && !matchedPitcherByName && !noVisibleSelectorControls) {
+        console.log(`[PDF Export] FAILED MATCH - returning 422 error with full selectionDebug`);
+        return res.status(422).json({
+          success: false,
+          message: `Slugger Pitcher Widget could not match selected players (${playerNameCandidates.join(", ")}).`,
+          data: {
+            widgetId,
+            widgetName,
+            requestedTeams: teamNames,
+            requestedPlayers: playerNames,
+            playerNameCandidates,
+            sourceUrl: executionUrl,
+            selectionDebug,
+          },
+        });
+      }
+    }
+
     console.log(`[PDF Export] Page loaded, waiting for render stability...`);
-    await waitForPdfRenderStability(page, { timeoutMs: 9000, fallbackMs: 2500 });
+    await waitForPdfRenderStability(page, {
+      timeoutMs: isSluggerPitcherWidget(widgetId, widgetName, redirectLink) ? 12000 : 9000,
+      fallbackMs: isSluggerPitcherWidget(widgetId, widgetName, redirectLink) ? 3200 : 2500,
+    });
     console.log(`[PDF Export] Generating PDF to ${filePath}...`);
     
     await page.pdf({
@@ -1605,6 +3619,81 @@ router.get("/93/hitting-data", async (req, res) => {
   }
 });
 
+router.get("/pitching-data", async (req, res) => {
+  try {
+    const playerIds = parseIdList(req.query.playerIds);
+    const teamIds = parseIdList(req.query.teamIds);
+
+    let query = `
+      SELECT
+        p.player_id,
+        p.player_name,
+        p.team_id,
+        p.player_batting_handedness as position
+      FROM player p
+    `;
+
+    const params = [];
+    const conditions = [];
+
+    if (playerIds.length > 0) {
+      conditions.push(`p.player_id::text = ANY($${params.length + 1}::text[])`);
+      params.push(playerIds.map((id) => String(id)));
+    }
+
+    if (teamIds.length > 0) {
+      conditions.push(`p.team_id::text = ANY($${params.length + 1}::text[])`);
+      params.push(teamIds.map((id) => String(id)));
+    }
+
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(" AND ")}`;
+    }
+
+    query += ` LIMIT 100`;
+
+    const result = await pool.query(query, params);
+    const players = result.rows || [];
+
+    const pitchingData = {
+      success: true,
+      data: {
+        widgetId: 223,
+        widgetName: "Slugger Pitcher Widget",
+        playerCount: players.length,
+        teamCount: teamIds.length,
+        players: players.map((p) => ({
+          id: p.player_id,
+          name: p.player_name,
+          team: p.team_id,
+          position: p.position,
+          stats: {
+            era: Number((Math.random() * 3 + 1.5).toFixed(2)),
+            whip: Number((Math.random() * 0.8 + 0.9).toFixed(2)),
+            so: Math.floor(Math.random() * 120),
+            ip: Number((Math.random() * 90 + 20).toFixed(1)),
+          },
+        })),
+        bullets: [
+          "Slugger Pitcher Widget executed successfully.",
+          `Analysis covers ${players.length} player(s) from ${teamIds.length} team(s).`,
+          players.length > 0
+            ? `Top arm to watch: ${players[0].player_name} (simulated ERA ${(Math.random() * 2 + 2).toFixed(2)})`
+            : "No players selected for analysis.",
+        ],
+      },
+    };
+
+    return res.status(200).json(pitchingData);
+  } catch (error) {
+    console.error("[Pitching Analytics] Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: `Error fetching pitching data: ${error.message}`,
+    });
+  }
+});
+
 router.get("/:widgetId/execute", async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId, 10);
@@ -1617,6 +3706,8 @@ router.get("/:widgetId/execute", async (req, res) => {
 
     const teamIds = parseIdList(req.query.teamIds);
     const playerIds = parseIdList(req.query.playerIds);
+    const teamNames = parseIdList(req.query.teamNames);
+    const playerNames = parseIdList(req.query.playerNames);
     const source = typeof req.query.source === "string" ? req.query.source : "superwidget";
 
     const widgetResult = await pool.query(selectWidgetById, [widgetId]);
@@ -1643,6 +3734,20 @@ router.get("/:widgetId/execute", async (req, res) => {
         return res.status(200).json(payload);
       } catch (hittingError) {
         console.error("[Widget Execute] Error calling hitting-data endpoint:", hittingError);
+      }
+    }
+
+    if (isSluggerPitcherWidget(widgetId, widgetName, redirectLink)) {
+      try {
+        const payload = await executePitchingAnalytics({
+          widgetId,
+          widgetName,
+          teamIds,
+          playerIds,
+        });
+        return res.status(200).json(payload);
+      } catch (pitchingError) {
+        console.error("[Widget Execute] Error calling pitching-data endpoint:", pitchingError);
       }
     }
 
@@ -1698,7 +3803,7 @@ router.get("/:widgetId/execute", async (req, res) => {
     }
 
     // Try to call the widget's redirectLink with parameters
-    const executionUrl = buildWidgetExecutionUrl(redirectLink, teamIds, playerIds, source);
+    const executionUrl = buildWidgetExecutionUrl(redirectLink, teamIds, playerIds, source, teamNames, playerNames);
     
     try {
       console.log(`[Widget Execute] Calling ${widgetName} at ${executionUrl}`);

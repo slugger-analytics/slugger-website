@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Badge } from "@/app/components/ui/badge";
 import { Loader2, Sparkles, BarChart3 } from "lucide-react";
 import { WidgetType } from "@/data/types";
-import { fetchWidgetOutputs, fetchWidgets, WidgetExecutionResult } from "@/api/widget";
+import { exportWidgetPdf, fetchWidgetOutputs, fetchWidgetSelectorOptions, fetchWidgets, WidgetExecutionResult } from "@/api/widget";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/userStore";
 import {
@@ -36,6 +36,8 @@ interface SavedAnalysis {
   createdAt: string;
 }
 
+const SUPER_WIDGET_SELECTOR_PRIORITY_IDS = [93, 269, 270, 223, 268] as const;
+
 export default function SuperWidgetPage() {
   const [availableWidgets, setAvailableWidgets] = useState<WidgetType[]>([]);
   const [selectedWidgetIds, setSelectedWidgetIds] = useState<number[]>([]);
@@ -46,6 +48,18 @@ export default function SuperWidgetPage() {
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [saveName, setSaveName] = useState("");
   const [widgetOutputs, setWidgetOutputs] = useState<WidgetExecutionResult[]>([]);
+  const [widgetPdfStates, setWidgetPdfStates] = useState<Record<number, {
+    loading: boolean;
+    error?: string;
+    pdfUrl?: string;
+  }>>({});
+  const [selectedTeams, setSelectedTeams] = useState<{ id: string | number; name: string }[]>([]);
+  const [selectedPlayers, setSelectedPlayers] = useState<{ id: string | number; name: string; teamId: string | number; position: string; sourceLabel?: string; externalId?: string | null }[]>([]);
+  const [selectorTeams, setSelectorTeams] = useState<Array<{ id: string | number; name: string }>>([]);
+  const [selectorPlayers, setSelectorPlayers] = useState<Array<{ id: string | number; name: string; teamId: string | number; position: string; sourceLabel?: string; externalId?: string | null }>>([]);
+  const [selectorOptionsLoading, setSelectorOptionsLoading] = useState(false);
+  const [selectorOptionsError, setSelectorOptionsError] = useState<string | null>(null);
+  const [selectorSourceWidgetName, setSelectorSourceWidgetName] = useState<string | null>(null);
   const user = useStore($user);
 
   const loadAvailableWidgets = useCallback(async () => {
@@ -66,6 +80,91 @@ export default function SuperWidgetPage() {
     }
   }, []); // Remove user.id dependency
 
+  const selectedWidgets = useMemo(
+    () => availableWidgets.filter((widget) => selectedWidgetIds.includes(widget.id)),
+    [availableWidgets, selectedWidgetIds]
+  );
+
+  const selectorSourceWidgetId = useMemo(() => {
+    const priorityWidgetId = SUPER_WIDGET_SELECTOR_PRIORITY_IDS.find((id) => selectedWidgetIds.includes(id));
+    if (priorityWidgetId) return priorityWidgetId;
+    return selectedWidgetIds.length === 1 ? selectedWidgetIds[0] : null;
+  }, [selectedWidgetIds]);
+
+  const selectorSourceWidget = useMemo(
+    () => availableWidgets.find((widget) => widget.id === selectorSourceWidgetId) ?? null,
+    [availableWidgets, selectorSourceWidgetId]
+  );
+
+  const selectedTeamFilter = useMemo(() => {
+    const teamIds = selectedTeams.map((team) => team.id);
+    const teamNames = selectedTeams.map((team) => team.name);
+    const key = selectedTeams
+      .map((team) => `${String(team.id)}:${String(team.name)}`)
+      .sort()
+      .join("|");
+
+    return { teamIds, teamNames, key };
+  }, [selectedTeams]);
+
+  useEffect(() => {
+    if (!selectorSourceWidgetId) {
+      setSelectorTeams([]);
+      setSelectorPlayers([]);
+      setSelectorSourceWidgetName(null);
+      setSelectorOptionsError(null);
+      return;
+    }
+
+    const loadSelectorOptions = async () => {
+      try {
+        setSelectorOptionsLoading(true);
+        setSelectorOptionsError(null);
+        const options = await fetchWidgetSelectorOptions(selectorSourceWidgetId, {
+          teamIds: selectedTeamFilter.teamIds,
+          teamNames: selectedTeamFilter.teamNames,
+        });
+        setSelectorSourceWidgetName(options.widgetName || selectorSourceWidget?.name || "widget");
+        setSelectorTeams(options.teams || []);
+        setSelectorPlayers(options.players || []);
+        if ((options.teams?.length ?? 0) === 0 || (options.players?.length ?? 0) === 0) {
+          setSelectorOptionsError(`${options.widgetName || selectorSourceWidget?.name || "Widget"} has no mappable team/player options.`);
+        }
+      } catch (error) {
+        console.error("Error loading widget selector options:", error);
+        setSelectorTeams([]);
+        setSelectorPlayers([]);
+        setSelectorSourceWidgetName(selectorSourceWidget?.name || null);
+        setSelectorOptionsError((error as Error)?.message ?? "Failed to load selector options");
+      } finally {
+        setSelectorOptionsLoading(false);
+      }
+    };
+
+    loadSelectorOptions();
+  }, [selectorSourceWidgetId, selectorSourceWidget?.name, selectedTeamFilter.key]);
+
+  useEffect(() => {
+    if (!selectorSourceWidgetId) return;
+    const validTeamIds = new Set(selectorTeams.map((team) => String(team.id)));
+    const validPlayerIds = new Set(selectorPlayers.map((player) => String(player.id)));
+
+    setSelectedTeams((prev) => {
+      const filtered = prev.filter((team) => validTeamIds.has(String(team.id)));
+      const unchanged =
+        filtered.length === prev.length &&
+        filtered.every((team, index) => String(team.id) === String(prev[index]?.id));
+      return unchanged ? prev : filtered;
+    });
+
+    setSelectedPlayers((prev) => {
+      const filtered = prev.filter((player) => validPlayerIds.has(String(player.id)));
+      const unchanged =
+        filtered.length === prev.length &&
+        filtered.every((player, index) => String(player.id) === String(prev[index]?.id));
+      return unchanged ? prev : filtered;
+    });
+  }, [selectorSourceWidgetId, selectorTeams, selectorPlayers]);
   const loadSavedAnalyses = useCallback(() => {
     if (typeof window === "undefined" || !user.id) return;
 
@@ -160,6 +259,111 @@ export default function SuperWidgetPage() {
     }
   };
 
+  const handleExportWidgetPdf = useCallback(async (widgetId: number) => {
+    console.log(`[SuperWidget] Starting PDF export for widget ${widgetId}`);
+    console.log(`[SuperWidget] Selected teams:`, selectedTeams);
+    console.log(`[SuperWidget] Selected players:`, selectedPlayers);
+
+    setWidgetPdfStates(prev => ({
+      ...prev,
+      [widgetId]: {
+        loading: true,
+        error: undefined,
+        pdfUrl: prev[widgetId]?.pdfUrl,
+      },
+    }));
+
+    try {
+      const result = await exportWidgetPdf(widgetId, {
+        teamIds: selectedTeams.map((team) => team.id),
+        playerIds: selectedPlayers.map((player) => player.id),
+        teamNames: selectedTeams.map((team) => team.name),
+        playerNames: selectedPlayers.map((player) => player.sourceLabel || player.name),
+        playerExternalIds: selectedPlayers
+          .map((player) => (typeof player.externalId === "string" ? player.externalId.trim() : ""))
+          .filter((value) => value.length > 0),
+        source: "superwidget-analyzer-pdf",
+      });
+
+      console.log(`[SuperWidget] PDF export result for widget ${widgetId}:`, result);
+
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: result.success ? undefined : result.message,
+          pdfUrl: result.pdfUrl,
+        },
+      }));
+    } catch (error) {
+      console.error(`[SuperWidget] PDF export failed for widget ${widgetId}:`, error);
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: (error as Error)?.message ?? "Failed to export PDF",
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+    }
+  }, [selectedTeams, selectedPlayers]);
+
+  const handleOpenWidgetInBrowser = useCallback(async (widgetId: number, directLink?: string) => {
+    const redirectLink = directLink;
+
+    if (!redirectLink) {
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: "Widget redirect URL is missing",
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+      return;
+    }
+
+    try {
+      // Get authentication token for the widget
+      const { requestWidgetToken } = await import("@/api/auth");
+      const token = await requestWidgetToken();
+
+      const url = new URL(redirectLink);
+      url.searchParams.set("source", "superwidget-open-browser");
+      url.searchParams.set("bootstrap_token", token);
+
+      const popup = window.open(url.toString(), "_blank", "width=1440,height=900");
+      if (!popup) {
+        setWidgetPdfStates(prev => ({
+          ...prev,
+          [widgetId]: {
+            loading: false,
+            error: "Popup was blocked. Please allow popups and try again.",
+            pdfUrl: prev[widgetId]?.pdfUrl,
+          },
+        }));
+        return;
+      }
+
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: undefined,
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+    } catch (error) {
+      setWidgetPdfStates(prev => ({
+        ...prev,
+        [widgetId]: {
+          loading: false,
+          error: `Failed to authenticate widget: ${(error as Error).message}`,
+          pdfUrl: prev[widgetId]?.pdfUrl,
+        },
+      }));
+    }
+  }, []);
   useEffect(() => {
     if (user.id) {
       loadAvailableWidgets();

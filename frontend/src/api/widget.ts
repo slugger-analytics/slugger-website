@@ -268,6 +268,7 @@ export const exportWidgetPdf = async (
     playerIds?: Array<string | number>;
     teamNames?: string[];
     playerNames?: string[];
+    playerExternalIds?: string[];
     source?: string;
   },
 ): Promise<WidgetPdfExportResult> => {
@@ -275,6 +276,7 @@ export const exportWidgetPdf = async (
   const playerIds = options?.playerIds ?? [];
   const teamNames = options?.teamNames ?? [];
   const playerNames = options?.playerNames ?? [];
+  const playerExternalIds = options?.playerExternalIds ?? [];
   const source = options?.source ?? "superwidget-pdf";
 
   const response = await fetch(`${API_URL}/api/widgets/${widgetId}/export-pdf`, {
@@ -282,7 +284,7 @@ export const exportWidgetPdf = async (
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ teamIds, playerIds, teamNames, playerNames, source }),
+    body: JSON.stringify({ teamIds, playerIds, teamNames, playerNames, playerExternalIds, source }),
   });
 
   const res = await response.json();
@@ -306,8 +308,27 @@ export const exportWidgetPdf = async (
   };
 };
 
-export const fetchWidgetSelectorOptions = async (widgetId: number): Promise<WidgetSelectorOptionsResult> => {
-  const response = await fetch(`${API_URL}/api/widgets/${widgetId}/selector-options`);
+export const fetchWidgetSelectorOptions = async (
+  widgetId: number,
+  options?: {
+    teamIds?: Array<string | number>;
+    teamNames?: string[];
+  },
+): Promise<WidgetSelectorOptionsResult> => {
+  const queryParams = new URLSearchParams();
+  const teamIds = options?.teamIds ?? [];
+  const teamNames = options?.teamNames ?? [];
+
+  if (teamIds.length > 0) {
+    queryParams.set("teamIds", JSON.stringify(teamIds));
+  }
+
+  if (teamNames.length > 0) {
+    queryParams.set("teamNames", JSON.stringify(teamNames));
+  }
+
+  const query = queryParams.toString();
+  const response = await fetch(`${API_URL}/api/widgets/${widgetId}/selector-options${query ? `?${query}` : ""}`);
   const res = await response.json();
 
   if (!response.ok || !res?.success) {
