@@ -73,7 +73,7 @@ function AroundLeagueContent() {
             <details className="text-xs text-yellow-700 mt-1">
               <summary className="cursor-pointer">More info</summary>
               <p className="text-xs text-yellow-700">
-                Due to the termination of previous data sources, we're currently migrating to a new provider for league-wide standings and scores. This only affects the &quot;Recent Games&quot; and &quot;Around the League&quot; sections — analytical play-by-play data used in widgets will remain up-to-date. Thank you for your patience, and full league insights will be back very soon! If you have any questions, feel free to use the &quot;Report a Bug&quot; page to reach us directly.
+                Due to the termination of previous data sources, we are currently migrating to a new provider for league-wide standings and scores. This only affects the &quot;Recent Games&quot; and &quot;Around the League&quot; sections — analytical play-by-play data used in widgets will remain up-to-date. Thank you for your patience, and full league insights will be back very soon! If you have any questions, feel free to use the &quot;Report a Bug&quot; page to reach us directly.
               </p>
             </details>
           </div>
