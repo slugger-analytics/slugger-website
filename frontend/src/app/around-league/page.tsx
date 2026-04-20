@@ -64,6 +64,21 @@ function AroundLeagueContent() {
           </div>
         </div>
 
+        {/*temporary banner development update saying we are working on updated league data*/}
+        <div className="rounded-2xl bg-yellow-50 px-4 py-3 flex items-center gap-3 border border-yellow-200">
+          <div>
+            <p className="text-sm text-yellow-700 font-medium">
+              <span className="font-bold">Note:</span> "Recent Games" and "Around the League" sections may be temporarily outdated
+            </p>
+            <details className="text-xs text-yellow-700 mt-1">
+              <summary className="cursor-pointer">More info</summary>
+              <p className="text-xs text-yellow-700">
+                Due to the termination of previous data sources, we're currently migrating to a new provider for league-wide standings and scores. This only affects the "Recent Games" and "Around the League" sections — analytical play-by-play data used in widgets will remain up-to-date. Thank you for your patience, and full league insights will be back very soon! If you have any questions, feel free to use the "Report a Bug" page to reach us directly.
+              </p>
+            </details>
+          </div>
+        </div>
+
         <section>
           <div className="flex items-center gap-2 mb-4">
             <Trophy size={16} className="text-alpbBlue" />
