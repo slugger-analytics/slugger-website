@@ -39,6 +39,7 @@ interface WidgetFrameProps {
  * 1. Widget loads and sends SLUGGER_WIDGET_READY
  * 2. Shell responds with SLUGGER_AUTH containing tokens
  * 3. Widget can request SLUGGER_TOKEN_REFRESH when tokens expire
+ * 4. Widget can request SLUGGER_PRINT_REQUEST to trigger print dialog in parent window
  */
 export function WidgetFrame({
   src,
@@ -173,6 +174,10 @@ export function WidgetFrame({
           // Tokens are still valid, just resend them
           sendTokens();
         }
+      } else if (type === "SLUGGER_PRINT_REQUEST") {
+        console.log("[WidgetFrame] Widget requesting print dialog");
+        // Handle print request from widget by opening print dialog in parent window
+        window.print();
       }
     };
 

@@ -48,8 +48,10 @@ export default function Widget({
 }: WidgetProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const { toggleFavWidget } = useMutationWidgets();
   const favWidgets = useStore($favWidgetIds);
+  const isPitcherWidget = id === 268 || redirectLink?.includes("slugger-pitching-widget");
 
   // Character limit for truncated description
   const CHAR_LIMIT = 111;
@@ -61,27 +63,64 @@ export default function Widget({
       ? `${description.slice(0, CHAR_LIMIT)}...`
       : description;
 
-  /**
-   * Opens the widget in a new tab instead of redirecting.
-   * Token injection and interaction recording are handled by the WidgetIframe component.
-   * Requirements: 2.1
-   */
   const handleLaunch = () => {
-    addRecentWidget(id); 
-    if (redirectLink) {
-      openWidgetTab({
-        id,
-        name,
-        description,
-        imageUrl,
-        redirectLink,
-        publicId,
-        restrictedAccess,
-        categories,
-        metrics,
-      });
-    } else {
+    addRecentWidget(id);
+    if (!redirectLink) {
       console.error("Redirect link is missing or invalid.");
+      return;
+    }
+
+    openWidgetTab({
+      id,
+      name,
+      description,
+      imageUrl,
+      redirectLink,
+      publicId,
+      restrictedAccess,
+      categories,
+      metrics,
+    });
+  };
+
+  const handleExportPitcherPdf = async () => {
+    if (isExportingPdf) {
+      return;
+    }
+
+    try {
+      setIsExportingPdf(true);
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      const response = await fetch(`${API_URL}/api/widgets/${id}/export-pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          teamIds: [],
+          playerIds: [],
+          teamNames: [],
+          playerNames: [],
+          source: "dashboard-pdf-button",
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result?.success || !result?.data?.pdfUrl) {
+        throw new Error(result?.message || "Failed to export PDF");
+      }
+
+      const link = document.createElement("a");
+      link.href = result.data.pdfUrl;
+      link.download = `pitcher-widget-${id}-${Date.now()}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("[Widget] Failed to export pitcher PDF:", error);
+      alert("PDF export failed. Please try again.");
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -175,6 +214,18 @@ export default function Widget({
           )}
         </div>
         <div className="flex">
+          {isPitcherWidget && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-3"
+              onClick={handleExportPitcherPdf}
+              disabled={isExportingPdf}
+            >
+              {isExportingPdf ? "Exporting..." : "PDF"}
+            </Button>
+          )}
+
           {/* Launch Button - Opens widget in a new tab (Requirement 2.1) */}
           <Button size="sm" className="ml-3" onClick={handleLaunch}>
             Launch

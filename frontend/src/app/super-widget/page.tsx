@@ -36,7 +36,14 @@ interface SavedAnalysis {
   createdAt: string;
 }
 
-const SUPER_WIDGET_SELECTOR_PRIORITY_IDS = [93, 269, 270, 223, 268] as const;
+const SUPER_WIDGET_SELECTOR_PRIORITY_IDS = [93, 269, 270, 271, 223, 268] as const;
+const PLAYER_PORTAL_WIDGET_ID = 270;
+const isFlashcardWidget = (widget: WidgetType | null | undefined) => {
+  if (!widget) return false;
+  const name = String(widget.name || "").toLowerCase();
+  const redirect = String(widget.redirectLink || "").toLowerCase();
+  return name.includes("flashcard") || redirect.includes("/widgets/flashcard");
+};
 
 export default function SuperWidgetPage() {
   const [availableWidgets, setAvailableWidgets] = useState<WidgetType[]>([]);
@@ -85,11 +92,17 @@ export default function SuperWidgetPage() {
     [availableWidgets, selectedWidgetIds]
   );
 
+  const flashcardSelectorSourceWidgetId = useMemo(() => {
+    const flashcardWidget = selectedWidgets.find((widget) => isFlashcardWidget(widget));
+    return flashcardWidget?.id ?? null;
+  }, [selectedWidgets]);
+
   const selectorSourceWidgetId = useMemo(() => {
     const priorityWidgetId = SUPER_WIDGET_SELECTOR_PRIORITY_IDS.find((id) => selectedWidgetIds.includes(id));
     if (priorityWidgetId) return priorityWidgetId;
+    if (flashcardSelectorSourceWidgetId) return flashcardSelectorSourceWidgetId;
     return selectedWidgetIds.length === 1 ? selectedWidgetIds[0] : null;
-  }, [selectedWidgetIds]);
+  }, [selectedWidgetIds, flashcardSelectorSourceWidgetId]);
 
   const selectorSourceWidget = useMemo(
     () => availableWidgets.find((widget) => widget.id === selectorSourceWidgetId) ?? null,
@@ -107,6 +120,11 @@ export default function SuperWidgetPage() {
     return { teamIds, teamNames, key };
   }, [selectedTeams]);
 
+  const shouldEnforcePlayerPortalPlayers = useMemo(
+    () => selectedWidgetIds.includes(PLAYER_PORTAL_WIDGET_ID),
+    [selectedWidgetIds]
+  );
+
   useEffect(() => {
     if (!selectorSourceWidgetId) {
       setSelectorTeams([]);
@@ -120,14 +138,41 @@ export default function SuperWidgetPage() {
       try {
         setSelectorOptionsLoading(true);
         setSelectorOptionsError(null);
+
         const options = await fetchWidgetSelectorOptions(selectorSourceWidgetId, {
           teamIds: selectedTeamFilter.teamIds,
           teamNames: selectedTeamFilter.teamNames,
         });
+
+        let filteredPlayers = options.players || [];
+
+        if (shouldEnforcePlayerPortalPlayers && selectorSourceWidgetId !== PLAYER_PORTAL_WIDGET_ID) {
+          const playerPortalOptions = await fetchWidgetSelectorOptions(PLAYER_PORTAL_WIDGET_ID, {
+            teamIds: selectedTeamFilter.teamIds,
+            teamNames: selectedTeamFilter.teamNames,
+          });
+
+          const portalPlayerIdSet = new Set(
+            (playerPortalOptions.players || []).map((player) => String(player.id))
+          );
+          const portalPlayerNameSet = new Set(
+            (playerPortalOptions.players || [])
+              .map((player) => String(player.name || "").trim().toLowerCase())
+              .filter(Boolean)
+          );
+
+          filteredPlayers = filteredPlayers.filter((player) => {
+            const byId = portalPlayerIdSet.has(String(player.id));
+            if (byId) return true;
+            const normalizedName = String(player.name || "").trim().toLowerCase();
+            return normalizedName.length > 0 && portalPlayerNameSet.has(normalizedName);
+          });
+        }
+
         setSelectorSourceWidgetName(options.widgetName || selectorSourceWidget?.name || "widget");
         setSelectorTeams(options.teams || []);
-        setSelectorPlayers(options.players || []);
-        if ((options.teams?.length ?? 0) === 0 || (options.players?.length ?? 0) === 0) {
+        setSelectorPlayers(filteredPlayers);
+        if ((options.teams?.length ?? 0) === 0 || filteredPlayers.length === 0) {
           setSelectorOptionsError(`${options.widgetName || selectorSourceWidget?.name || "Widget"} has no mappable team/player options.`);
         }
       } catch (error) {
@@ -142,7 +187,7 @@ export default function SuperWidgetPage() {
     };
 
     loadSelectorOptions();
-  }, [selectorSourceWidgetId, selectorSourceWidget?.name, selectedTeamFilter.key]);
+  }, [selectorSourceWidgetId, selectorSourceWidget?.name, selectedTeamFilter.key, shouldEnforcePlayerPortalPlayers]);
 
   useEffect(() => {
     if (!selectorSourceWidgetId) return;

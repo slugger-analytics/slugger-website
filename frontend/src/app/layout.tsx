@@ -2,6 +2,7 @@ import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/toaster";
 import PersistentDashboardContainer from "./components/layout/persistent-dashboard-container";
+import { GlobalPdfHandler } from "./components/global-pdf-handler";
 
 export const metadata = {
   title: "SLUGGER",
@@ -28,6 +29,8 @@ export default function RootLayout({
     <AuthProvider>
       <html lang="en" className="h-full">
         <body suppressHydrationWarning={true} className="h-full">
+          {/* Global PDF handler for pitcher widget exports */}
+          <GlobalPdfHandler />
           {/* 
            * PersistentDashboardContainer stays mounted across all routes
            * to preserve widget iframe state during navigation.

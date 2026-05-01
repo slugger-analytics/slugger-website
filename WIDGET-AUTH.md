@@ -98,6 +98,22 @@ useEffect(() => {
 }, []);
 ```
 
+### 1c. Handle print requests (optional)
+
+If your widget has a print button, `window.print()` won't work properly inside an iframe. Instead, send a message to Slugger to trigger the print dialog in the parent window:
+
+```js
+// When user clicks your print button
+function handlePrint() {
+  window.parent.postMessage(
+    { type: "SLUGGER_PRINT_REQUEST", widgetId: "your-widget-id" },
+    "https://alpb-analytics.com" // or window.location.origin in production
+  );
+}
+```
+
+Slugger will respond by calling `window.print()` in the parent window, which will show the standard browser print dialog.
+
 ### SLUGGER_AUTH payload shape
 
 ```json
@@ -286,6 +302,7 @@ app.use((req, res, next) => {
 | child → parent | `SLUGGER_WIDGET_READY` | Your widget | Immediately on mount | "I am ready to receive tokens" |
 | parent → child | `SLUGGER_AUTH` | Slugger | After receiving READY | Delivers `bootstrapToken` and basic user info |
 | child → parent | `SLUGGER_TOKEN_REFRESH` | Your widget | When token is near expiry | "Please refresh and resend the token" |
+| child → parent | `SLUGGER_PRINT_REQUEST` | Your widget | When user clicks print | "Please open print dialog in parent window" |
 
 ---
 

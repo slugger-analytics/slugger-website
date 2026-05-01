@@ -137,6 +137,204 @@ const isCountBasedWidget = (widgetId, widgetName, redirectLink) => {
   );
 };
 
+const isFlashcardWidget = (widgetId, widgetName, redirectLink) => {
+  const normalizedName = (widgetName || "").toLowerCase();
+  const normalizedRedirect = (redirectLink || "").toLowerCase();
+
+  return (
+    normalizedName.includes("flashcard") ||
+    normalizedName.includes("baseball flashcard") ||
+    normalizedRedirect.includes("/widgets/flashcard")
+  );
+};
+
+const isOutfielderOptimizationWidget = (widgetId, widgetName, redirectLink) => {
+  const normalizedName = (widgetName || "").toLowerCase();
+  const normalizedRedirect = (redirectLink || "").toLowerCase();
+
+  return (
+    widgetId === 271 ||
+    normalizedName.includes("outfielder optimization") ||
+    normalizedName.includes("outfield positioning") ||
+    normalizedRedirect.includes("sluggeroutfielderoptimizer")
+  );
+};
+
+const FLASHCARD_TEAM_PLAYER_FALLBACKS = {
+  "charleston dirty birds": [
+    "DeShields, Delino",
+    "Cancel, Gabriel",
+    "Hawkins, Courtney",
+    "Barnum, Keon",
+    "Frazier, Clint",
+    "Gomez, Dariel",
+    "Carr, Jared",
+    "Estrada, Rusber",
+    "Santana, Juan",
+    "Soto, Jonathan",
+    "Weaver, Lyndon",
+  ],
+  "york revolution": [
+    "McDermott, Matt",
+    "Wallace, Paxton",
+    "Rhinesmith, Jacob",
+    "Martin, Rudy",
+    "Mondesi, Paul",
+    "Kato, Kobe",
+    "Casey, Donovan",
+    "Washington, David",
+    "Martin, Trey",
+    "Welker, Colton",
+    "Devenney, Ciaran",
+    "Reyes, Alfredo",
+  ],
+  "lancaster stormers": [
+    "Lucky, Nick",
+    "Sedio, Chad",
+    "Conley, Jack",
+    "Farmer, Justin",
+    "Loehr, Trace",
+    "Dunston, Shawon",
+    "Proctor, Chris",
+    "Santana, Cristian",
+    "Howard, Gaige",
+    "Carpenter, Joseph",
+  ],
+  "lancaster barnstormers": [
+    "Lucky, Nick",
+    "Sedio, Chad",
+    "Conley, Jack",
+    "Farmer, Justin",
+    "Loehr, Trace",
+    "Dunston, Shawon",
+    "Proctor, Chris",
+    "Santana, Cristian",
+    "Howard, Gaige",
+    "Carpenter, Joseph",
+  ],
+  "staten island ferryhawks": [
+    "Johnson, Kolby",
+    "Motter, Taylor",
+    "Sandoval, Pablo",
+    "Dunand, Joe",
+    "Scantlin, Nate",
+    "Norman, Ben",
+    "Brooks, Robert",
+    "Guzman, Jeison",
+    "Garcia, Wilkerman",
+    "Martinez, David",
+    "Howell, Korry",
+  ],
+  "high point rockers": [
+    "Figueroa, Martin",
+    "Owings, Connor",
+    "Aklinski, Ben",
+    "Moran, Colin",
+    "Wiel, Zander",
+    "Parreira, Brian",
+    "Mehlbauer, Clayton",
+    "Grotjohn, Ryan",
+    "Johns, Gavin",
+    "Edwards, Evan",
+    "Washer, Jake",
+    "Richardson, Cayman",
+  ],
+  "lexington legends": [
+    "Reynolds, Mikey",
+    "Howell, Gabe",
+    "Cottam, Kole",
+    "Gonzalez, Pedro",
+    "O'Brien, Keenan",
+    "Tavarez, Jesus",
+    "Liniak, Kingston",
+    "Hernandez, Luis",
+    "Robertson, Payton",
+    "Pompey, Tristan",
+    "Alfonzo, Daniel",
+    "Jemison, Andrew",
+  ],
+  "hagerstown flying boxcars": [
+    "Culver, Cito",
+    "Pugh, Brandon",
+    "Perez, Eury",
+    "Terry, Curtis",
+    "Dotel, Welington",
+    "Sepulveda, Christian",
+    "Abreu, Osvaldo",
+    "Moorer, Demetrius",
+    "Gulino, Michael",
+    "Williams, Justin",
+    "Hill, Tyler",
+  ],
+  "long island ducks": [
+    "Geraldo, Manuel",
+    "Antonini, Aaron",
+    "Schwindel, Frank",
+    "Sisco, Chance",
+    "Gomez, Hector",
+    "McBroom, Ryan",
+    "Dearden, Tyler",
+    "Higgins, Kevin",
+    "Kelly, Scott",
+    "Wingrove, Rixon",
+    "Smith, Chad",
+    "Waite, Jonathan",
+  ],
+  "gastonia ghost peppers": [
+    "Reinher, Jack",
+    "Stowers, Josh",
+    "Watson, Kevin",
+    "Wylie, Justin",
+    "Mazeika, Patrick",
+    "De La Rosa, Eric",
+    "Davidson, Braxton",
+    "Gatewood, Jake",
+    "Hoover, Jake",
+    "Miller, Dean",
+    "Gonzalez, Hidekel",
+  ],
+  "gastonia baseball club": [
+    "Reinher, Jack",
+    "Stowers, Josh",
+    "Watson, Kevin",
+    "Wylie, Justin",
+    "Mazeika, Patrick",
+    "De La Rosa, Eric",
+    "Davidson, Braxton",
+    "Gatewood, Jake",
+    "Hoover, Jake",
+    "Miller, Dean",
+    "Gonzalez, Hidekel",
+  ],
+  "southern maryland blue crabs": [
+    "Hibbert, Matt",
+    "Wielansky, Michael",
+    "Brocato, Anthony",
+    "Kelly, Juan",
+    "Broughton, Josh",
+    "Hill, Aaron",
+    "Ray, Anthony",
+    "Alonso, Alan",
+    "Quiroz, Isaias",
+    "Wurtz, Gabe",
+    "Yetsko, Ian",
+    "Marquez, Caleb",
+  ],
+};
+
+const FLASHCARD_PRIMARY_TEAM_NAMES = [
+  "Charleston Dirty Birds",
+  "York Revolution",
+  "Lancaster Stormers",
+  "Staten Island FerryHawks",
+  "High Point Rockers",
+  "Lexington Legends",
+  "Hagerstown Flying Boxcars",
+  "Long Island Ducks",
+  "Gastonia Ghost Peppers",
+  "Southern Maryland Blue Crabs",
+];
+
 const addCommonWidgetParams = (url, teamIds, playerIds, source, teamNames = [], playerNames = []) => {
   const teamIdsAsStrings = teamIds.map((id) => String(id));
   const playerIdsAsStrings = playerIds.map((id) => String(id));
@@ -763,6 +961,111 @@ const fetchWidgetSelectorOptionsViaBrowser = async (redirectLink) => {
   }
 };
 
+const fetchFlashcardWidgetPlayerOptionsViaBrowser = async (redirectLink, { teamNames = [] } = {}) => {
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
+    });
+
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1440, height: 1200 });
+
+    const requestedTeams = teamNames
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    let targetUrl = redirectLink;
+    try {
+      const url = new URL(redirectLink, "https://www.alpb-analytics.com");
+      if (requestedTeams.length > 0) {
+        url.searchParams.set("teamNames", JSON.stringify(requestedTeams));
+        url.searchParams.set("team_names", requestedTeams.join(","));
+        url.searchParams.set("teamName", requestedTeams[0]);
+      }
+      url.searchParams.set("source", "superwidget-selector");
+      targetUrl = url.toString();
+    } catch {
+      // keep original redirectLink
+    }
+
+    await page.goto(targetUrl, {
+      waitUntil: "networkidle2",
+      timeout: 180000,
+    });
+
+    await wakeSleepingSelectorPageIfNeeded(page);
+    await new Promise((resolve) => setTimeout(resolve, 2200));
+
+    if (requestedTeams.length > 0) {
+      try {
+        await prepareFlashcardPageForTeamSelection(page);
+      } catch {
+        // no-op
+      }
+
+      const lineupAlreadyVisible = await page.evaluate(() => {
+        const bodyText = String(document.body?.innerText || "").toLowerCase();
+        const hasLineupSignals = /print\s+lineup/.test(bodyText) || /\b\d+\s+batters\b/.test(bodyText);
+        const cardCount = document.querySelectorAll(".mini-card-name, .player-name").length;
+        return hasLineupSignals && cardCount > 0;
+      });
+
+      if (!lineupAlreadyVisible) {
+        await selectFlashcardTeamInPage(page, requestedTeams);
+        await new Promise((resolve) => setTimeout(resolve, 1800));
+      }
+    }
+
+    const options = await page.evaluate((requestedTeamsFromServer) => {
+      const normalizeTeamName = (value) =>
+        String(value || "")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const inferTeamName = () => {
+        const headingCandidates = Array.from(document.querySelectorAll("h1, h2, .title, .header-title"))
+          .map((element) => String(element.textContent || "").replace(/\s+/g, " ").trim())
+          .filter(Boolean);
+
+        const lineupHeading = headingCandidates.find((text) => /lineup/i.test(text));
+        if (lineupHeading) {
+          return normalizeTeamName(lineupHeading.replace(/lineup/i, ""));
+        }
+
+        return normalizeTeamName(requestedTeamsFromServer?.[0] || "");
+      };
+
+      const inferredTeamName = inferTeamName();
+      const allNames = Array.from(document.querySelectorAll(".mini-card-name, .player-name"))
+        .map((element) => String(element.textContent || "").replace(/\s+/g, " ").trim())
+        .filter(Boolean);
+
+      const unique = [];
+      const seen = new Set();
+      for (const name of allNames) {
+        const key = name.toLowerCase();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        unique.push({
+          text: name,
+          externalId: "",
+          teamName: inferredTeamName || null,
+        });
+      }
+
+      return unique;
+    }, requestedTeams);
+
+    return options;
+  } finally {
+    if (browser) {
+      await browser.close();
+    }
+  }
+};
+
 const fetchGeneralStatisticsOptionsViaBrowser = async (redirectLink) => {
   let browser;
   try {
@@ -1223,12 +1526,15 @@ router.get("/:widgetId/selector-options", async (req, res) => {
       externalId: null,
     }));
 
+    const isFlashcard = isFlashcardWidget(widgetId, widgetName, redirectLink);
     let sourceOptions;
     try {
       sourceOptions = isHittingAnalyticsWidget(widgetId, widgetName, redirectLink)
         ? await fetchHittingWidgetPlayerOptions()
         : isCountBasedWidget(widgetId, widgetName, redirectLink)
           ? await fetchCountBasedWidgetPlayerOptions(redirectLink)
+        : isFlashcard
+          ? await fetchFlashcardWidgetPlayerOptionsViaBrowser(redirectLink, { teamNames: requestedTeamNames })
         : isSluggerPitcherWidget(widgetId, widgetName, redirectLink)
           ? (await fetchSluggerPitcherOptionsViaBrowser(redirectLink, { teamNames: requestedTeamNames })).players
         : isPlayerPortalWidget(widgetId, widgetName, redirectLink)
@@ -1254,13 +1560,27 @@ router.get("/:widgetId/selector-options", async (req, res) => {
     const mappedPlayers = [];
 
     const isSluggerPitcher = isSluggerPitcherWidget(widgetId, widgetName, redirectLink);
+    const fallbackTeamName = requestedTeamNames[0] || null;
 
     for (const option of sourceOptions) {
-      const local = resolveLocalPlayerFromOption(option.text, playerLookup);
+      const optionText = typeof option === "string" ? option : option?.text;
+      const optionTeamName = typeof option === "object" && option !== null ? option.teamName : undefined;
+      const optionExternalId = typeof option === "object" && option !== null ? option.externalId : null;
+
+      const local = resolveLocalPlayerFromOption(optionText, playerLookup);
       if (local) {
-        const rawName = String(option.text || "").trim() || local.player_name;
-        const rawTeamName = String(option.teamName || "").trim();
-        const effectiveTeamName = rawTeamName || local.team_name;
+        const rawName = String(optionText || "").trim() || local.player_name;
+        const rawTeamName = String(optionTeamName || "").trim();
+        const effectiveTeamName = rawTeamName || local.team_name || fallbackTeamName || "Unknown Team";
+        const flashcardTeamName = rawTeamName || fallbackTeamName || effectiveTeamName;
+        const flashcardTeamKey = flashcardTeamName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "unknown-team";
+        const flashcardPlayerKey = rawName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "unknown-player";
         const effectiveTeamId = rawTeamName
           ? `slugger-team:${rawTeamName
               .toLowerCase()
@@ -1269,38 +1589,70 @@ router.get("/:widgetId/selector-options", async (req, res) => {
           : local.team_id;
 
         mappedPlayers.push({
-          id: isSluggerPitcher ? `slugger:${local.player_id}` : local.player_id,
-          name: isSluggerPitcher ? rawName : local.player_name,
-          teamId: isSluggerPitcher ? effectiveTeamId : local.team_id,
-          teamName: isSluggerPitcher ? effectiveTeamName : local.team_name,
+          id: isSluggerPitcher
+            ? `slugger:${local.player_id}`
+            : isFlashcard
+              ? `flashcard:${flashcardTeamKey}:${flashcardPlayerKey}`
+              : local.player_id,
+          name: isSluggerPitcher || isFlashcard ? rawName : local.player_name,
+          teamId: isSluggerPitcher
+            ? effectiveTeamId
+            : isFlashcard
+              ? `flashcard-team:${flashcardTeamKey}`
+              : local.team_id,
+          teamName: isSluggerPitcher
+            ? effectiveTeamName
+            : isFlashcard
+              ? flashcardTeamName
+              : local.team_name,
           position: local.position,
-          externalId: option.externalId || null,
-          sourceLabel: option.text,
+          externalId: optionExternalId || null,
+          sourceLabel: optionText,
         });
         continue;
       }
 
       if (isSluggerPitcher) {
-        const rawName = String(option.text || "").trim();
-        const rawTeamName = String(option.teamName || "Unknown Team").trim() || "Unknown Team";
+        const rawName = String(optionText || "").trim();
+        const rawTeamName = String(optionTeamName || "Unknown Team").trim() || "Unknown Team";
         const slugTeamKey = rawTeamName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown-team";
         const slugPlayerKey = rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown-player";
 
         mappedPlayers.push({
-          id: `slugger:${slugTeamKey}:${option.externalId || slugPlayerKey}`,
+          id: `slugger:${slugTeamKey}:${optionExternalId || slugPlayerKey}`,
           name: rawName,
           teamId: `slugger-team:${slugTeamKey}`,
           teamName: rawTeamName,
           position: "Unknown",
-          externalId: option.externalId || null,
-          sourceLabel: option.text,
+          externalId: optionExternalId || null,
+          sourceLabel: optionText,
+        });
+        continue;
+      }
+
+      if (isFlashcard) {
+        const rawName = String(optionText || "").trim();
+        if (!rawName) continue;
+
+        const rawTeamName = String(optionTeamName || fallbackTeamName || "Unknown Team").trim() || "Unknown Team";
+        const slugTeamKey = rawTeamName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown-team";
+        const slugPlayerKey = rawName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "unknown-player";
+
+        mappedPlayers.push({
+          id: `flashcard:${slugTeamKey}:${slugPlayerKey}`,
+          name: rawName,
+          teamId: `flashcard-team:${slugTeamKey}`,
+          teamName: rawTeamName,
+          position: "Unknown",
+          externalId: optionExternalId || null,
+          sourceLabel: optionText,
         });
       }
     }
 
     const requestedTeamIdSet = new Set(requestedTeamIds.map((value) => value.toLowerCase()));
     const requestedTeamNameSet = new Set(requestedTeamNames.map((name) => name.toLowerCase()));
-    const finalPlayers = mappedPlayers.filter((player) => {
+    let finalPlayers = mappedPlayers.filter((player) => {
       const teamId = String(player.teamId || "").toLowerCase();
       const teamName = String(player.teamName || "").toLowerCase();
 
@@ -1314,6 +1666,44 @@ router.get("/:widgetId/selector-options", async (req, res) => {
 
       return true;
     });
+
+    if (isFlashcard && finalPlayers.length === 0) {
+      const fallbackTeams = requestedTeamNames.length > 0
+        ? [String(requestedTeamNames[0] || "").trim()].filter(Boolean)
+        : FLASHCARD_PRIMARY_TEAM_NAMES;
+
+      const fallbackPlayers = [];
+      for (const teamName of fallbackTeams) {
+        const fallbackRoster = FLASHCARD_TEAM_PLAYER_FALLBACKS[teamName.toLowerCase()] || [];
+        if (fallbackRoster.length === 0) continue;
+
+        const slugTeamKey = teamName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "") || "unknown-team";
+
+        for (const name of fallbackRoster) {
+          const slugPlayerKey = String(name)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "") || "unknown-player";
+
+          fallbackPlayers.push({
+            id: `flashcard:${slugTeamKey}:${slugPlayerKey}`,
+            name,
+            teamId: `flashcard-team:${slugTeamKey}`,
+            teamName: teamName,
+            position: "Unknown",
+            externalId: null,
+            sourceLabel: name,
+          });
+        }
+      }
+
+      if (fallbackPlayers.length > 0) {
+        finalPlayers = fallbackPlayers;
+      }
+    }
 
     const teamsMap = new Map();
     for (const player of finalPlayers) {
@@ -1567,6 +1957,451 @@ const selectHittingPlayerInPage = async (page, rawPlayerName) => {
   }
 
   return false;
+};
+
+const getFlashcardInteractionTargets = (page) => {
+  const targets = [page];
+  const frames = page.frames?.() || [];
+  const mainFrame = page.mainFrame?.();
+  for (const frame of frames) {
+    if (frame !== mainFrame) {
+      targets.push(frame);
+    }
+  }
+  return targets;
+};
+
+const selectFlashcardPlayerInPage = async (page, rawPlayerName) => {
+  const playerName = String(rawPlayerName || "").trim();
+  if (!playerName) return { selected: false, selectedText: "", frameUrl: null, onPlayerPage: false, reason: "No player name" };
+
+  const tokens = playerName
+    .toLowerCase()
+    .replace(/,/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length >= 2);
+
+  const targets = getFlashcardInteractionTargets(page);
+  const debugTargets = [];
+
+  const verifyPlayerPageForTarget = async (target) => {
+    return target.evaluate((targetName, targetTokens) => {
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const bodyText = normalize(document.body?.innerText || "");
+      const target = normalize(targetName);
+      const hasPlayerName = bodyText.includes(target) || targetTokens.every((token) => bodyText.includes(token));
+      const hasPrintLineup = bodyText.includes("print lineup");
+      const hasBattersSummary = /\b\d+\s+batters\b/.test(bodyText);
+      const hasLineupWord = /\blineup\b/.test(bodyText);
+      const hasTeamsBack = bodyText.includes(" teams") || bodyText.includes("← teams");
+      const onLineupPage = hasPrintLineup || hasBattersSummary || hasLineupWord || hasTeamsBack;
+
+      const headingTexts = Array.from(document.querySelectorAll("h1, h2, h3, [data-testid*='player'], .player-name, .player-title"))
+        .map((element) => normalize(element.textContent || ""))
+        .filter(Boolean);
+      const headingMatch = headingTexts.some((text) => text.includes(target) || targetTokens.every((token) => text.includes(token)));
+
+      const topLines = String(document.body?.innerText || "")
+        .split("\n")
+        .map((line) => normalize(line))
+        .filter(Boolean)
+        .slice(0, 10);
+      const topHasTarget = topLines.some((line) => line.includes(target) || targetTokens.every((token) => line.includes(token)));
+      const topHasLineup = topLines.some((line) => line.includes("lineup") || line.includes("print lineup") || /\b\d+\s+batters\b/.test(line));
+
+      const detailSignals = ["avg", "obp", "slg", "ops", "iso", "woba", "babip", "hard hit", "barrel", "chase", "whiff", "pitches"];
+      const hasDetailSignals = detailSignals.some((signal) => bodyText.includes(signal));
+      const strongPlayerSignal = headingMatch || hasDetailSignals;
+      const topPlayerSignal = topHasTarget && !topHasLineup;
+      const lineupOnlySignal = onLineupPage && !(strongPlayerSignal || topPlayerSignal);
+
+      return {
+        onPlayerPage: hasPlayerName && !lineupOnlySignal,
+        hasPlayerName,
+        onLineupPage,
+        headingMatch,
+        hasDetailSignals,
+        strongPlayerSignal,
+        topPlayerSignal,
+        lineupOnlySignal,
+      };
+    }, playerName, tokens);
+  };
+
+  for (const target of targets) {
+    const targetUrl = typeof target.url === "function" ? target.url() : page.url();
+
+    const beforeSnapshot = await target.evaluate(() => {
+      const bodyText = String(document.body?.innerText || "");
+      const topLines = bodyText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .slice(0, 12);
+
+      const activeCard = document.querySelector(".mini-card.active, .mini-card.selected, .mini-card[aria-selected='true']");
+      const activeCardName = String(
+        activeCard?.querySelector?.(".mini-card-name, .player-name")?.textContent || activeCard?.textContent || ""
+      )
+        .replace(/\s+/g, " ")
+        .trim();
+
+      return {
+        href: window.location.href,
+        title: document.title,
+        topLines,
+        hasPrintLineup: /print\s+lineup/i.test(bodyText),
+        hasBattersSummary: /\b\d+\s+batters\b/i.test(bodyText),
+        activeCardName: activeCardName || null,
+      };
+    });
+
+    const clickResult = await target.evaluate((targetName, targetTokens) => {
+      const normalize = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .trim();
+
+      const targetText = normalize(targetName);
+      const cards = Array.from(document.querySelectorAll(".mini-card"));
+
+      let bestElement = null;
+      let bestClickElement = null;
+      let bestText = "";
+      let bestScore = -1;
+      let candidateCount = 0;
+      const matchedTexts = [];
+
+      for (const card of cards) {
+        const nameEl = card.querySelector(".mini-card-name, .player-name, [class*='name']");
+        const rawText = String((nameEl?.textContent || card.textContent || "")).replace(/\s+/g, " ").trim();
+        if (!rawText || rawText.length > 220) continue;
+
+        const normalizedText = normalize(rawText);
+        const tokenHits = targetTokens.filter((token) => normalizedText.includes(token)).length;
+        if (!normalizedText.includes(targetText) && tokenHits < Math.min(2, targetTokens.length)) continue;
+        candidateCount += 1;
+        if (matchedTexts.length < 8) matchedTexts.push(rawText);
+
+        const style = window.getComputedStyle(card);
+        const rect = card.getBoundingClientRect();
+        if (style.display === "none" || style.visibility === "hidden" || rect.height <= 0 || rect.width <= 0) continue;
+
+        let score = 0;
+        if (normalizedText === targetText) score += 10;
+        if (normalizedText.includes(targetText)) score += 7;
+        score += tokenHits * 2;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestElement = card;
+          bestClickElement = nameEl || card.querySelector("a, button, [role='button']") || card;
+          bestText = rawText;
+        }
+      }
+
+      if (!bestElement) {
+        const names = Array.from(document.querySelectorAll(".mini-card-name, .player-name"));
+        for (const nameEl of names) {
+          const rawText = String(nameEl.textContent || "").replace(/\s+/g, " ").trim();
+          if (!rawText) continue;
+          const normalizedText = normalize(rawText);
+          const tokenHits = targetTokens.filter((token) => normalizedText.includes(token)).length;
+          if (!normalizedText.includes(targetText) && tokenHits < Math.min(2, targetTokens.length)) continue;
+
+          const card = nameEl.closest(".mini-card") || nameEl;
+          bestElement = card;
+          bestClickElement = nameEl;
+          bestText = rawText;
+          bestScore = 1;
+          break;
+        }
+      }
+
+      if (!bestElement) {
+        const getClickableAncestor = (element) => {
+          let current = element;
+          for (let depth = 0; depth < 8 && current; depth += 1) {
+            if (
+              current.matches?.("button, [role='button'], a, .mini-card, .player-card, .player-item, .card, li, [onclick], div") ||
+              typeof current.onclick === "function"
+            ) {
+              return current;
+            }
+            current = current.parentElement;
+          }
+          return null;
+        };
+
+        const textNodes = Array.from(document.querySelectorAll("*:not(script):not(style)"));
+        for (const node of textNodes) {
+          const rawText = String(node.textContent || "").replace(/\s+/g, " ").trim();
+          if (!rawText || rawText.length > 220) continue;
+
+          const normalizedText = normalize(rawText);
+          const tokenHits = targetTokens.filter((token) => normalizedText.includes(token)).length;
+          if (!normalizedText.includes(targetText) && tokenHits < Math.min(2, targetTokens.length)) continue;
+
+          const clickable = getClickableAncestor(node);
+          if (!clickable) continue;
+
+          const style = window.getComputedStyle(clickable);
+          const rect = clickable.getBoundingClientRect();
+          if (style.display === "none" || style.visibility === "hidden" || rect.height <= 0 || rect.width <= 0) continue;
+
+          candidateCount += 1;
+          if (matchedTexts.length < 8) matchedTexts.push(rawText);
+          bestElement = clickable;
+          bestText = rawText;
+          bestScore = 1;
+          break;
+        }
+      }
+
+      if (!bestElement || bestScore <= 0) {
+        return {
+          clickedText: "",
+          candidateCount,
+          matchedText: matchedTexts,
+        };
+      }
+
+      const clickTarget = bestClickElement || bestElement;
+      if (typeof clickTarget.click === "function") {
+        clickTarget.click();
+      }
+      clickTarget.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      clickTarget.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      clickTarget.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      clickTarget.dispatchEvent(new MouseEvent("dblclick", { bubbles: true }));
+      return {
+        clickedText: bestText,
+        candidateCount,
+        matchedText: matchedTexts,
+      };
+    }, playerName, tokens);
+
+    const clickedPlayerText = String(clickResult?.clickedText || "");
+    debugTargets.push({
+      targetUrl,
+      beforeSnapshot,
+      candidateCount: Number(clickResult?.candidateCount || 0),
+      matchedText: Array.isArray(clickResult?.matchedText) ? clickResult.matchedText : [],
+      clickedText: clickedPlayerText || null,
+    });
+
+    if (clickedPlayerText) {
+      await new Promise((resolve) => setTimeout(resolve, 2200));
+
+      const afterSnapshot = await target.evaluate(() => {
+        const bodyText = String(document.body?.innerText || "");
+        const topLines = bodyText
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .slice(0, 12);
+
+        const activeCard = document.querySelector(".mini-card.active, .mini-card.selected, .mini-card[aria-selected='true']");
+        const activeCardName = String(
+          activeCard?.querySelector?.(".mini-card-name, .player-name")?.textContent || activeCard?.textContent || ""
+        )
+          .replace(/\s+/g, " ")
+          .trim();
+
+        return {
+          href: window.location.href,
+          title: document.title,
+          topLines,
+          hasPrintLineup: /print\s+lineup/i.test(bodyText),
+          hasBattersSummary: /\b\d+\s+batters\b/i.test(bodyText),
+          activeCardName: activeCardName || null,
+        };
+      });
+      debugTargets[debugTargets.length - 1].afterSnapshot = afterSnapshot;
+      debugTargets[debugTargets.length - 1].urlChanged = Boolean(beforeSnapshot?.href && afterSnapshot?.href && beforeSnapshot.href !== afterSnapshot.href);
+
+      let matchedVerification = null;
+      for (const verifyTarget of targets) {
+        const verification = await verifyPlayerPageForTarget(verifyTarget);
+        const verifyUrl = typeof verifyTarget.url === "function" ? verifyTarget.url() : page.url();
+
+        debugTargets.push({
+          targetUrl: verifyUrl,
+          verificationOnly: true,
+          verification,
+        });
+
+        if (verification?.onPlayerPage) {
+          matchedVerification = { verification, verifyUrl };
+          break;
+        }
+      }
+
+      if (matchedVerification) {
+        return {
+          selected: true,
+          selectedText: clickedPlayerText,
+          frameUrl: matchedVerification.verifyUrl || targetUrl,
+          onPlayerPage: true,
+          verification: matchedVerification.verification,
+          debugTargets,
+        };
+      }
+    }
+  }
+
+  return {
+    selected: false,
+    selectedText: "",
+    frameUrl: null,
+    onPlayerPage: false,
+    reason: "Player click/search did not reach player detail page",
+    debugTargets,
+  };
+};
+
+const selectFlashcardTeamInPage = async (page, teamNames = []) => {
+  const requestedTeams = teamNames
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (requestedTeams.length === 0) {
+    return { selected: false, selectedText: "", reason: "No team names provided", frameUrl: null };
+  }
+
+  console.log(`[PDF Export] Flashcard team selection: requesting teams: ${JSON.stringify(requestedTeams)}`);
+  const targets = getFlashcardInteractionTargets(page);
+
+  for (const teamName of requestedTeams) {
+    for (const target of targets) {
+      const targetUrl = typeof target.url === "function" ? target.url() : page.url();
+
+      const selectedText = await target.evaluate((rawTeamName) => {
+        const normalize = (value) =>
+          String(value || "")
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const targetTeam = normalize(rawTeamName);
+        const targetTokens = targetTeam.split(/\s+/).filter((token) => token.length >= 2);
+
+        const candidates = Array.from(
+          document.querySelectorAll("button, [role='button'], a, .team-card, .team-item, .card, li, div")
+        ).filter((element) => {
+          const style = window.getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          if (style.display === "none" || style.visibility === "hidden" || rect.height <= 0 || rect.width <= 0) {
+            return false;
+          }
+          const text = String(element.textContent || "").replace(/\s+/g, " ").trim();
+          if (!text || text.length > 220) return false;
+          return true;
+        });
+
+        let bestElement = null;
+        let bestText = "";
+        let bestScore = -1;
+
+        for (const element of candidates) {
+          const rawText = String(element.textContent || "").replace(/\s+/g, " ").trim();
+          const text = normalize(rawText);
+          if (!text) continue;
+
+          let score = 0;
+          if (text === targetTeam) score += 9;
+          if (text.includes(targetTeam)) score += 6;
+          if (targetTeam.includes(text)) score += 2;
+          for (const token of targetTokens) {
+            if (text.includes(token)) score += 1;
+          }
+
+          if (score > bestScore) {
+            bestScore = score;
+            bestElement = element;
+            bestText = rawText;
+          }
+        }
+
+        if (!bestElement || bestScore <= 0) return "";
+
+        bestElement.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        bestElement.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        bestElement.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        return bestText;
+      }, teamName);
+
+      console.log(`[PDF Export] Flashcard team "${teamName}" selection result: "${selectedText}"`);
+      
+      if (selectedText) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return { selected: true, selectedText, requested: teamName, frameUrl: targetUrl };
+      }
+    }
+  }
+
+  return { selected: false, selectedText: "", reason: "No matching flashcard team card found", frameUrl: null };
+};
+
+const prepareFlashcardPageForTeamSelection = async (page) => {
+  const targets = getFlashcardInteractionTargets(page);
+
+  for (const target of targets) {
+    const targetUrl = typeof target.url === "function" ? target.url() : page.url();
+
+    const dateGateDetected = await target.evaluate(() => {
+      const hasStartLabel = /start\s*date/i.test(document.body?.innerText || "");
+      const hasEndLabel = /end\s*date/i.test(document.body?.innerText || "");
+      const hasLoadDataButton = Array.from(
+        document.querySelectorAll("button, [role='button'], input[type='button'], input[type='submit']")
+      ).some((element) => /load\s*data/i.test(String(element.textContent || element.value || "")));
+      return hasStartLabel && hasEndLabel && hasLoadDataButton;
+    });
+
+    if (!dateGateDetected) {
+      continue;
+    }
+
+    const clickedLoadData = await target.evaluate(() => {
+      const buttons = Array.from(
+        document.querySelectorAll("button, [role='button'], input[type='button'], input[type='submit']")
+      );
+      const found = buttons.find((element) => /load\s*data/i.test(String(element.textContent || element.value || "")));
+      if (!found) return false;
+      found.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+      found.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+      found.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      return true;
+    });
+
+    if (!clickedLoadData) {
+      return { prepared: false, skipped: false, reason: "Load Data button not clickable", frameUrl: targetUrl };
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+
+    try {
+      await target.waitForFunction(
+        () => {
+          const text = (document.body?.innerText || "").toLowerCase();
+          return text.includes("select a team") || text.includes("teams available");
+        },
+        { timeout: 15000 }
+      );
+    } catch {
+      // no-op fallback
+    }
+
+    return { prepared: true, skipped: false, reason: "Load Data clicked", frameUrl: targetUrl };
+  }
+
+  return { prepared: false, skipped: true, reason: "Date gate not detected", frameUrl: null };
 };
 
 const selectCountBasedPlayerInPage = async (page, rawPlayerName) => {
@@ -2972,6 +3807,578 @@ const selectGeneralStatisticsTeamInPage = async (page, { teamNames = [] }) => {
   };
 };
 
+const selectPlayerPortalPlayerInPage = async (page, { playerNames = [] }) => {
+  const requested = playerNames
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (requested.length === 0) {
+    return {
+      selected: false,
+      requested,
+      selectedText: null,
+      matchedRequestedName: null,
+      matchedBy: null,
+      visiblePlayerNames: [],
+      reason: "No player requested",
+    };
+  }
+
+  const chooseBestCandidate = (visibleNames) => {
+    const normalizedVisible = (visibleNames || [])
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    let bestRequested = null;
+    let bestVisible = null;
+    let bestScore = -1;
+
+    for (const requestedName of requested) {
+      for (const visibleName of normalizedVisible) {
+        let score = 0;
+        if (namesLikelyMatch(requestedName, visibleName)) score += 12;
+
+        const requestedNorm = normalizeComparableName(requestedName);
+        const visibleNorm = normalizeComparableName(visibleName);
+
+        if (requestedNorm && visibleNorm) {
+          if (requestedNorm === visibleNorm) score += 8;
+          if (visibleNorm.includes(requestedNorm)) score += 6;
+          if (requestedNorm.includes(visibleNorm) && visibleNorm.length >= 5) score += 3;
+
+          const requestedTokens = requestedNorm.split(" ").filter((token) => token.length >= 2);
+          for (const token of requestedTokens) {
+            if (visibleNorm.includes(token)) score += 1;
+          }
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestRequested = requestedName;
+          bestVisible = visibleName;
+        }
+      }
+    }
+
+    return {
+      bestRequested,
+      bestVisible,
+      bestScore,
+    };
+  };
+
+  const collectVisiblePlayerNames = async () =>
+    page.evaluate(() => {
+      const normalize = (value) => String(value || "").replace(/\s+/g, " ").trim();
+      const candidates = new Set();
+
+      const anchorNames = Array.from(document.querySelectorAll('a[href*="/players/"]'))
+        .map((node) => normalize(node.textContent || ""))
+        .filter(Boolean);
+
+      for (const value of anchorNames) {
+        candidates.add(value);
+      }
+
+      const cardLikeSelectors = [
+        "[data-testid*='player']",
+        "[class*='player-card']",
+        "[class*='playerCard']",
+        "[class*='player_name']",
+      ];
+
+      for (const selector of cardLikeSelectors) {
+        const nodes = Array.from(document.querySelectorAll(selector));
+        for (const node of nodes) {
+          const text = normalize(node.textContent || "");
+          if (!text) continue;
+          const firstLine = normalize(text.split("\n")[0] || "");
+          if (firstLine && firstLine.length <= 60) {
+            candidates.add(firstLine);
+          }
+        }
+      }
+
+      return Array.from(candidates).slice(0, 120);
+    });
+
+  const locateSearchInput = async () => {
+    const selectors = [
+      "input[placeholder*='Search by name' i]",
+      "input[placeholder*='search' i]",
+      "input[type='search']",
+      "input[type='text']",
+    ];
+
+    for (const selector of selectors) {
+      const handles = await page.$$(selector);
+      for (const handle of handles) {
+        const visible = await handle.evaluate((element) => {
+          if (!(element instanceof HTMLInputElement)) return false;
+          const style = window.getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+        });
+
+        if (visible) {
+          return handle;
+        }
+      }
+    }
+
+    return null;
+  };
+
+  let inputApplied = false;
+  let selectedText = null;
+
+  for (const requestedName of requested) {
+    const inputHandle = await locateSearchInput();
+    if (!inputHandle) continue;
+
+    await inputHandle.click({ clickCount: 3 });
+    await page.keyboard.press("Backspace");
+    await inputHandle.type(requestedName, { delay: 22 });
+    await page.keyboard.press("Enter");
+    await new Promise((resolve) => setTimeout(resolve, 1800));
+
+    const typedValue = await inputHandle.evaluate((element) => {
+      if (!(element instanceof HTMLInputElement)) return "";
+      return String(element.value || "").trim();
+    });
+
+    if (typedValue) {
+      inputApplied = true;
+      selectedText = typedValue;
+      break;
+    }
+  }
+
+  const visiblePlayerNames = await collectVisiblePlayerNames();
+  const candidate = chooseBestCandidate(visiblePlayerNames);
+
+  if (candidate.bestRequested && candidate.bestVisible && candidate.bestScore > 6) {
+    return {
+      selected: true,
+      requested,
+      selectedText: candidate.bestVisible,
+      matchedRequestedName: candidate.bestRequested,
+      matchedBy: "player-card-match-after-search",
+      visiblePlayerNames,
+      reason: null,
+    };
+  }
+
+  if (inputApplied && selectedText) {
+    const matchedRequestedName = requested.find((name) => namesLikelyMatch(name, selectedText)) || null;
+    if (matchedRequestedName) {
+      return {
+        selected: true,
+        requested,
+        selectedText,
+        matchedRequestedName,
+        matchedBy: "search-input-enter",
+        visiblePlayerNames,
+        reason: null,
+      };
+    }
+  }
+
+  return {
+    selected: false,
+    requested,
+    selectedText: selectedText || null,
+    matchedRequestedName: null,
+    matchedBy: inputApplied ? "search-input-value" : null,
+    visiblePlayerNames,
+    reason: inputApplied
+      ? "Search input was set, but no matching player card found"
+      : "No searchable input found in Player Portal",
+  };
+};
+
+const triggerOutfielderGenerateInPage = async (page, { clickCount = 2 } = {}) => {
+  const targets = [page, ...page.frames().filter((frame) => frame !== page.mainFrame())];
+  const attempts = Math.max(1, Number(clickCount) || 1);
+  const clickLogs = [];
+
+  for (let index = 0; index < attempts; index += 1) {
+    let clicked = false;
+
+    for (const target of targets) {
+      try {
+        const clickResult = await target.evaluate(() => {
+          const normalize = (value) => String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
+
+          const isVisible = (element) => {
+            if (!element) return false;
+            const style = window.getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+          };
+
+          const nodes = Array.from(document.querySelectorAll("button, [role='button'], input[type='button'], input[type='submit'], a"));
+          const candidates = nodes
+            .map((node) => {
+              const text = node instanceof HTMLInputElement
+                ? String(node.value || "")
+                : String(node.textContent || "");
+              return {
+                node,
+                text: String(text || "").replace(/\s+/g, " ").trim(),
+                normalized: normalize(text),
+              };
+            })
+            .filter((item) => item.text && isVisible(item.node));
+
+          let best = null;
+          for (const candidate of candidates) {
+            let score = 0;
+            if (candidate.normalized.includes("generate positions")) score += 15;
+            if (candidate.normalized.includes("generate")) score += 6;
+            if (candidate.normalized.includes("position")) score += 4;
+
+            if (!best || score > best.score) {
+              best = { ...candidate, score };
+            }
+          }
+
+          if (!best || best.score <= 0) {
+            return {
+              clicked: false,
+              buttonText: null,
+              candidateCount: candidates.length,
+            };
+          }
+
+          if (typeof best.node.focus === "function") {
+            best.node.focus();
+          }
+
+          best.node.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          best.node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+          best.node.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+          if (typeof best.node.click === "function") {
+            best.node.click();
+          }
+
+          return {
+            clicked: true,
+            buttonText: best.text,
+            candidateCount: candidates.length,
+          };
+        });
+
+        if (clickResult?.clicked) {
+          clicked = true;
+          clickLogs.push({
+            attempt: index + 1,
+            targetUrl: typeof target.url === "function" ? target.url() : page.url(),
+            buttonText: clickResult.buttonText || null,
+            candidateCount: Number(clickResult.candidateCount || 0),
+          });
+          break;
+        }
+
+        clickLogs.push({
+          attempt: index + 1,
+          targetUrl: typeof target.url === "function" ? target.url() : page.url(),
+          buttonText: null,
+          candidateCount: Number(clickResult?.candidateCount || 0),
+        });
+      } catch (error) {
+        clickLogs.push({
+          attempt: index + 1,
+          targetUrl: typeof target.url === "function" ? target.url() : page.url(),
+          error: String(error?.message || error),
+        });
+      }
+    }
+
+    if (!clicked) {
+      continue;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  return {
+    triggered: clickLogs.some((log) => !log.error && log.buttonText),
+    attempts,
+    clickLogs,
+  };
+};
+
+const selectOutfielderBatterInPage = async (page, { playerNames = [] } = {}) => {
+  const requested = playerNames
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  if (requested.length === 0) {
+    return {
+      selected: false,
+      requested,
+      selectedText: null,
+      matchedRequestedName: null,
+      availableOptions: [],
+      reason: "No requested players",
+    };
+  }
+
+  const targets = [page, ...page.frames().filter((frame) => frame !== page.mainFrame())];
+  let bestResult = null;
+
+  for (const target of targets) {
+    try {
+      const targetResult = await target.evaluate(async (requestedNames) => {
+        const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        const normalize = (value) =>
+          String(value || "")
+            .toLowerCase()
+            .replace(/\([^)]*\)/g, " ")
+            .replace(/[^a-z0-9]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+
+        const isVisible = (element) => {
+          if (!element) return false;
+          const style = window.getComputedStyle(element);
+          const rect = element.getBoundingClientRect();
+          return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
+        };
+
+        const likelyMatch = (requestedName, optionName) => {
+          const requestedNorm = normalize(requestedName);
+          const optionNorm = normalize(optionName);
+          if (!requestedNorm || !optionNorm) return false;
+          if (requestedNorm === optionNorm) return true;
+          if (optionNorm.includes(requestedNorm) || requestedNorm.includes(optionNorm)) return true;
+
+          const requestedTokens = requestedNorm.split(/\s+/).filter((token) => token.length >= 2);
+          const hit = requestedTokens.filter((token) => optionNorm.includes(token)).length;
+          return hit >= Math.max(1, Math.min(2, requestedTokens.length));
+        };
+
+        const scorePair = (requestedName, optionName) => {
+          const requestedNorm = normalize(requestedName);
+          const optionNorm = normalize(optionName);
+          if (!requestedNorm || !optionNorm) return 0;
+
+          let score = 0;
+          if (requestedNorm === optionNorm) score += 30;
+          if (optionNorm.includes(requestedNorm)) score += 12;
+          if (requestedNorm.includes(optionNorm) && optionNorm.length >= 6) score += 6;
+
+          const requestedTokens = requestedNorm.split(/\s+/).filter((token) => token.length >= 2);
+          for (const token of requestedTokens) {
+            if (optionNorm.includes(token)) score += 2;
+          }
+
+          return score;
+        };
+
+        const findBatterSelect = () => {
+          const labels = Array.from(document.querySelectorAll("label, p, span, div"));
+          const batterLabel = labels.find((element) => {
+            const text = String(element.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+            return text === "batter" || text.startsWith("batter ");
+          });
+
+          if (batterLabel) {
+            if (batterLabel instanceof HTMLLabelElement && batterLabel.htmlFor) {
+              const byFor = document.getElementById(batterLabel.htmlFor);
+              if (byFor instanceof HTMLSelectElement && isVisible(byFor)) {
+                return byFor;
+              }
+            }
+
+            const nearestContainer = batterLabel.closest("div, section, form") || batterLabel.parentElement;
+            if (nearestContainer) {
+              const selectInContainer = nearestContainer.querySelector("select");
+              if (selectInContainer instanceof HTMLSelectElement && isVisible(selectInContainer)) {
+                return selectInContainer;
+              }
+            }
+          }
+
+          const selects = Array.from(document.querySelectorAll("select"))
+            .filter((element) => isVisible(element));
+
+          if (selects.length === 1) {
+            return selects[0];
+          }
+
+          return selects[1] || selects[0] || null;
+        };
+
+        const batterSelect = findBatterSelect();
+        if (batterSelect) {
+          const options = Array.from(batterSelect.options)
+            .map((option) => ({
+              value: String(option.value || "").trim(),
+              text: String(option.textContent || option.label || "").replace(/\s+/g, " ").trim(),
+            }))
+            .filter((option) => option.text.length > 0);
+
+          const validOptions = options.filter((option) => {
+            const lower = option.text.toLowerCase();
+            if (!option.value) return false;
+            return !lower.includes("select batter") && !lower.includes("choose batter");
+          });
+
+          let best = null;
+          for (const requestedName of requestedNames) {
+            for (const option of validOptions) {
+              const score = scorePair(requestedName, option.text);
+              if (!best || score > best.score) {
+                best = {
+                  score,
+                  option,
+                  requestedName,
+                };
+              }
+            }
+          }
+
+          if (!best || best.score <= 0) {
+            return {
+              selected: false,
+              requested: requestedNames,
+              selectedText: String(batterSelect.options?.[batterSelect.selectedIndex]?.textContent || "").trim() || null,
+              matchedRequestedName: null,
+              availableOptions: validOptions.map((option) => option.text).slice(0, 120),
+              reason: "No matching Batter option in select",
+            };
+          }
+
+          batterSelect.value = best.option.value;
+          batterSelect.dispatchEvent(new Event("input", { bubbles: true }));
+          batterSelect.dispatchEvent(new Event("change", { bubbles: true }));
+          await wait(1200);
+
+          const selectedOption = batterSelect.options[batterSelect.selectedIndex];
+          const selectedText = String(selectedOption?.textContent || selectedOption?.label || "").replace(/\s+/g, " ").trim();
+          const matchedRequestedName = requestedNames.find((name) => likelyMatch(name, selectedText)) || best.requestedName || null;
+
+          return {
+            selected: Boolean(selectedText && matchedRequestedName),
+            requested: requestedNames,
+            selectedText: selectedText || null,
+            matchedRequestedName,
+            matchedBy: "html-select-change",
+            availableOptions: validOptions.map((option) => option.text).slice(0, 120),
+            reason: selectedText && matchedRequestedName ? null : "Batter select changed but could not verify requested match",
+          };
+        }
+
+        const comboCandidates = Array.from(document.querySelectorAll("[role='combobox'], [aria-haspopup='listbox']"))
+          .filter((element) => isVisible(element));
+
+        if (comboCandidates.length === 0) {
+          return {
+            selected: false,
+            requested: requestedNames,
+            selectedText: null,
+            matchedRequestedName: null,
+            availableOptions: [],
+            reason: "No visible Batter select or combobox",
+          };
+        }
+
+        const targetCombo = comboCandidates[0];
+        targetCombo.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        targetCombo.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        targetCombo.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await wait(400);
+
+        const optionNodes = Array.from(document.querySelectorAll("[role='option'], li[role='option'], [data-value]"))
+          .filter((element) => isVisible(element));
+        const options = optionNodes
+          .map((node) => ({
+            node,
+            text: String(node.textContent || "").replace(/\s+/g, " ").trim(),
+          }))
+          .filter((item) => item.text.length > 0);
+
+        let best = null;
+        for (const requestedName of requestedNames) {
+          for (const option of options) {
+            const score = scorePair(requestedName, option.text);
+            if (!best || score > best.score) {
+              best = { score, option, requestedName };
+            }
+          }
+        }
+
+        if (!best || best.score <= 0) {
+          return {
+            selected: false,
+            requested: requestedNames,
+            selectedText: String(targetCombo.textContent || "").replace(/\s+/g, " ").trim() || null,
+            matchedRequestedName: null,
+            availableOptions: options.map((option) => option.text).slice(0, 120),
+            reason: "No matching combobox option",
+          };
+        }
+
+        best.option.node.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+        best.option.node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+        best.option.node.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await wait(900);
+
+        const selectedText = String(targetCombo.textContent || "").replace(/\s+/g, " ").trim();
+        const matchedRequestedName = requestedNames.find((name) => likelyMatch(name, selectedText)) || best.requestedName || null;
+
+        return {
+          selected: Boolean(selectedText && matchedRequestedName),
+          requested: requestedNames,
+          selectedText: selectedText || null,
+          matchedRequestedName,
+          matchedBy: "combobox-option-click",
+          availableOptions: options.map((option) => option.text).slice(0, 120),
+          reason: selectedText && matchedRequestedName ? null : "Combobox click applied but could not verify requested match",
+        };
+      }, requested);
+
+      const resultWithTarget = {
+        ...targetResult,
+        frameUrl: typeof target.url === "function" ? target.url() : page.url(),
+      };
+
+      if (resultWithTarget?.selected && resultWithTarget?.matchedRequestedName) {
+        return resultWithTarget;
+      }
+
+      const score = Number((resultWithTarget?.availableOptions || []).length || 0);
+      const bestScore = Number((bestResult?.availableOptions || []).length || 0);
+      if (!bestResult || score > bestScore) {
+        bestResult = resultWithTarget;
+      }
+    } catch (error) {
+      const message = String(error?.message || "");
+      if (
+        message.includes("Execution context was destroyed") ||
+        message.includes("Cannot find context with specified id") ||
+        message.includes("Most likely the page has been closed") ||
+        message.includes("Target closed")
+      ) {
+        continue;
+      }
+      throw error;
+    }
+  }
+
+  return bestResult || {
+    selected: false,
+    requested,
+    selectedText: null,
+    matchedRequestedName: null,
+    availableOptions: [],
+    reason: "No frame returned selectable Outfielder Batter control",
+  };
+};
+
 router.get("/exports/:fileName", async (req, res) => {
   try {
     const fileName = req.params.fileName;
@@ -3120,11 +4527,45 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
 
     await wakeSleepingSelectorPageIfNeeded(page);
 
-    if ((isHittingAnalyticsWidget(widgetId, widgetName, redirectLink) || isCountBasedWidget(widgetId, widgetName, redirectLink)) && playerNames.length > 0) {
+    if ((isHittingAnalyticsWidget(widgetId, widgetName, redirectLink) || isCountBasedWidget(widgetId, widgetName, redirectLink) || isFlashcardWidget(widgetId, widgetName, redirectLink)) && playerNameCandidates.length > 0) {
       let matchedRequestedPlayer = null;
       const attemptedPlayers = [];
 
-      for (const candidatePlayerName of playerNames) {
+      if (isFlashcardWidget(widgetId, widgetName, redirectLink) && teamNames.length > 0) {
+        const flashcardPreparation = await prepareFlashcardPageForTeamSelection(page);
+        selectionDebug = {
+          ...(selectionDebug || {}),
+          flashcardPreparation,
+        };
+
+        await waitForPdfRenderStability(page, {
+          timeoutMs: 9000,
+          fallbackMs: 2200,
+        });
+
+        const flashcardTeamSelection = await selectFlashcardTeamInPage(page, teamNames);
+        selectionDebug = {
+          ...(selectionDebug || {}),
+          flashcardTeamSelection,
+        };
+
+        if (!flashcardTeamSelection?.selected) {
+          return res.status(422).json({
+            success: false,
+            message: `${widgetName} could not match selected teams (${teamNames.join(", ")}).`,
+            data: {
+              widgetId,
+              widgetName,
+              requestedTeams: teamNames,
+              requestedPlayers: playerNameCandidates,
+              sourceUrl: executionUrl,
+              selectionDebug,
+            },
+          });
+        }
+      }
+
+      for (const candidatePlayerName of playerNameCandidates) {
         if (isCountBasedWidget(widgetId, widgetName, redirectLink)) {
           const result = await selectCountBasedPlayerInPage(page, candidatePlayerName);
           const selectedText = result.label || "";
@@ -3161,6 +4602,37 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
           }
 
           if (matchedByName) {
+            matchedRequestedPlayer = candidatePlayerName;
+            break;
+          }
+        } else if (isFlashcardWidget(widgetId, widgetName, redirectLink)) {
+          const flashcardSelection = await selectFlashcardPlayerInPage(page, candidatePlayerName);
+          console.log(`[PDF Export] Flashcard player selection attempted for "${candidatePlayerName}": ${JSON.stringify(flashcardSelection)}`);
+
+          selectionDebug = {
+            selected: Boolean(flashcardSelection?.selected),
+            text: flashcardSelection?.selectedText || "",
+            requested: candidatePlayerName,
+            matchedBy: flashcardSelection?.selectedText ? "flashcard-search-and-select" : null,
+            frameUrl: flashcardSelection?.frameUrl || null,
+            onPlayerPage: Boolean(flashcardSelection?.onPlayerPage),
+            verification: flashcardSelection?.verification || null,
+            targetDiagnostics: flashcardSelection?.debugTargets || [],
+            reason: flashcardSelection?.reason || null,
+          };
+
+          const selectedText = String(selectionDebug?.text || "");
+          const matchedByName = namesLikelyMatch(candidatePlayerName, selectedText);
+
+          attemptedPlayers.push({
+            requested: candidatePlayerName,
+            selected: selectionDebug?.text || null,
+            matchedByName,
+            selectedByAction: Boolean(flashcardSelection?.selected),
+            onPlayerPage: Boolean(flashcardSelection?.onPlayerPage),
+          });
+
+          if (Boolean(flashcardSelection?.onPlayerPage) && (matchedByName || flashcardSelection?.selected)) {
             matchedRequestedPlayer = candidatePlayerName;
             break;
           }
@@ -3219,24 +4691,56 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
                 .filter(Boolean)
                 .slice(0, 50);
             })
-          : await page.evaluate(() => {
-              const select = document.querySelector("#player");
-              if (select && select.selectize && select.selectize.options) {
-                return Object.values(select.selectize.options)
-                  .map((option) => (option?.text || "").trim())
+          : isFlashcardWidget(widgetId, widgetName, redirectLink)
+            ? await (async () => {
+                const unique = [];
+                const seen = new Set();
+                const targets = getFlashcardInteractionTargets(page);
+
+                for (const target of targets) {
+                  const names = await target.evaluate(() => {
+                    return Array.from(document.querySelectorAll(".mini-card-name, .player-name"))
+                      .map((el) => String(el.textContent || "").trim())
+                      .filter(Boolean)
+                      .slice(0, 200);
+                  });
+
+                  for (const text of names || []) {
+                    const key = String(text || "").toLowerCase();
+                    if (!key || seen.has(key)) continue;
+                    seen.add(key);
+                    unique.push(text);
+                    if (unique.length >= 50) break;
+                  }
+
+                  if (unique.length >= 50) break;
+                }
+
+                return unique;
+              })()
+            : await page.evaluate(() => {
+                const select = document.querySelector("#player");
+                if (select && select.selectize && select.selectize.options) {
+                  return Object.values(select.selectize.options)
+                    .map((option) => (option?.text || "").trim())
+                    .filter(Boolean)
+                    .slice(0, 50);
+                }
+
+                return Array.from(document.querySelectorAll(".selectize-dropdown .option, .selectize-dropdown-content .option"))
+                  .map((option) => (option.textContent || "").trim())
                   .filter(Boolean)
                   .slice(0, 50);
-              }
+              });
 
-              return Array.from(document.querySelectorAll(".selectize-dropdown .option, .selectize-dropdown-content .option"))
-                .map((option) => (option.textContent || "").trim())
-                .filter(Boolean)
-                .slice(0, 50);
-            });
+        const selectedTextForMessage = String(selectionDebug?.text || "").trim();
+        const flashcardHint = isFlashcardWidget(widgetId, widgetName, redirectLink)
+          ? " Did not reach the selected player's detail page (still on lineup/team context)."
+          : "";
 
         return res.status(422).json({
           success: false,
-          message: `${widgetName} could not match selected players (${playerNames.join(", ")}). Widget currently selected "${selectionDebug?.text || "unknown"}".`,
+          message: `${widgetName} could not match selected players (${playerNames.join(", ")}). Widget currently selected "${selectedTextForMessage || "none"}".${flashcardHint}`,
           data: {
             widgetId,
             widgetName,
@@ -3464,10 +4968,101 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
       }
     }
 
+    if (isPlayerPortalWidget(widgetId, widgetName, redirectLink) && playerNameCandidates.length > 0) {
+      const playerPortalSelection = await selectPlayerPortalPlayerInPage(page, {
+        playerNames: playerNameCandidates,
+      });
+
+      selectionDebug = {
+        ...(selectionDebug || {}),
+        playerPortalSelection,
+      };
+
+      console.log(`[PDF Export] Player Portal selection (playerNames=${JSON.stringify(playerNameCandidates)}):`, JSON.stringify(playerPortalSelection, null, 2));
+
+      if (!playerPortalSelection?.selected || !playerPortalSelection?.matchedRequestedName) {
+        return res.status(422).json({
+          success: false,
+          message: `${widgetName} could not match selected players (${playerNameCandidates.join(", ")}).`,
+          data: {
+            widgetId,
+            widgetName,
+            requestedPlayers: playerNames,
+            playerNameCandidates,
+            sourceUrl: executionUrl,
+            selectionDebug,
+          },
+        });
+      }
+
+      await waitForPdfRenderStability(page, {
+        timeoutMs: 9000,
+        fallbackMs: 2200,
+      });
+    }
+
+    if (isOutfielderOptimizationWidget(widgetId, widgetName, redirectLink)) {
+      const outfielderRequestedNames = playerNames
+        .map((value) => String(value || "").trim())
+        .filter(Boolean);
+      const outfielderPlayerCandidates = outfielderRequestedNames.length > 0 ? outfielderRequestedNames : playerNameCandidates;
+
+      if (outfielderPlayerCandidates.length > 0) {
+        const outfielderPlayerSelection = await selectOutfielderBatterInPage(page, {
+          playerNames: outfielderPlayerCandidates,
+        });
+
+        selectionDebug = {
+          ...(selectionDebug || {}),
+          outfielderPlayerSelection,
+        };
+
+        console.log(`[PDF Export] Outfielder player selection (playerNames=${JSON.stringify(outfielderPlayerCandidates)}):`, JSON.stringify(outfielderPlayerSelection, null, 2));
+
+        if (!outfielderPlayerSelection?.selected || !outfielderPlayerSelection?.matchedRequestedName) {
+          return res.status(422).json({
+            success: false,
+            message: `${widgetName} could not match selected players (${outfielderPlayerCandidates.join(", ")}).`,
+            data: {
+              widgetId,
+              widgetName,
+              requestedPlayers: playerNames,
+              playerNameCandidates: outfielderPlayerCandidates,
+              selectedPlayer: outfielderPlayerSelection?.selectedText || null,
+              availablePlayers: outfielderPlayerSelection?.availableOptions || [],
+              sourceUrl: executionUrl,
+              selectionDebug,
+            },
+          });
+        }
+
+        await waitForPdfRenderStability(page, {
+          timeoutMs: 9000,
+          fallbackMs: 2200,
+        });
+      }
+
+      const outfielderGenerateDebug = await triggerOutfielderGenerateInPage(page, {
+        clickCount: 2,
+      });
+
+      selectionDebug = {
+        ...(selectionDebug || {}),
+        outfielderGenerate: outfielderGenerateDebug,
+      };
+
+      console.log(`[PDF Export] Outfielder generate clicks: ${JSON.stringify(outfielderGenerateDebug)}`);
+
+      await waitForPdfRenderStability(page, {
+        timeoutMs: 12000,
+        fallbackMs: 3000,
+      });
+    }
+
     console.log(`[PDF Export] Page loaded, waiting for render stability...`);
     await waitForPdfRenderStability(page, {
-      timeoutMs: isSluggerPitcherWidget(widgetId, widgetName, redirectLink) ? 12000 : 9000,
-      fallbackMs: isSluggerPitcherWidget(widgetId, widgetName, redirectLink) ? 3200 : 2500,
+      timeoutMs: isSluggerPitcherWidget(widgetId, widgetName, redirectLink) || isOutfielderOptimizationWidget(widgetId, widgetName, redirectLink) ? 12000 : 9000,
+      fallbackMs: isSluggerPitcherWidget(widgetId, widgetName, redirectLink) || isOutfielderOptimizationWidget(widgetId, widgetName, redirectLink) ? 3200 : 2500,
     });
     console.log(`[PDF Export] Generating PDF to ${filePath}...`);
     

@@ -208,6 +208,7 @@ export interface WidgetPdfExportResult {
   message: string;
   pdfUrl?: string;
   sourceUrl?: string;
+  debugData?: unknown;
 }
 
 export const fetchWidgetOutputs = async (
@@ -295,6 +296,7 @@ export const exportWidgetPdf = async (
       widgetName: res?.data?.widgetName || `Widget ${widgetId}`,
       success: false,
       message: res?.message || `Failed to export PDF for widget ${widgetId}`,
+      debugData: res?.data,
     };
   }
 
@@ -305,6 +307,7 @@ export const exportWidgetPdf = async (
     message: res?.message || "PDF exported",
     pdfUrl: res?.data?.pdfUrl,
     sourceUrl: res?.data?.sourceUrl,
+    debugData: res?.data,
   };
 };
 

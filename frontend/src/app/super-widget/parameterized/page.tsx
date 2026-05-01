@@ -31,9 +31,17 @@ interface WidgetPdfState {
   loading: boolean;
   error?: string;
   pdfUrl?: string;
+  debugData?: unknown;
 }
 
-const SUPER_WIDGET_SELECTOR_PRIORITY_IDS = [93, 269, 270, 223, 268] as const;
+const SUPER_WIDGET_SELECTOR_PRIORITY_IDS = [93, 269, 270, 271, 223, 268] as const;
+const PLAYER_PORTAL_WIDGET_ID = 270;
+const isFlashcardWidget = (widget: WidgetType | null | undefined) => {
+  if (!widget) return false;
+  const name = String(widget.name || "").toLowerCase();
+  const redirect = String(widget.redirectLink || "").toLowerCase();
+  return name.includes("flashcard") || redirect.includes("/widgets/flashcard");
+};
 
 export default function SuperWidgetParameterizedPage() {
   const [selectedTeams, setSelectedTeams] = useState<Team[]>([]);
@@ -56,6 +64,15 @@ export default function SuperWidgetParameterizedPage() {
   const user = useStore($user);
   const analysisAbortController = useRef<AbortController | null>(null);
   const widgetOutputRequestId = useRef(0);
+
+  const formatDebugData = useCallback((value: unknown) => {
+    if (value === undefined || value === null) return "";
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
+  }, []);
 
   const DEFAULT_API_BASE = "http://localhost:3001";
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_BASE;
@@ -106,13 +123,21 @@ export default function SuperWidgetParameterizedPage() {
     [availableWidgets, selectedWidgetIds]
   );
 
+  const flashcardSelectorSourceWidgetId = useMemo(() => {
+    const flashcardWidget = selectedWidgets.find((widget) => isFlashcardWidget(widget));
+    return flashcardWidget?.id ?? null;
+  }, [selectedWidgets]);
+
   const selectorSourceWidgetId = useMemo(() => {
     const priorityWidgetId = SUPER_WIDGET_SELECTOR_PRIORITY_IDS.find((id) => selectedWidgetIds.includes(id));
     if (priorityWidgetId) {
       return priorityWidgetId;
     }
+    if (flashcardSelectorSourceWidgetId) {
+      return flashcardSelectorSourceWidgetId;
+    }
     return selectedWidgetIds.length === 1 ? selectedWidgetIds[0] : null;
-  }, [selectedWidgetIds]);
+  }, [selectedWidgetIds, flashcardSelectorSourceWidgetId]);
 
   const selectorSourceWidget = useMemo(
     () => (selectorSourceWidgetId ? availableWidgets.find((widget) => widget.id === selectorSourceWidgetId) : null),
@@ -130,6 +155,11 @@ export default function SuperWidgetParameterizedPage() {
     return { teamIds, teamNames, key };
   }, [selectedTeams]);
 
+  const shouldEnforcePlayerPortalPlayers = useMemo(
+    () => selectedWidgetIds.includes(PLAYER_PORTAL_WIDGET_ID),
+    [selectedWidgetIds]
+  );
+
   useEffect(() => {
     if (!selectorSourceWidgetId) {
       setSelectorTeams(null);
@@ -144,12 +174,38 @@ export default function SuperWidgetParameterizedPage() {
       try {
         setSelectorOptionsLoading(true);
         setSelectorOptionsError(null);
+
         const data = await fetchWidgetSelectorOptions(selectorSourceWidgetId, {
           teamIds: selectedTeamFilter.teamIds,
           teamNames: selectedTeamFilter.teamNames,
         });
+
         const teams = (data.teams || []) as Team[];
-        const players = (data.players || []) as Player[];
+        let players = (data.players || []) as Player[];
+
+        if (shouldEnforcePlayerPortalPlayers && selectorSourceWidgetId !== PLAYER_PORTAL_WIDGET_ID) {
+          const playerPortalData = await fetchWidgetSelectorOptions(PLAYER_PORTAL_WIDGET_ID, {
+            teamIds: selectedTeamFilter.teamIds,
+            teamNames: selectedTeamFilter.teamNames,
+          });
+
+          const portalPlayerIdSet = new Set(
+            (playerPortalData.players || []).map((player) => String(player.id))
+          );
+          const portalPlayerNameSet = new Set(
+            (playerPortalData.players || [])
+              .map((player) => String(player.name || "").trim().toLowerCase())
+              .filter(Boolean)
+          );
+
+          players = players.filter((player) => {
+            const byId = portalPlayerIdSet.has(String(player.id));
+            if (byId) return true;
+            const normalizedName = String(player.name || "").trim().toLowerCase();
+            return normalizedName.length > 0 && portalPlayerNameSet.has(normalizedName);
+          });
+        }
+
         const widgetName = data.widgetName || selectorSourceWidget?.name || "widget";
 
         setSelectorSourceWidgetName(widgetName);
@@ -172,7 +228,7 @@ export default function SuperWidgetParameterizedPage() {
     };
 
     loadSelectorOptions();
-  }, [selectorSourceWidgetId, selectorSourceWidget?.name, selectedTeamFilter.key]);
+  }, [selectorSourceWidgetId, selectorSourceWidget?.name, selectedTeamFilter.key, shouldEnforcePlayerPortalPlayers]);
 
   useEffect(() => {
     if (!selectorSourceWidgetId || !selectorTeams || !selectorPlayers) return;
@@ -377,6 +433,7 @@ export default function SuperWidgetParameterizedPage() {
         loading: true,
         error: undefined,
         pdfUrl: prev[widgetId]?.pdfUrl,
+        debugData: undefined,
       }
     }));
 
@@ -396,6 +453,7 @@ export default function SuperWidgetParameterizedPage() {
           loading: false,
           error: result.success ? undefined : result.message,
           pdfUrl: result.pdfUrl,
+          debugData: result.debugData,
         }
       }));
     } catch (error) {
@@ -405,6 +463,7 @@ export default function SuperWidgetParameterizedPage() {
           loading: false,
           error: (error as Error)?.message ?? "Failed to export PDF",
           pdfUrl: prev[widgetId]?.pdfUrl,
+          debugData: prev[widgetId]?.debugData,
         }
       }));
     }
@@ -536,9 +595,19 @@ export default function SuperWidgetParameterizedPage() {
                             )}
                           </div>
                           {widgetPdfStates[output.widgetId]?.error && (
-                            <p className="text-red-600 text-sm mb-3">
-                              Error: {widgetPdfStates[output.widgetId].error}
-                            </p>
+                            <div className="mb-3">
+                              <p className="text-red-600 text-sm mb-2">
+                                Error: {widgetPdfStates[output.widgetId].error}
+                              </p>
+                              {widgetPdfStates[output.widgetId]?.debugData && (
+                                <details className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+                                  <summary className="cursor-pointer font-medium">Debug details</summary>
+                                  <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-words">
+                                    {formatDebugData(widgetPdfStates[output.widgetId].debugData)}
+                                  </pre>
+                                </details>
+                              )}
+                            </div>
                           )}
 
                           {output.bullets.length > 0 && (
