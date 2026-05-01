@@ -599,7 +599,7 @@ export default function SuperWidgetParameterizedPage() {
                               <p className="text-red-600 text-sm mb-2">
                                 Error: {widgetPdfStates[output.widgetId].error}
                               </p>
-                              {widgetPdfStates[output.widgetId]?.debugData && (
+                              {widgetPdfStates[output.widgetId]?.debugData !== undefined && widgetPdfStates[output.widgetId]?.debugData !== null && (
                                 <details className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
                                   <summary className="cursor-pointer font-medium">Debug details</summary>
                                   <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap break-words">
