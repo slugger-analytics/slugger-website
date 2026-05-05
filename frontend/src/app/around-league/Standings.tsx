@@ -175,13 +175,17 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
 
   // Build flat list of {division, teams} respecting filters
   const sections = standingsData
-    .map((division) => {
-      const base = maxTeams ? division.team.slice(0, maxTeams) : division.team;
-      const filtered = teamFilter ? base.filter((t) => t.teamname === teamFilter) : base;
-      const teams = sortTeams(filtered, sortKey, sortDir);
-      return { division, teams };
-    })
-    .filter(({ teams }) => teams.length > 0);
+  .map((division) => {
+    const filtered = teamFilter
+      ? division.team.filter((t) => t.teamname === teamFilter)
+      : division.team;
+
+    const sorted = sortTeams(filtered, sortKey, sortDir);
+    const teams = maxTeams ? sorted.slice(0, maxTeams) : sorted;
+
+    return { division, teams };
+  })
+  .filter(({ teams }) => teams.length > 0);
 
   return (
     <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden"}`}>
@@ -263,7 +267,7 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
                   <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums font-semibold text-gray-800`}>
                     {team.pct}
                   </td>
-                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-600 hidden sm:table-cell`}>
+                  {/* <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-600 hidden sm:table-cell`}>
                     {team.streak}
                   </td>
                   <td className={`${compact ? "px-2 py-2" : "px-3 py-3"} text-center hidden sm:table-cell`}>
@@ -271,7 +275,7 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
                       ? <PipBar value={team.last10} />
                       : <span className="tabular-nums text-xs text-gray-600">{team.last10}</span>
                     }
-                  </td>
+                  </td> */}
                 </tr>
               ))}
             </React.Fragment>

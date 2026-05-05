@@ -144,7 +144,7 @@ export default function HomePage() {
                       </Link>
                     </div>
                     <div className="overflow-x-auto">
-                      <Standings season={year} maxTeams={1} compact />
+                      <Standings season={year} maxTeams={3} compact />
                     </div>
                   </div>
 
