@@ -14,8 +14,14 @@ export default function RecentGameResults() {
 
         (async () => {
             try {
-                const data = await fetchRecentScores(3);
-                if (mounted) setGames(data);
+                const todayET = new Intl.DateTimeFormat("en-CA", {
+                    timeZone: "America/New_York",
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                }).format(new Date());
+                const scores = await fetchRecentScores(10, todayET, todayET);
+                if (mounted) setGames(scores);
             } catch (err: any) {
                 console.error(err);
                 if (mounted) setError(err.message || "Failed to load recent games");

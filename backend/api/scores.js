@@ -11,7 +11,7 @@ const MAX_LIMIT = 100;
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
 /**
- * GET /scores?limit=N
+ * GET /scores?limit=N?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
  * Returns the most recent scores. Limit defaults to 3, capped at 100.
  */
 router.get("/", async (req, res) => {
@@ -20,31 +20,53 @@ router.get("/", async (req, res) => {
     ? Math.min(parsed, MAX_LIMIT)
     : DEFAULT_LIMIT;
 
+  const { startDate, endDate } = req.query;
+
+  let query = `
+    SELECT
+      s.game_id,
+      s.home_team_name,
+      s.visiting_team_name,
+      s.home_team_score,
+      s.visiting_team_score,
+      s.game_status,
+      s.innings_played,
+      s.regulation_innings,
+      s.field,
+      s.date,
+      s.gametime,
+      s.timezone,
+      s.last_updated
+    FROM scores s
+  `;
+
+  const conditions = [];
+  const values = [];
+  let paramIndex = 1;
+
+  if (startDate) {
+    conditions.push(`DATE(s.date) >= $${paramIndex++}::date`);
+    values.push(startDate);
+  }
+
+  if (endDate) {
+    conditions.push(`DATE(s.date) < ($${paramIndex++}::date + INTERVAL '1 day')`);
+    values.push(endDate);
+  }
+
+  if (conditions.length > 0) {
+    query += ` WHERE ${conditions.join(" AND ")}`;
+  }
+
+  query += ` ORDER BY s.date DESC NULLS LAST LIMIT $${paramIndex}`;
+  values.push(limit);
+
   try {
-    const result = await pool.query(
-      `SELECT
-         s.game_id,
-         s.home_team_name,
-         s.visiting_team_name,
-         s.home_team_score,
-         s.visiting_team_score,
-         s.game_status,
-         s.innings_played,
-         s.regulation_innings,
-         s.field,
-         s.date,
-         s.gametime,
-         s.timezone,
-         s.last_updated
-       FROM scores s
-       ORDER BY s.date DESC NULLS LAST
-       LIMIT $1`,
-      [limit]
-    );
+    const result = await pool.query(query, values);
 
     return res.status(200).json({
       success: true,
-      message: "Recent scores retrieved successfully.",
+      message: "Scores retrieved successfully.",
       data: result.rows,
     });
   } catch (error) {
