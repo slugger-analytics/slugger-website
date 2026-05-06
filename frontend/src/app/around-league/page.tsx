@@ -77,20 +77,6 @@ function AroundLeagueContent() {
             <TrendingUp size={16} className="text-alpbBlue" />
             <h2 className="text-lg font-semibold text-gray-800">{leadersTitle}</h2>
           </div>
-          {/*temporary banner development update saying we are working on updated league data*/}
-        <div className="rounded-2xl bg-yellow-50 px-4 py-3 flex items-center gap-3 border border-yellow-200">
-          <div>
-            <p className="text-sm text-yellow-700 font-medium">
-              <span className="font-bold">Note:</span> Stat leaders for the current season coming soon!
-            </p>
-            <details className="text-xs text-yellow-700 mt-1">
-              <summary className="cursor-pointer">More info</summary>
-              <p className="text-xs text-yellow-700">
-                Due to the termination of previous data sources, we are currently migrating to a new provider for league-wide statistics. Thank you for your patience, and full league insights will be back very soon! If you have any questions, feel free to use the &quot;Report a Bug&quot; page to reach us directly.
-              </p>
-            </details>
-          </div>
-        </div>
           <StatLeaders season={season} teamFilter={teamFilter} />
         </section>
 
