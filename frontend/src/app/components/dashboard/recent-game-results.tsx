@@ -24,7 +24,7 @@ export default function RecentGameResults() {
                 if (mounted) setGames(scores);
             } catch (err: any) {
                 console.error(err);
-                if (mounted) setError(err.message || "Failed to load recent games");
+                if (mounted) setError(err.message || "Failed to load games");
             } finally {
                 if (mounted) setLoading(false);
             }
@@ -38,14 +38,14 @@ export default function RecentGameResults() {
     if (loading) return (
         <div className="flex items-center justify-center py-8 text-gray-400 text-sm gap-2">
             <div className="w-4 h-4 rounded-full border-2 border-gray-200 border-t-blue-500 animate-spin" />
-            Loading recent games…
+            Loading games…
         </div>
     );
     if (error) return (
         <div className="text-red-500 text-sm py-4 text-center">{error}</div>
     );
     if (!games || games.length === 0) return (
-        <div className="text-gray-400 text-sm py-4 text-center">No recent games available</div>
+        <div className="text-gray-400 text-sm py-4 text-center">No games today!</div>
     );
 
     return (

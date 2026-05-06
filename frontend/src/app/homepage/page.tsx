@@ -95,21 +95,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/*temporary banner development update saying we are working on updated league data*/}
-              <div className="rounded-2xl bg-yellow-50 px-4 py-3 flex items-center gap-3 border border-yellow-200">
-                <div>
-                  <p className="text-sm text-yellow-700 font-medium">
-                    <span className="font-bold">Note:</span> &quot;Recent Games&quot; and &quot;Around the League&quot; sections may be temporarily outdated
-                  </p>
-                  <details className="text-xs text-yellow-700 mt-1">
-                    <summary className="cursor-pointer">More info</summary>
-                    <p className="text-xs text-yellow-700">
-                      Due to the termination of previous data sources, we are currently migrating to a new provider for league-wide standings and scores. This only affects the &quot;Recent Games&quot; and &quot;Around the League&quot; sections — analytical play-by-play data used in widgets will remain up-to-date. Thank you for your patience, and full league insights will be back very soon! If you have any questions, feel free to use the &quot;Report a Bug&quot; page to reach us directly.
-                    </p>
-                  </details>
-                </div>
-              </div>
-
               {/* ── MAIN GRID ── */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-[680px]">
 
@@ -117,7 +102,7 @@ export default function HomePage() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 pb-8 flex flex-col overflow-hidden lg:h-full">
                   <div className="flex items-center gap-2 mb-4 shrink-0">
                     <CalendarDays size={18} className="text-alpbBlue" />
-                    <h2 className="text-base font-semibold text-gray-800">Recent Games</h2>
+                    <h2 className="text-base font-semibold text-gray-800">Today's Games</h2>
                   </div>
                   <div className="flex-1 overflow-y-auto min-h-0">
                     <RecentGameResults />
