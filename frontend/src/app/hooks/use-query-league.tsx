@@ -1,6 +1,6 @@
 import { fetchLeaders, fetchStandings } from "@/api/league";
 import { setLeagueLeaders, setStandings } from "@/lib/widgetStore";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 export default function useQueryLeague() {
   const [standingsLoading, setStandingsLoading] = useState(false);
@@ -8,7 +8,7 @@ export default function useQueryLeague() {
   const [leadersLoading, setLeadersLoading] = useState(false);
   const [leadersError, setLeadersError] = useState<string | null>(null);
 
-  const loadStandings = async (year?: string) => {
+  const loadStandings = useCallback(async (year?: string) => {
     try {
       setStandingsLoading(true);
       setStandingsError(null);
@@ -22,9 +22,9 @@ export default function useQueryLeague() {
     } finally {
       setStandingsLoading(false);
     }
-  };
+  }, []);
 
-  const loadLeagueLeaders = async (year?: string) => {
+  const loadLeagueLeaders = useCallback(async (year?: string) => {
     try {
       setLeadersLoading(true);
       setLeadersError(null);
@@ -38,7 +38,7 @@ export default function useQueryLeague() {
     } finally {
       setLeadersLoading(false);
     }
-  };
+  }, []);
 
   return {
     standingsLoading,
