@@ -11,10 +11,11 @@ const router = Router();
 
 const FIRST_YEAR = 2021;
 
-const CURRENT_YEAR = parseInt(process.env.SEASON_YEAR, 10);
-if (!Number.isFinite(CURRENT_YEAR)) {
-  throw new Error("[league] SEASON_YEAR env var is missing or not a valid year.");
-}
+const envSeasonYear = parseInt(process.env.SEASON_YEAR, 10);
+const runtimeYear = new Date().getFullYear();
+const CURRENT_YEAR = Number.isFinite(envSeasonYear)
+  ? Math.max(envSeasonYear, runtimeYear)
+  : runtimeYear;
 
 const BUCKET_NAME = process.env.JSON_BUCKET_NAME;
 if (!BUCKET_NAME) {
