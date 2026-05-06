@@ -56,7 +56,7 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
 
   useEffect(() => {
     loadLeagueLeaders(season || undefined);
-  }, [season]);
+  }, [season, loadLeagueLeaders]);
 
   const allBatters = allLeadersData?.stats?.batting?.player ?? [];
   const allPitchers = allLeadersData?.stats?.pitching?.player ?? [];

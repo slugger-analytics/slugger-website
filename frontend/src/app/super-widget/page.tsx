@@ -85,7 +85,7 @@ export default function SuperWidgetPage() {
     } finally {
       setLoading(false);
     }
-  }, []); // Remove user.id dependency
+  }, [user.id]);
 
   const selectedWidgets = useMemo(
     () => availableWidgets.filter((widget) => selectedWidgetIds.includes(widget.id)),
@@ -187,7 +187,13 @@ export default function SuperWidgetPage() {
     };
 
     loadSelectorOptions();
-  }, [selectorSourceWidgetId, selectorSourceWidget?.name, selectedTeamFilter.key, shouldEnforcePlayerPortalPlayers]);
+  }, [
+    selectorSourceWidgetId,
+    selectorSourceWidget?.name,
+    selectedTeamFilter.teamIds,
+    selectedTeamFilter.teamNames,
+    shouldEnforcePlayerPortalPlayers,
+  ]);
 
   useEffect(() => {
     if (!selectorSourceWidgetId) return;
@@ -222,7 +228,7 @@ export default function SuperWidgetPage() {
     } catch (error) {
       console.error("Error loading saved analyses:", error);
     }
-  }, []); // Remove user.id dependency
+  }, [user.id]);
 
   const saveAnalysis = () => {
     if (!analysis || !saveName.trim()) return;

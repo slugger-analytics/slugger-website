@@ -35,7 +35,7 @@ const SeasonDropdown = ({ value, onChange, triggerClassName = "" }: Props) => {
         if (!value) onChange(fallback);
         setLoaded(true);
       });
-  }, []);
+  }, [onChange, value]);
 
   if (!loaded) {
     return (

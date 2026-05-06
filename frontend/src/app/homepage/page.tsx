@@ -102,7 +102,7 @@ export default function HomePage() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 pb-8 flex flex-col overflow-hidden lg:h-full">
                   <div className="flex items-center gap-2 mb-4 shrink-0">
                     <CalendarDays size={18} className="text-alpbBlue" />
-                    <h2 className="text-base font-semibold text-gray-800">Today's Games</h2>
+                    <h2 className="text-base font-semibold text-gray-800">Today&apos;s Games</h2>
                   </div>
                   <div className="flex-1 overflow-y-auto min-h-0">
                     <RecentGameResults />

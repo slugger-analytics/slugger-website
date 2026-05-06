@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Widget from "./widget";
 import { WidgetType } from "@/data/types";
 import useQueryWidgets from "@/app/hooks/use-query-widgets";
@@ -40,7 +40,7 @@ export default function Widgets() {
    * Sets the user role (whether the user is a "Widget Developer").
    * Based on the user's role, it adjusts the `isDev` state to control widget visibility.
    */
-  const setUserRole = async () => {
+  const setUserRole = useCallback(async () => {
     try {
       if (user.role === "widget developer") {
         setIsDev(true);
@@ -52,11 +52,11 @@ export default function Widgets() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.role]);
 
   useEffect(() => {
     setUserRole();
-  }, [user.id, user.role]);
+  }, [setUserRole, user.id]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -165,13 +165,9 @@ export default function Widgets() {
         return sortDirection === "asc" ? res : -res;
       });
   }, [
-    filtersVersion,
-    widgetsVersion,
     widgets,
     favWidgetIds,
     widgetQuery,
-    isDev,
-    user,
     filters,
     sortBy,
     sortDirection,

@@ -21,7 +21,7 @@ import {
   Link as LinkIcon,
   Clipboard as ClipboardIcon,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useStore } from "@nanostores/react";
 import { $user, updateStoreUser } from "@/lib/userStore";
 import { toast } from "sonner";
@@ -67,6 +67,27 @@ export default function TeamPage() {
   const { toast } = useToast();
   const user = useStore($user);
 
+  const fetchTeamMembers = useCallback(async () => {
+    if (!user.teamId) return;
+    try {
+      const membersData = await getTeamMembers(user.teamId);
+      setMembers(membersData);
+
+      // Update user store if current user's admin status changed
+      // Use == for loose comparison to handle string/number mismatch
+      const currentUserMember = membersData.find((m) => m.user_id == user.id);
+      if (currentUserMember && currentUserMember.is_admin !== user.is_admin) {
+        updateStoreUser({ is_admin: currentUserMember.is_admin });
+      }
+    } catch (error) {
+      console.error("Error fetching team members:", error);
+      toast({
+        title: "Error fetching team member",
+        variant: "destructive",
+      });
+    }
+  }, [toast, user.id, user.is_admin, user.teamId]);
+
   useEffect(() => {
     const fetchTeamData = async () => {
       if (user.teamId && user.teamId !== "null") {
@@ -85,7 +106,7 @@ export default function TeamPage() {
     };
 
     fetchTeamData();
-  }, [user.teamId]);
+  }, [fetchTeamMembers, toast, user.teamId]);
 
   const handleClickRemove = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -121,26 +142,7 @@ export default function TeamPage() {
     }
   };
 
-  const fetchTeamMembers = async () => {
-    if (!user.teamId) return;
-    try {
-      const membersData = await getTeamMembers(user.teamId);
-      setMembers(membersData);
-
-      // Update user store if current user's admin status changed
-      // Use == for loose comparison to handle string/number mismatch
-      const currentUserMember = membersData.find((m) => m.user_id == user.id);
-      if (currentUserMember && currentUserMember.is_admin !== user.is_admin) {
-        updateStoreUser({ is_admin: currentUserMember.is_admin });
-      }
-    } catch (error) {
-      console.error("Error fetching team members:", error);
-      toast({
-        title: "Error fetching team member",
-        variant: "destructive",
-      });
-    }
-  };
+  // `fetchTeamMembers` is defined above via `useCallback` so effects can depend on it safely.
 
   const promoteMember = async (memberId: string) => {
     if (!user.teamId) return;

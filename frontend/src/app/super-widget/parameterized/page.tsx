@@ -228,7 +228,13 @@ export default function SuperWidgetParameterizedPage() {
     };
 
     loadSelectorOptions();
-  }, [selectorSourceWidgetId, selectorSourceWidget?.name, selectedTeamFilter.key, shouldEnforcePlayerPortalPlayers]);
+  }, [
+    selectorSourceWidgetId,
+    selectorSourceWidget?.name,
+    selectedTeamFilter.teamIds,
+    selectedTeamFilter.teamNames,
+    shouldEnforcePlayerPortalPlayers,
+  ]);
 
   useEffect(() => {
     if (!selectorSourceWidgetId || !selectorTeams || !selectorPlayers) return;

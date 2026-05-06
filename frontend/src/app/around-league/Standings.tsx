@@ -109,7 +109,7 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
 
   useEffect(() => {
     loadStandings(season || undefined);
-  }, [season]);
+  }, [season, loadStandings]);
 
   const handleExport = () => {
     const header = ["Division", "Team", "W", "L", "PCT", "Streak", "Last 10"];
