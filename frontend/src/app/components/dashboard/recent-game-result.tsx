@@ -19,7 +19,7 @@ export default function RecentScoreResult({ game }: Props) {
   const timezone     = game.timezone || "";
 
   const isFinal      = status.toLowerCase().includes("final");
-  const isLive       = status.toLowerCase().includes("in progress");
+  const isLive       = status.toLowerCase().includes("live");
   const isScheduled  = status.toLowerCase().includes("scheduled");
 
   const homeWon = isFinal && homeScore != null && awayScore != null && homeScore > awayScore;
@@ -38,7 +38,7 @@ export default function RecentScoreResult({ game }: Props) {
 
   const statusBadge = () => {
     if (isFinal)     return { label: "Final",       cls: "bg-gray-100 text-gray-600" };
-    if (isLive)      return { label: `Live · ${inningsPlayed ?? ""}`, cls: "bg-green-100 text-green-700 animate-pulse" };
+    if (isLive)      return { label: `Live ${inningsPlayed ?? ""}`, cls: "bg-green-100 text-green-700 animate-pulse" };
     if (isScheduled) return { label: gametime ? `${gametime} ${timezone}` : "Scheduled", cls: "bg-blue-50 text-blue-600" };
     return { label: status, cls: "bg-gray-100 text-gray-500" };
   };
