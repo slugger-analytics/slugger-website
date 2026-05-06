@@ -149,6 +149,14 @@ function pitcherRow(item) {
   };
 }
 
+function isQualifiedPitcher(item) {
+  const outs = Number(item?.stats?.OUTS_PITCHED ?? 0);
+  const bf = Number(item?.stats?.BF ?? 0);
+  // iScore returns a lot of pitchers with 0 innings / 0 BF and ERA=0.00,
+  // which breaks "leaders" when sorting by ERA. Filter them out.
+  return outs > 0 && bf > 0;
+}
+
 exports.handler = async (event = {}) => {
   const BUCKET_NAME = requiredEnv("JSON_BUCKET_NAME");
 
@@ -200,7 +208,14 @@ exports.handler = async (event = {}) => {
   }
 
   const battingPlayers = (batting.items || []).map((it) => batterRow(it, sbByPlayerId));
-  const pitchingPlayers = (pitching.items || []).map((it) => pitcherRow(it));
+  const pitchingItems = (pitching.items || [])
+    .filter(isQualifiedPitcher)
+    .sort((a, b) => {
+      const ea = Number(a?.stats?.RATES?.ERA ?? 999);
+      const eb = Number(b?.stats?.RATES?.ERA ?? 999);
+      return ea - eb;
+    });
+  const pitchingPlayers = pitchingItems.map((it) => pitcherRow(it));
 
   const payload = {
     updatedAt: new Date().toISOString(),
