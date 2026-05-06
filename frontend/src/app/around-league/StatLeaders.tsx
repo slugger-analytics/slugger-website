@@ -10,7 +10,7 @@ import {
   TabsTrigger,
 } from "@/app/components/ui/tabs";
 type BattingSortKey = "rank" | "playername" | "teamname" | "avg" | "hr" | "rbi" | "sb";
-type PitchingSortKey = "rank" | "playername" | "teamname" | "era" | "wins" | "so" | "ip";
+type PitchingSortKey = "rank" | "playername" | "teamname" | "era" | "whip" | "so" | "ip";
 type SortDir = "asc" | "desc";
 
 function downloadCsv(filename: string, rows: string[][]): void {
@@ -110,7 +110,7 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
       case "playername": diff = a.playername.localeCompare(b.playername); break;
       case "teamname":  diff = (a.teamname?.fullname ?? "").localeCompare(b.teamname?.fullname ?? ""); break;
       case "era":       diff = parseFloat(a.era)  - parseFloat(b.era);  break;
-      case "wins":      diff = parseInt(a.wins)   - parseInt(b.wins);   break;
+      case "whip":      diff = parseFloat(a.whip ?? "0") - parseFloat(b.whip ?? "0"); break;
       case "so":        diff = parseInt(a.so)     - parseInt(b.so);     break;
       case "ip":        diff = parseFloat(a.ip)   - parseFloat(b.ip);   break;
     }
@@ -146,13 +146,13 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
       downloadCsv(`${label}batting-leaders.csv`, rows);
     } else {
       const rows = [
-        ["Rank", "Player", "Team", "ERA", "W", "SO", "IP"],
+        ["Rank", "Player", "Team", "ERA", "WHIP", "SO", "IP"],
         ...pitchers.map((p, i) => [
           String(i + 1),
           p.playername,
           p.teamname?.fullname ?? p.teamname?.$t ?? "",
           p.era,
-          p.wins,
+          p.whip ?? "",
           p.so,
           p.ip,
         ]),
@@ -267,7 +267,7 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
                 {colHead("Player", () => handlePitchingSort("playername"), pitchingSortIcon("playername"), "text-left")}
                 {!teamFilter && colHead("Team", () => handlePitchingSort("teamname"), pitchingSortIcon("teamname"), "text-left", true)}
                 {colHead("ERA",    () => handlePitchingSort("era"),        pitchingSortIcon("era"))}
-                {colHead("W",      () => handlePitchingSort("wins"),       pitchingSortIcon("wins"))}
+                {colHead("WHIP",     () => handlePitchingSort("whip"),       pitchingSortIcon("whip"))}
                 {colHead("SO",     () => handlePitchingSort("so"),         pitchingSortIcon("so"))}
                 {colHead("IP",     () => handlePitchingSort("ip"),         pitchingSortIcon("ip"),         "text-right", true)}
               </tr>
@@ -286,7 +286,7 @@ const StatLeaders = ({ season, teamFilter }: StatLeadersProps) => {
                     <td className="px-4 py-2.5 font-medium text-gray-800">{pitcher.playername}</td>
                     {!teamFilter && <td className="px-3 py-2.5 text-gray-500 text-sm hidden sm:table-cell">{pitcher.teamname?.fullname ?? pitcher.teamname?.$t}</td>}
                     <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-800">{pitcher.era}</td>
-                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.wins}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.whip ?? "—"}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-gray-700">{pitcher.so}</td>
                     <td className="px-3 py-2.5 text-right tabular-nums text-gray-700 hidden sm:table-cell">{pitcher.ip}</td>
                   </tr>

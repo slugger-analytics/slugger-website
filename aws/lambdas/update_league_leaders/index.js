@@ -8,9 +8,52 @@
  * Output shape matches `frontend/src/data/types.ts` `LeagueLeadersData`.
  */
 
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 
 const s3 = new S3Client({});
+
+async function streamToString(body) {
+  const chunks = [];
+  for await (const chunk of body) chunks.push(chunk);
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function getLeagueGamesPlayedFromStandings(bucket, year) {
+  try {
+    const cmd = new GetObjectCommand({
+      Bucket: bucket,
+      Key: `standings/${year}-standings.json`,
+    });
+    const res = await s3.send(cmd);
+    const text = await streamToString(res.Body);
+    const parsed = JSON.parse(text);
+    const standings = parsed?.standings ?? parsed?.data?.standings ?? parsed;
+
+    let teamCount = 0;
+    let winSum = 0;
+    for (const conf of standings?.conference ?? []) {
+      for (const div of conf?.division ?? []) {
+        for (const team of div?.team ?? []) {
+          teamCount += 1;
+          winSum += Number(team?.wins ?? 0);
+        }
+      }
+    }
+
+    if (teamCount <= 1) return null;
+    // Total wins across teams equals total league games played (each game produces one winner).
+    const leagueGames = winSum;
+    console.info("[update_league_leaders] standings-derived league games", {
+      year: String(year),
+      teamCount,
+      leagueGames,
+    });
+    return leagueGames;
+  } catch (err) {
+    console.warn("[update_league_leaders] could not derive league games from standings; using fallback", err?.message || err);
+    return null;
+  }
+}
 
 const ISCORE_BASE_URL =
   process.env.ISCORE_BASE_URL?.trim() ||
@@ -36,6 +79,12 @@ function fmtAvg(x) {
 }
 
 function fmtEra(x) {
+  const n = Number(x);
+  if (!Number.isFinite(n)) return "0.00";
+  return n.toFixed(2);
+}
+
+function fmtWhip(x) {
   const n = Number(x);
   if (!Number.isFinite(n)) return "0.00";
   return n.toFixed(2);
@@ -128,6 +177,7 @@ function pitcherRow(item) {
     teamname: teamNameObj(item.teamId, item.teamName),
     wins: String(stats.W ?? 0),
     losses: String(stats.L ?? 0),
+    whip: fmtWhip(rates.WHIP),
     ip: toInningsFromOuts(stats.OUTS_PITCHED ?? 0),
     runs: String(stats.R ?? 0),
     er: String(stats.ER ?? 0),
@@ -149,12 +199,11 @@ function pitcherRow(item) {
   };
 }
 
-function isQualifiedPitcher(item) {
+function isQualifiedPitcher(item, minOuts) {
   const outs = Number(item?.stats?.OUTS_PITCHED ?? 0);
   const bf = Number(item?.stats?.BF ?? 0);
-  // iScore returns a lot of pitchers with 0 innings / 0 BF and ERA=0.00,
-  // which breaks "leaders" when sorting by ERA. Filter them out.
-  return outs > 0 && bf > 0;
+  if (bf <= 0 || outs <= 0) return false;
+  return outs >= minOuts;
 }
 
 exports.handler = async (event = {}) => {
@@ -169,6 +218,25 @@ exports.handler = async (event = {}) => {
     requiredEnv("ISCORE_LEAGUE_ID");
 
   const size = Number(event.size || process.env.ISCORE_LEADERBOARD_SIZE || 200);
+
+  const inningsPerGame = Number(process.env.LEADER_MIN_IP_PER_TEAM_GAME ?? "0.05");
+  const minOutsFloor = Math.max(0, Math.floor(Number(process.env.LEADER_MIN_OUTS_FLOOR ?? "9")));
+  const relaxedMinOutsFloor = Math.max(0, Math.floor(Number(process.env.LEADER_RELAXED_MIN_OUTS_FLOOR ?? "6")));
+  const maxMinOuts = Math.max(minOutsFloor, Math.floor(Number(process.env.LEADER_MAX_MIN_OUTS ?? "162")));
+  const leagueGames = await getLeagueGamesPlayedFromStandings(BUCKET_NAME, year);
+  const minOutsFromScheduleRaw =
+    leagueGames != null ? Math.floor(leagueGames * inningsPerGame * 3) : null;
+  const minOutsFromSchedule =
+    minOutsFromScheduleRaw == null ? null : Math.min(Math.max(minOutsFromScheduleRaw, 0), maxMinOuts);
+  const minOutsPitcher = Math.max(minOutsFloor, minOutsFromSchedule ?? minOutsFloor);
+
+  console.info("[update_league_leaders] ERA qualifier (outs)", {
+    minOutsPitcher,
+    minOutsFloor,
+    relaxedMinOutsFloor,
+    minOutsFromSchedule,
+    inningsPerGame,
+  });
 
   const battingUrl = buildUrl("/leaderboard/player/batting", {
     seasonId,
@@ -208,13 +276,36 @@ exports.handler = async (event = {}) => {
   }
 
   const battingPlayers = (batting.items || []).map((it) => batterRow(it, sbByPlayerId));
-  const pitchingItems = (pitching.items || [])
-    .filter(isQualifiedPitcher)
-    .sort((a, b) => {
-      const ea = Number(a?.stats?.RATES?.ERA ?? 999);
-      const eb = Number(b?.stats?.RATES?.ERA ?? 999);
-      return ea - eb;
+  const allPitchItems = pitching.items || [];
+  const qualifyAt = (minOuts) => allPitchItems.filter((it) => isQualifiedPitcher(it, minOuts));
+
+  let pitchingItems = qualifyAt(minOutsPitcher);
+  const minQualified = Math.max(0, Math.floor(Number(process.env.LEADER_MIN_QUALIFIED_PITCHERS ?? "8")));
+  const effectiveMinOuts =
+    pitchingItems.length < minQualified ? Math.min(minOutsPitcher, Math.max(relaxedMinOutsFloor, minOutsFloor)) : minOutsPitcher;
+
+  if (pitchingItems.length < minQualified && effectiveMinOuts !== minOutsPitcher) {
+    pitchingItems = qualifyAt(effectiveMinOuts);
+    console.warn("[update_league_leaders] relaxed ERA qualifier", {
+      from: minOutsPitcher,
+      to: effectiveMinOuts,
+      qualified: pitchingItems.length,
     });
+  }
+
+  pitchingItems.sort((a, b) => {
+    const ea = Number(a?.stats?.RATES?.ERA ?? 999);
+    const eb = Number(b?.stats?.RATES?.ERA ?? 999);
+    if (ea !== eb) return ea - eb;
+
+    const wa = Number(a?.stats?.RATES?.WHIP ?? 999);
+    const wb = Number(b?.stats?.RATES?.WHIP ?? 999);
+    if (wa !== wb) return wa - wb;
+
+    const outsa = Number(a?.stats?.OUTS_PITCHED ?? 0);
+    const outsb = Number(b?.stats?.OUTS_PITCHED ?? 0);
+    return outsb - outsa;
+  });
   const pitchingPlayers = pitchingItems.map((it) => pitcherRow(it));
 
   const payload = {

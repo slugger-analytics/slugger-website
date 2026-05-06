@@ -194,6 +194,8 @@ export interface PitchingPlayer {
   teamname: TeamName;
   wins: string;
   losses: string;
+  /** iScore provides WHIP directly; Pointstreak-era field was often empty. */
+  whip?: string;
   ip: string;
   runs: string;
   er: string;
