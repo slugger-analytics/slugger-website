@@ -84,8 +84,7 @@ export default function Home() {
               custom={0.4}
               className="text-sm sm:text-xl font-medium text-gray-300 mt-4 sm:mt-8 max-w-3xl leading-relaxed px-4 sm:px-0"
             >
-              Discover advanced insights and data that redefine your
-              understanding of the game. Developed by the Johns Hopkins Sports
+              Discover advanced insights and data that redefine the game. <br/> Developed by the Johns Hopkins Sports
               Analytics Research Group.
             </motion.p>
 
