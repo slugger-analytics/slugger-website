@@ -1,27 +1,17 @@
+"use client";
+
 import { $standings } from "@/lib/widgetStore";
 import { useStore } from "@nanostores/react";
 import React, { useState, useEffect } from "react";
 import { ChevronsUpDown, ChevronUp, ChevronDown, Download } from "lucide-react";
 import { Division, Team } from "@/data/types";
 import useQueryLeague from "../hooks/use-query-league";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@/app/components/ui/tabs";
 
-type SortKey = "teamname" | "wins" | "losses" | "pct" | "streak" | "last10";
+type SortKey = "teamname" | "wins" | "losses" | "pct";
 type SortDir = "asc" | "desc";
 
-function parseStreak(s: string): number {
-  const m = s?.match(/^([WL])(\d+)$/);
-  if (!m) return 0;
-  return m[1] === "W" ? parseInt(m[2]) : -parseInt(m[2]);
-}
-
-function parseLast10Wins(s: string): number {
-  return parseInt(s?.split("-")[0] ?? "0") || 0;
-}
+const NORTH_TEAMS = ["Hagerstown Flying Boxcars", "Lancaster Stormers", "Long Island Ducks", "York Revolution", "Staten Island Ferry Hawks"];
+const SOUTH_TEAMS = ["Southern Maryland Blue Crabs", "High Point Rockers", "Lexington Legends", "Gastonia Ghost Peppers", "Charleston Dirty Birds"];
 
 function sortTeams(teams: Team[], key: SortKey, dir: SortDir): Team[] {
   return [...teams].sort((a, b) => {
@@ -30,33 +20,10 @@ function sortTeams(teams: Team[], key: SortKey, dir: SortDir): Team[] {
       case "wins":     diff = parseInt(a.wins)    - parseInt(b.wins);    break;
       case "losses":   diff = parseInt(a.losses)  - parseInt(b.losses);  break;
       case "pct":      diff = parseFloat(a.pct)   - parseFloat(b.pct);   break;
-      case "streak":   diff = parseStreak(a.streak) - parseStreak(b.streak); break;
-      case "last10":   diff = parseLast10Wins(a.last10) - parseLast10Wins(b.last10); break;
-      case "teamname": diff = a.teamname.localeCompare(b.teamname); break;
+      case "teamname": diff = a.teamname.localeCompare(b.teamname);       break;
     }
     return dir === "asc" ? diff : -diff;
   });
-}
-
-/** Mini pip bar for Last 10 */
-function PipBar({ value }: { value: string }) {
-  const parts = value?.split("-");
-  const wins = parseInt(parts?.[0] ?? "0") || 0;
-  const losses = parseInt(parts?.[1] ?? "0") || 0;
-  return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className="tabular-nums text-xs font-medium">{value}</span>
-      <div className="flex gap-px">
-        {Array.from({ length: 10 }).map((_, i) => (
-          <span
-            key={i}
-            className={`inline-block w-2 h-2 rounded-sm ${i < wins ? "bg-alpbBlue" : "bg-gray-200"}`}
-          />
-        ))}
-      </div>
-      <span className="text-[9px] text-gray-400 tabular-nums">{wins}W·{losses}L</span>
-    </div>
-  );
 }
 
 function downloadCsv(filename: string, rows: string[][]): void {
@@ -72,18 +39,17 @@ function downloadCsv(filename: string, rows: string[][]): void {
   URL.revokeObjectURL(url);
 }
 
-type AroundLeagueProps = {
+type StandingsProps = {
   season: string;
   maxTeams?: number;
   compact?: boolean;
   teamFilter?: string;
 };
 
-const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps) => {
+const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) => {
   const { loadStandings, standingsLoading, standingsError } = useQueryLeague();
 
-  const [standingsData, setStandingsData] = useState<Division[]>([]);
-  const [view, setView] = useState("OVERALL");
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
   const [lastUpdated, setLastUpdated] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("pct");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -91,32 +57,40 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
 
   useEffect(() => {
     if (allStandingsData?.standings?.conference) {
-      const data = allStandingsData.standings.conference.find(
-        (conf) => conf.name === view,
+      // Pull all teams from the OVERALL conference, flattening all divisions
+      const overall = allStandingsData.standings.conference.find(
+        (conf) => conf.name === "OVERALL"
       );
-      const divisions = data?.division.map((division) => ({
-        ...division,
-        team: [...division.team],
-      })) ?? [];
-      setStandingsData(divisions);
+      const teams = overall?.division.flatMap((d) => d.team) ?? [];
+      setAllTeams(teams);
+
       const readableDate = new Date(allStandingsData.updatedAt).toLocaleString("en-US", {
         year: "numeric", month: "long", day: "numeric",
         hour: "numeric", minute: "2-digit", hour12: true,
       });
       setLastUpdated(readableDate);
     }
-  }, [allStandingsData, view]);
+  }, [allStandingsData]);
 
   useEffect(() => {
     loadStandings(season || undefined);
   }, [season, loadStandings]);
 
+  // Split into hardcoded divisions
+  const northTeams = allTeams.filter((t) => NORTH_TEAMS.includes(t.teamname));
+  const southTeams = allTeams.filter((t) => SOUTH_TEAMS.includes(t.teamname));
+
+  const divisions = [
+    { name: "North Division", teams: northTeams },
+    { name: "South Division", teams: southTeams },
+  ];
+
   const handleExport = () => {
-    const header = ["Division", "Team", "W", "L", "PCT", "Streak", "Last 10"];
+    const header = ["Division", "Team", "W", "L", "PCT"];
     const rows: string[][] = [header];
-    standingsData.forEach((division) => {
-      sortTeams(division.team, sortKey, sortDir).forEach((team) => {
-        rows.push([division.name, team.teamname, team.wins, team.losses, team.pct, team.streak, team.last10]);
+    divisions.forEach(({ name, teams }) => {
+      sortTeams(teams, sortKey, sortDir).forEach((team) => {
+        rows.push([name, team.teamname, team.wins, team.losses, team.pct]);
       });
     });
     downloadCsv(`${season ? `${season}-` : ""}standings.csv`, rows);
@@ -138,15 +112,15 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
       : <ChevronDown className="shrink-0" size={11} />;
   };
 
-  const colHead = (key: SortKey, label: string, align = "text-right") =>
+  const colHead = (key: SortKey, label: string) =>
     compact ? (
-      <th key={key} className={`px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 ${align}`}>
+      <th key={key} className="px-2 py-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 text-right">
         {label}
       </th>
     ) : (
       <th
         key={key}
-        className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap ${align}`}
+        className="px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap text-right"
         onClick={() => handleSort(key)}
       >
         <span className="inline-flex items-center gap-0.5 justify-end">
@@ -159,7 +133,9 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
     return (
       <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 p-6"}`}>
         <div className="space-y-2 py-4">
-          {[1,2,3,4].map(i => <div key={i} className="h-8 rounded bg-gray-100 animate-pulse" />)}
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-8 rounded bg-gray-100 animate-pulse" />
+          ))}
         </div>
       </div>
     );
@@ -173,31 +149,10 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
     );
   }
 
-  // Build flat list of {division, teams} respecting filters
-  const sections = standingsData
-  .map((division) => {
-    const filtered = teamFilter
-      ? division.team.filter((t) => t.teamname === teamFilter)
-      : division.team;
-
-    const sorted = sortTeams(filtered, sortKey, sortDir);
-    const teams = maxTeams ? sorted.slice(0, maxTeams) : sorted;
-
-    return { division, teams };
-  })
-  .filter(({ teams }) => teams.length > 0);
-
   return (
     <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden"}`}>
       {!compact && (
-        <div className="flex flex-wrap items-center justify-between gap-y-2 px-5 pt-4 pb-3 border-b border-gray-100">
-          {/* <Tabs defaultValue="OVERALL">
-            <TabsList className="flex-wrap h-auto">
-              <TabsTrigger value="OVERALL" onClick={() => setView("OVERALL")}>Overall</TabsTrigger>
-              <TabsTrigger value="FIRST HALF" onClick={() => setView("FIRST HALF")}>1st Half</TabsTrigger>
-              <TabsTrigger value="SECOND HALF" onClick={() => setView("SECOND HALF")}>2nd Half</TabsTrigger>
-            </TabsList>
-          </Tabs> */}
+        <div className="flex items-center justify-end px-5 pt-4 pb-3 border-b border-gray-100">
           <button
             onClick={handleExport}
             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-alpbBlue hover:border-alpbBlue border border-gray-200 rounded-md px-3 py-1.5 transition-colors"
@@ -209,7 +164,6 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
       )}
 
       <table className="w-full border-collapse text-sm">
-        {/* Column headers */}
         <thead>
           <tr className="border-b border-gray-100">
             {compact ? (
@@ -219,67 +173,63 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: AroundLeagueProps)
                 className="px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 text-left cursor-pointer select-none hover:text-gray-700 transition-colors"
                 onClick={() => handleSort("teamname")}
               >
-                <span className="inline-flex items-center gap-0.5">Team {sortIcon("teamname")}</span>
+                <span className="inline-flex items-center gap-0.5">
+                  Team {sortIcon("teamname")}
+                </span>
               </th>
             )}
-            {colHead("wins",    "W")}
-            {colHead("losses",  "L")}
-            {colHead("pct",     "PCT")}
-            {/* <th className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap text-right hidden sm:table-cell`} onClick={() => handleSort("streak")}>
-              <span className="inline-flex items-center gap-0.5 justify-end">STRK {sortIcon("streak")}</span>
-            </th> */}
-            {/* <th className={`px-3 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 cursor-pointer select-none hover:text-gray-700 transition-colors whitespace-nowrap text-center hidden sm:table-cell`} onClick={() => handleSort("last10")}>
-              <span className="inline-flex items-center gap-0.5">L10 {sortIcon("last10")}</span>
-            </th> */}
+            {colHead("wins",   "W")}
+            {colHead("losses", "L")}
+            {colHead("pct",    "PCT")}
           </tr>
         </thead>
 
         <tbody>
-          {sections.map(({ division, teams }) => (
-            <React.Fragment key={division.name}>
-              {/* Division label row
-              {!compact && !teamFilter && (
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <td
-                    colSpan={6}
-                    className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400"
+          {divisions.map(({ name, teams }) => {
+            // Apply teamFilter if provided
+            const base = teamFilter ? teams.filter((t) => t.teamname === teamFilter) : teams;
+            const sorted = sortTeams(base, sortKey, sortDir);
+            const displayed = maxTeams ? sorted.slice(0, maxTeams) : sorted;
+
+            if (displayed.length === 0) return null;
+
+            return (
+              <React.Fragment key={name}>
+                {/* Division header row */}
+                {!compact && !teamFilter && (
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <td
+                      colSpan={4}
+                      className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-400"
+                    >
+                      {name}
+                    </td>
+                  </tr>
+                )}
+                {displayed.map((team, idx) => (
+                  <tr
+                    key={idx}
+                    className={`border-b border-gray-100 transition-colors hover:bg-blue-50/40 ${
+                      teamFilter && team.teamname === teamFilter ? "bg-alpbBlue/5" : ""
+                    }`}
                   >
-                    {division.name}
-                  </td>
-                </tr>
-              )} */}
-              {teams.map((team, idx) => (
-                <tr
-                  key={idx}
-                  className={`border-b border-gray-100 transition-colors hover:bg-blue-50/40 ${
-                    teamFilter && team.teamname === teamFilter ? "bg-alpbBlue/5" : ""
-                  }`}
-                >
-                  <td className={`${compact ? "px-2 py-2" : "px-4 py-3"} font-medium text-gray-800`}>
-                    {team.teamname}
-                  </td>
-                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
-                    {team.wins}
-                  </td>
-                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
-                    {team.losses}
-                  </td>
-                  <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums font-semibold text-gray-800`}>
-                    {team.pct}
-                  </td>
-                  {/* <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-600 hidden sm:table-cell`}>
-                    {team.streak}
-                  </td>
-                  <td className={`${compact ? "px-2 py-2" : "px-3 py-3"} text-center hidden sm:table-cell`}>
-                    {!compact && team.last10
-                      ? <PipBar value={team.last10} />
-                      : <span className="tabular-nums text-xs text-gray-600">{team.last10}</span>
-                    }
-                  </td> */}
-                </tr>
-              ))}
-            </React.Fragment>
-          ))}
+                    <td className={`${compact ? "px-2 py-2" : "px-4 py-3"} font-medium text-gray-800`}>
+                      {team.teamname}
+                    </td>
+                    <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
+                      {team.wins}
+                    </td>
+                    <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
+                      {team.losses}
+                    </td>
+                    <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums font-semibold text-gray-800`}>
+                      {team.pct}
+                    </td>
+                  </tr>
+                ))}
+              </React.Fragment>
+            );
+          })}
         </tbody>
       </table>
 
