@@ -1,0 +1,12 @@
+{
+  "name": "update_standings",
+  "private": true,
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.888.0"
+  }
+}
