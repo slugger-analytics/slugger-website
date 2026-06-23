@@ -45,6 +45,8 @@
     "build": "tsc --project tsconfig.json",
     "start": "node server.js",
     "lint": "echo 'Backend linting skipped - no ESLint config'",
-    "prettier": "npx prettier . --write"
+    "prettier": "npx prettier . --write",
+    "test": "node --test test/account-approval.test.js",
+    "test:account-approval": "node --test test/account-approval.test.js"
   }
 }

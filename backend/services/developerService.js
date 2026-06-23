@@ -78,16 +78,26 @@ export async function approveDeveloper(requestId) {
     console.log(`Generating API key for new developer with user_id: ${newUser.user_id} and email: ${developer.email}`);
     const apiKey = await generateApiKeyForUser(newUser.user_id, developer.email);
 
-    // Send API key email
-    await sendApiKeyEmail(developer.email, apiKey);
-
     // Remove from pending_developers
     await client.query(`
       DELETE FROM pending_developers WHERE request_id = $1
     `, [requestId]);
 
     await client.query('COMMIT');
-    return { apiKey, userId: newUser.user_id };
+
+    // Email is best-effort: approval should succeed even if SES is misconfigured.
+    let emailSent = true;
+    try {
+      await sendApiKeyEmail(developer.email, apiKey);
+    } catch (emailError) {
+      emailSent = false;
+      console.error(
+        `[developerService] approveDeveloper — API key email failed for ${developer.email}:`,
+        emailError
+      );
+    }
+
+    return { apiKey, userId: newUser.user_id, emailSent };
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
@@ -96,20 +106,36 @@ export async function approveDeveloper(requestId) {
   }
 }
 
-export async function declineDeveloper(requestId, email) {
+export async function declineDeveloper(requestId) {
   const client = await pool.connect();
   try {
-    await client.query(
-      `DELETE FROM pending_developers WHERE request_id = $1`,
-      [requestId]);
-    await client.query('COMMIT');
-    // Delete the Cognito account
-    await cognito.adminDeleteUser({
-      UserPoolId: process.env.COGNITO_USER_POOL_ID,
-      Username: email
-    }).promise();
+    await client.query("BEGIN");
+
+    const deleteResult = await client.query(
+      `DELETE FROM pending_developers WHERE request_id = $1 RETURNING email`,
+      [requestId]
+    );
+
+    if (deleteResult.rowCount === 0) {
+      throw new Error("Pending developer not found");
+    }
+
+    const email = deleteResult.rows[0].email;
+    await client.query("COMMIT");
+
+    try {
+      await cognito.adminDeleteUser({
+        UserPoolId: process.env.COGNITO_USER_POOL_ID,
+        Username: email,
+      }).promise();
+    } catch (cognitoError) {
+      if (cognitoError.code !== "UserNotFoundException") {
+        throw new Error(`Failed to delete Cognito account: ${cognitoError.message}`);
+      }
+      console.warn(`[developerService] declineDeveloper — Cognito user not found for ${email}`);
+    }
   } catch (error) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw error;
   } finally {
     client.release();

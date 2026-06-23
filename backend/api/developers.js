@@ -7,25 +7,22 @@ import {
   getAllApprovedWidgets,
 } from "../services/developerService.js";
 import { requireSiteAdmin } from "../middleware/permission-guards.js";
+import { parseApprovalRequestId, mapApprovalServiceError } from "../lib/accountApproval.js";
 
 const router = Router();
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**
- * Parse and validate a developer ID from a route param.
- * Returns the integer ID, or null if invalid.
- */
-function parseDeveloperId(param) {
-  const id = parseInt(param, 10);
-  return Number.isFinite(id) && id > 0 ? id : null;
-}
-
-/**
  * Central service error handler. Logs the full error internally and sends a
  * sanitized 500 to the client.
  */
 function handleServiceError(error, res, context) {
+  const known = mapApprovalServiceError(error);
+  if (known) {
+    console.warn(`[developers] ${context} — ${known.message}`);
+    return res.status(known.status).json({ success: false, message: known.message });
+  }
   console.error(`[developers] ${context} — unexpected error:`, error);
   return res.status(500).json({ success: false, message: "An unexpected error occurred." });
 }
@@ -37,7 +34,7 @@ function handleServiceError(error, res, context) {
  * Approve a pending developer and send them their API key.
  */
 router.post("/pending/:developerId/approve", requireSiteAdmin, async (req, res) => {
-  const id = parseDeveloperId(req.params.developerId);
+  const id = parseApprovalRequestId(req.params.developerId);
   if (!id) {
     return res.status(400).json({ success: false, message: "Invalid developer ID." });
   }
@@ -45,9 +42,12 @@ router.post("/pending/:developerId/approve", requireSiteAdmin, async (req, res) 
   try {
     const result = await approveDeveloper(id);
     console.info(`[developers] approve — developer ${id} approved`);
+    const message = result.emailSent
+      ? "Developer approved and API key sent."
+      : "Developer approved. API key created but email could not be sent.";
     return res.status(200).json({
       success: true,
-      message: "Developer approved and API key sent.",
+      message,
       data: result,
     });
   } catch (error) {
@@ -60,7 +60,7 @@ router.post("/pending/:developerId/approve", requireSiteAdmin, async (req, res) 
  * Decline a pending developer.
  */
 router.post("/pending/:developerId/decline", requireSiteAdmin, async (req, res) => {
-  const id = parseDeveloperId(req.params.developerId);
+  const id = parseApprovalRequestId(req.params.developerId);
   if (!id) {
     return res.status(400).json({ success: false, message: "Invalid developer ID." });
   }

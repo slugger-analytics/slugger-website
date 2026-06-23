@@ -18,6 +18,7 @@ import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
 import { sendPasswordResetEmail } from "../services/emailService.js";
 import { requireAuth, requireSiteAdmin } from "../middleware/permission-guards.js";
+import { shouldBlockLoginForPendingDeveloper } from "../lib/accountApproval.js";
 import jwt from "jsonwebtoken";
 
 dotenv.config();
@@ -117,7 +118,12 @@ router.post("/sign-in", async (req, res) => {
         [email]
       );
 
-      if (pendingCheck.rows.length > 0) {
+      if (
+        shouldBlockLoginForPendingDeveloper({
+          userExists: false,
+          pendingDeveloperExists: pendingCheck.rows.length > 0,
+        })
+      ) {
         // This is a pending developer - they should not login until approved
         return res.status(403).json({
           success: false,

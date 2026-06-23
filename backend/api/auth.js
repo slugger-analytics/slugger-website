@@ -2,6 +2,10 @@ import { Router } from "express";
 import cognito from "../cognito.js";
 import pool from "../db.js";
 import { disableCognitoAccount } from "../services/developerService.js";
+import {
+  resolvePendingDeveloperStatus,
+  confirmSignupMarkedDeveloper,
+} from "../lib/accountApproval.js";
 
 const router = Router();
 
@@ -113,7 +117,7 @@ router.post("/confirm-signup", async (req, res) => {
       [email]
     );
 
-    const isDeveloper = updateResult.rowCount > 0;
+    const isDeveloper = confirmSignupMarkedDeveloper(updateResult.rowCount);
 
     if (isDeveloper) {
       console.info(`[auth] confirm-signup — disabling Cognito account for pending developer ${email}`);
@@ -156,13 +160,8 @@ router.get("/check-status/:email", async (req, res) => {
       [email]
     );
 
-    if (result.rowCount === 0) {
-      return res.json({ status: "regular_user" });
-    }
-
-    const { email_confirmed } = result.rows[0];
     return res.json({
-      status: email_confirmed ? "pending_approval" : "pending_confirmation",
+      status: resolvePendingDeveloperStatus(result.rows[0] ?? null),
     });
 
   } catch (error) {
