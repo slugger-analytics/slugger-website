@@ -414,6 +414,7 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
     }
 
     // Build base (lightweight) query: select widget rows only
+    // Visibility OR rules are mirrored in lib/widgetAccess.js for unit tests.
     const baseParams = [];
     const baseConditions = ["(LOWER(w.visibility) = 'public' OR w.visibility IS NULL)"];
     if (userId) {

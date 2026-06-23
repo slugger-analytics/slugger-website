@@ -46,7 +46,8 @@
     "start": "node server.js",
     "lint": "echo 'Backend linting skipped - no ESLint config'",
     "prettier": "npx prettier . --write",
-    "test": "node --test test/account-approval.test.js",
-    "test:account-approval": "node --test test/account-approval.test.js"
+    "test": "node --test test/account-approval.test.js test/widget-access.test.js",
+    "test:account-approval": "node --test test/account-approval.test.js",
+    "test:widget-access": "node --test test/widget-access.test.js"
   }
 }
