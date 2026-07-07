@@ -225,6 +225,8 @@ export interface BattingPlayer {
   lastname: string;
   teamname: TeamName;
   position: string;
+  g: string;
+  pa: string;
   ab: string;
   runs: string;
   hits: string;
@@ -241,6 +243,7 @@ export interface BattingPlayer {
   obp: string;
   slg: string;
   avg: string;
+  ops: string;
 }
 
 export interface TeamName {
