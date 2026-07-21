@@ -1,14 +1,13 @@
 "use client";
 
-import { $standings } from "@/lib/widgetStore";
-import { useStore } from "@nanostores/react";
-import React, { useState, useEffect } from "react";
+import { fetchStandings } from "@/api/league";
+import React, { useState, useEffect, useCallback } from "react";
 import { ChevronsUpDown, ChevronUp, ChevronDown, Download } from "lucide-react";
-import { Division, Team } from "@/data/types";
-import useQueryLeague from "../hooks/use-query-league";
+import { Team } from "@/data/types";
 
 type SortKey = "teamname" | "wins" | "losses" | "pct";
 type SortDir = "asc" | "desc";
+type Half = "full" | "first" | "second";
 
 const NORTH_TEAMS = ["Hagerstown Flying Boxcars", "Lancaster Stormers", "Long Island Ducks", "York Revolution", "Staten Island Ferry Hawks"];
 const SOUTH_TEAMS = ["Southern Maryland Blue Crabs", "High Point Rockers", "Lexington Legends", "Gastonia Ghost Peppers", "Charleston Dirty Birds"];
@@ -39,6 +38,17 @@ function downloadCsv(filename: string, rows: string[][]): void {
   URL.revokeObjectURL(url);
 }
 
+function pctNum(wins: string, losses: string): number {
+  const w = parseInt(wins) || 0;
+  const l = parseInt(losses) || 0;
+  const g = w + l;
+  return g > 0 ? w / g : 0;
+}
+
+function fmtPct(n: number): string {
+  return n.toFixed(3);
+}
+
 type StandingsProps = {
   season: string;
   maxTeams?: number;
@@ -47,38 +57,83 @@ type StandingsProps = {
 };
 
 const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) => {
-  const { loadStandings, standingsLoading, standingsError } = useQueryLeague();
-
-  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [half, setHalf] = useState<Half>("full");
+  const [fullTeams, setFullTeams] = useState<Team[]>([]);
+  const [firstHalfTeams, setFirstHalfTeams] = useState<Team[] | null>(null);
+  const [clinched, setClinched] = useState<string[]>([]);
   const [lastUpdated, setLastUpdated] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("pct");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const allStandingsData = useStore($standings);
 
-  useEffect(() => {
-    if (allStandingsData?.standings?.conference) {
-      // Pull all teams from the OVERALL conference, flattening all divisions
-      const overall = allStandingsData.standings.conference.find(
-        (conf) => conf.name === "OVERALL"
-      );
-      const teams = overall?.division.flatMap((d) => d.team) ?? [];
-      setAllTeams(teams);
+  const extractTeams = (data: { standings?: { conference?: Array<{ name: string; division?: Array<{ team?: Team[] }> }> } }) => {
+    const overall = data?.standings?.conference?.find((c) => c.name === "OVERALL");
+    return overall?.division?.flatMap((d) => d.team ?? []) ?? [];
+  };
 
-      const readableDate = new Date(allStandingsData.updatedAt).toLocaleString("en-US", {
-        year: "numeric", month: "long", day: "numeric",
-        hour: "numeric", minute: "2-digit", hour12: true,
-      });
-      setLastUpdated(readableDate);
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [fullData, firstHalfData] = await Promise.allSettled([
+        fetchStandings(season || undefined, "full"),
+        fetchStandings(season || undefined, "first"),
+      ]);
+
+      if (fullData.status === "fulfilled") {
+        setFullTeams(extractTeams(fullData.value));
+        setClinched(fullData.value.clinched ?? []);
+        const readableDate = new Date(fullData.value.updatedAt).toLocaleString("en-US", {
+          year: "numeric", month: "long", day: "numeric",
+          hour: "numeric", minute: "2-digit", hour12: true,
+        });
+        setLastUpdated(readableDate);
+      } else {
+        setError("Data unavailable for this season.");
+      }
+
+      if (firstHalfData.status === "fulfilled") {
+        setFirstHalfTeams(extractTeams(firstHalfData.value));
+        if (firstHalfData.value.clinched?.length) {
+          setClinched((prev) => (prev.length ? prev : (firstHalfData.value.clinched ?? [])));
+        }
+      } else {
+        setFirstHalfTeams(null);
+      }
+    } catch {
+      setError("Data unavailable for this season.");
+    } finally {
+      setLoading(false);
     }
-  }, [allStandingsData]);
+  }, [season]);
 
-  useEffect(() => {
-    loadStandings(season || undefined);
-  }, [season, loadStandings]);
+  useEffect(() => { load(); }, [load]);
 
-  // Split into hardcoded divisions
-  const northTeams = allTeams.filter((t) => NORTH_TEAMS.includes(t.teamname));
-  const southTeams = allTeams.filter((t) => SOUTH_TEAMS.includes(t.teamname));
+  // Second-half = full-season minus first-half
+  const secondHalfTeams: Team[] | null = firstHalfTeams && fullTeams.length > 0
+    ? fullTeams.map((ft) => {
+        const fh = firstHalfTeams.find((t) => t.teamname === ft.teamname);
+        if (!fh) return ft;
+        const w2 = Math.max(0, parseInt(ft.wins) - parseInt(fh.wins));
+        const l2 = Math.max(0, parseInt(ft.losses) - parseInt(fh.losses));
+        return {
+          ...ft,
+          wins: String(w2),
+          losses: String(l2),
+          pct: fmtPct(pctNum(String(w2), String(l2))),
+          gp: String(w2 + l2),
+        };
+      })
+    : null;
+
+  const activeTeams =
+    half === "first"  ? (firstHalfTeams  ?? fullTeams) :
+    half === "second" ? (secondHalfTeams ?? fullTeams) :
+    fullTeams;
+
+  const northTeams = activeTeams.filter((t) => NORTH_TEAMS.includes(t.teamname));
+  const southTeams = activeTeams.filter((t) => SOUTH_TEAMS.includes(t.teamname));
 
   const divisions = [
     { name: "North Division", teams: northTeams },
@@ -93,7 +148,8 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
         rows.push([name, team.teamname, team.wins, team.losses, team.pct]);
       });
     });
-    downloadCsv(`${season ? `${season}-` : ""}standings.csv`, rows);
+    const suffix = half === "first" ? "first-half-" : half === "second" ? "second-half-" : "";
+    downloadCsv(`${season ? `${season}-` : ""}${suffix}standings.csv`, rows);
   };
 
   const handleSort = (key: SortKey) => {
@@ -129,7 +185,9 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
       </th>
     );
 
-  if (standingsLoading) {
+  const hasHalfData = firstHalfTeams !== null;
+
+  if (loading) {
     return (
       <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 p-6"}`}>
         <div className="space-y-2 py-4">
@@ -141,7 +199,7 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
     );
   }
 
-  if (standingsError) {
+  if (error) {
     return (
       <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 p-6"}`}>
         <p className="text-gray-400 italic text-sm py-6 text-center">Data unavailable for this season.</p>
@@ -152,7 +210,27 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
   return (
     <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 w-full overflow-hidden"}`}>
       {!compact && (
-        <div className="flex items-center justify-end px-5 pt-4 pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+          {hasHalfData ? (
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+              {(["first", "second", "full"] as Half[]).map((h) => (
+                <button
+                  key={h}
+                  onClick={() => setHalf(h)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    half === h
+                      ? "bg-white text-alpbBlue shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {h === "first" ? "1st Half" : h === "second" ? "2nd Half" : "Full Season"}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div />
+          )}
+
           <button
             onClick={handleExport}
             className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-alpbBlue hover:border-alpbBlue border border-gray-200 rounded-md px-3 py-1.5 transition-colors"
@@ -186,7 +264,6 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
 
         <tbody>
           {divisions.map(({ name, teams }) => {
-            // Apply teamFilter if provided
             const base = teamFilter ? teams.filter((t) => t.teamname === teamFilter) : teams;
             const sorted = sortTeams(base, sortKey, sortDir);
             const displayed = maxTeams ? sorted.slice(0, maxTeams) : sorted;
@@ -195,7 +272,6 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
 
             return (
               <React.Fragment key={name}>
-                {/* Division header row */}
                 {!compact && !teamFilter && (
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <td
@@ -206,27 +282,40 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
                     </td>
                   </tr>
                 )}
-                {displayed.map((team, idx) => (
-                  <tr
-                    key={idx}
-                    className={`border-b border-gray-100 transition-colors hover:bg-blue-50/40 ${
-                      teamFilter && team.teamname === teamFilter ? "bg-alpbBlue/5" : ""
-                    }`}
-                  >
-                    <td className={`${compact ? "px-2 py-2" : "px-4 py-3"} font-medium text-gray-800`}>
-                      {team.teamname}
-                    </td>
-                    <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
-                      {team.wins}
-                    </td>
-                    <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
-                      {team.losses}
-                    </td>
-                    <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums font-semibold text-gray-800`}>
-                      {team.pct}
-                    </td>
-                  </tr>
-                ))}
+                {displayed.map((team, idx) => {
+                  const hasClinched = clinched.includes(team.teamname);
+                  return (
+                    <tr
+                      key={idx}
+                      className={`border-b border-gray-100 transition-colors hover:bg-blue-50/40 ${
+                        teamFilter && team.teamname === teamFilter ? "bg-alpbBlue/5" : ""
+                      }`}
+                    >
+                      <td className={`${compact ? "px-2 py-2" : "px-4 py-3"} font-medium text-gray-800`}>
+                        <span className="inline-flex items-center gap-1.5">
+                          {team.teamname}
+                          {hasClinched && (
+                            <span
+                              title="Clinched playoff spot"
+                              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-alpbBlue text-white text-[9px] font-bold leading-none shrink-0"
+                            >
+                              C
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
+                        {team.wins}
+                      </td>
+                      <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
+                        {team.losses}
+                      </td>
+                      <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums font-semibold text-gray-800`}>
+                        {team.pct}
+                      </td>
+                    </tr>
+                  );
+                })}
               </React.Fragment>
             );
           })}

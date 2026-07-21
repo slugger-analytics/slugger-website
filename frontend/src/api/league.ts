@@ -28,11 +28,13 @@ export async function fetchSeasons(): Promise<SeasonsData> {
   }
 }
 
-export async function fetchStandings(year?: string): Promise<LeagueStandingsData> {
+export async function fetchStandings(year?: string, half?: "first" | "full"): Promise<LeagueStandingsData> {
   try {
-    const url = year
-      ? `${API_URL}/api/league/standings?year=${year}`
-      : `${API_URL}/api/league/standings`;
+    const params = new URLSearchParams();
+    if (year) params.set("year", year);
+    if (half) params.set("half", half);
+    const qs = params.toString();
+    const url = `${API_URL}/api/league/standings${qs ? `?${qs}` : ""}`;
     const response = await fetch(url);
     const res = await response.json();
 

@@ -109,23 +109,31 @@ router.get("/seasons", (req, res) => {
 });
 
 /**
- * GET /league/standings?year=YYYY
+ * GET /league/standings?year=YYYY&half=first|full
  * Returns standings data for the requested season.
+ * When half=first, loads the frozen first-half snapshot if available.
  */
 router.get("/standings", async (req, res) => {
   const year = resolveYear(req.query.year, res);
   if (year === null) return;
 
+  const half = req.query.half === "first" ? "first" : "full";
+  const key = half === "first"
+    ? `standings/${year}-first-half-standings.json`
+    : `standings/${year}-standings.json`;
+
   try {
-    const data = await fetchS3Json(`standings/${year}-standings.json`);
+    const data = await fetchS3Json(key);
     return res.status(200).json({
       success: true,
       message: "Fetched season standings successfully.",
       data,
     });
   } catch (error) {
-    error._notFoundMessage = `No standings data available for the ${year} season.`;
-    return handleS3Error(error, res, `standings(${year})`);
+    error._notFoundMessage = half === "first"
+      ? `First-half standings are not yet available for the ${year} season.`
+      : `No standings data available for the ${year} season.`;
+    return handleS3Error(error, res, `standings(${year},${half})`);
   }
 });
 

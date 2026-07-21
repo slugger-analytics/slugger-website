@@ -18,40 +18,31 @@ async function streamToString(body) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-async function getLeagueGamesPlayedFromStandings(bucket, year) {
+async function getTeamGamesMap(bucket, year) {
   try {
-    const cmd = new GetObjectCommand({
-      Bucket: bucket,
-      Key: `standings/${year}-standings.json`,
-    });
+    const cmd = new GetObjectCommand({ Bucket: bucket, Key: `standings/${year}-standings.json` });
     const res = await s3.send(cmd);
     const text = await streamToString(res.Body);
     const parsed = JSON.parse(text);
     const standings = parsed?.standings ?? parsed?.data?.standings ?? parsed;
 
-    let teamCount = 0;
-    let winSum = 0;
+    // Map teamId -> games played
+    const map = new Map();
     for (const conf of standings?.conference ?? []) {
       for (const div of conf?.division ?? []) {
         for (const team of div?.team ?? []) {
-          teamCount += 1;
-          winSum += Number(team?.wins ?? 0);
+          if (team?.teamId) {
+            map.set(String(team.teamId), Number(team.gp ?? 0));
+          }
         }
       }
     }
 
-    if (teamCount <= 1) return null;
-    // Total wins across teams equals total league games played (each game produces one winner).
-    const leagueGames = winSum;
-    console.info("[update_league_leaders] standings-derived league games", {
-      year: String(year),
-      teamCount,
-      leagueGames,
-    });
-    return leagueGames;
+    console.info("[update_league_leaders] team games map", { teams: map.size, entries: Object.fromEntries(map) });
+    return map;
   } catch (err) {
-    console.warn("[update_league_leaders] could not derive league games from standings; using fallback", err?.message || err);
-    return null;
+    console.warn("[update_league_leaders] could not build team games map; qualifiers will use floor", err?.message || err);
+    return new Map();
   }
 }
 
@@ -110,6 +101,19 @@ function buildUrl(path, params) {
   return `${ISCORE_BASE_URL}${path}?${usp.toString()}`;
 }
 
+async function fetchAllPages(path, params) {
+  const allItems = [];
+  let page = 0;
+  while (true) {
+    const data = await fetchJson(buildUrl(path, { ...params, page, size: 100 }));
+    const items = data.items || [];
+    allItems.push(...items);
+    if (page + 1 >= (data.totalPages ?? 1) || items.length === 0) break;
+    page++;
+  }
+  return allItems;
+}
+
 function teamNameObj(teamId, teamName) {
   const id = teamId ? String(teamId) : "";
   const name = teamName ? String(teamName) : "";
@@ -140,6 +144,8 @@ function batterRow(item, sbByPlayerId) {
     lastname: last,
     teamname: teamNameObj(item.teamId, item.teamName),
     position: "",
+    g: String(stats.GP ?? 0),
+    pa: String(stats.PA ?? 0),
     ab: String(stats.AB ?? 0),
     runs: String(stats.R ?? 0),
     hits: String(stats.H ?? 0),
@@ -156,6 +162,7 @@ function batterRow(item, sbByPlayerId) {
     obp: String(Number(rates.OBP ?? 0).toFixed(3)),
     slg: String(Number(rates.SLG ?? 0).toFixed(3)),
     avg: fmtAvg(rates.AVG),
+    ops: String(Number(rates.OPS ?? 0).toFixed(3)),
   };
 }
 
@@ -199,12 +206,6 @@ function pitcherRow(item) {
   };
 }
 
-function isQualifiedPitcher(item, minOuts) {
-  const outs = Number(item?.stats?.OUTS_PITCHED ?? 0);
-  const bf = Number(item?.stats?.BF ?? 0);
-  if (bf <= 0 || outs <= 0) return false;
-  return outs >= minOuts;
-}
 
 exports.handler = async (event = {}) => {
   const BUCKET_NAME = requiredEnv("JSON_BUCKET_NAME");
@@ -217,81 +218,51 @@ exports.handler = async (event = {}) => {
     String(event.iscoreLeagueId || event.leagueId || event.leagueid || "").trim() ||
     requiredEnv("ISCORE_LEAGUE_ID");
 
-  const size = Number(event.size || process.env.ISCORE_LEADERBOARD_SIZE || 200);
+  const paPerGame = Number(process.env.LEADER_PA_PER_GAME ?? "3.1");
+  const minPAFloor = Math.max(0, Number(process.env.LEADER_MIN_PA_FLOOR ?? "20"));
+  const minOutsFloor = Math.max(0, Number(process.env.LEADER_MIN_OUTS_FLOOR ?? "3"));
 
-  const inningsPerGame = Number(process.env.LEADER_MIN_IP_PER_TEAM_GAME ?? "0.05");
-  const minOutsFloor = Math.max(0, Math.floor(Number(process.env.LEADER_MIN_OUTS_FLOOR ?? "9")));
-  const relaxedMinOutsFloor = Math.max(0, Math.floor(Number(process.env.LEADER_RELAXED_MIN_OUTS_FLOOR ?? "6")));
-  const maxMinOuts = Math.max(minOutsFloor, Math.floor(Number(process.env.LEADER_MAX_MIN_OUTS ?? "162")));
-  const leagueGames = await getLeagueGamesPlayedFromStandings(BUCKET_NAME, year);
-  const minOutsFromScheduleRaw =
-    leagueGames != null ? Math.floor(leagueGames * inningsPerGame * 3) : null;
-  const minOutsFromSchedule =
-    minOutsFromScheduleRaw == null ? null : Math.min(Math.max(minOutsFromScheduleRaw, 0), maxMinOuts);
-  const minOutsPitcher = Math.max(minOutsFloor, minOutsFromSchedule ?? minOutsFloor);
+  const teamGamesMap = await getTeamGamesMap(BUCKET_NAME, year);
 
-  console.info("[update_league_leaders] ERA qualifier (outs)", {
-    minOutsPitcher,
-    minOutsFloor,
-    relaxedMinOutsFloor,
-    minOutsFromSchedule,
-    inningsPerGame,
-  });
+  const getTeamGames = (teamId) => teamGamesMap.get(String(teamId)) ?? 0;
+  const minPAForPlayer = (teamId) => {
+    const g = getTeamGames(teamId);
+    return g > 0 ? Math.max(minPAFloor, Math.floor(g * paPerGame)) : minPAFloor;
+  };
+  const minOutsForPlayer = (teamId) => {
+    const g = getTeamGames(teamId);
+    return g > 0 ? Math.max(minOutsFloor, g * 3) : minOutsFloor; // 1 IP per team game
+  };
 
-  const battingUrl = buildUrl("/leaderboard/player/batting", {
-    seasonId,
-    leagueId,
-    sortBy: "AVG",
-    sortDir: "desc",
-    size,
-  });
-  const runningUrl = buildUrl("/leaderboard/player/running", {
-    seasonId,
-    leagueId,
-    sortBy: "SB",
-    sortDir: "desc",
-    size,
-  });
-  const pitchingUrl = buildUrl("/leaderboard/player/pitching", {
-    seasonId,
-    leagueId,
-    sortBy: "ERA",
-    sortDir: "asc",
-    size,
-  });
+  console.info("[update_league_leaders] fetching all pages", { year, seasonId, leagueId });
 
-  console.info("[update_league_leaders] fetching", { year, seasonId, leagueId, size });
+  const battingParams = { seasonId, leagueId, sortBy: "AVG", sortDir: "desc" };
+  const runningParams = { seasonId, leagueId, sortBy: "SB", sortDir: "desc" };
+  const pitchingParams = { seasonId, leagueId, sortBy: "ERA", sortDir: "asc" };
 
-  const [batting, running, pitching] = await Promise.all([
-    fetchJson(battingUrl),
-    fetchJson(runningUrl),
-    fetchJson(pitchingUrl),
+  const [battingAll, runningAll, pitchingAll] = await Promise.all([
+    fetchAllPages("/leaderboard/player/batting", battingParams),
+    fetchAllPages("/leaderboard/player/running", runningParams),
+    fetchAllPages("/leaderboard/player/pitching", pitchingParams),
   ]);
 
   const sbByPlayerId = new Map();
-  for (const item of running.items || []) {
+  for (const item of runningAll) {
     const pid = String(item.playerId || "");
     if (!pid) continue;
     sbByPlayerId.set(pid, Number(item.stats?.SB ?? 0));
   }
 
-  const battingPlayers = (batting.items || []).map((it) => batterRow(it, sbByPlayerId));
-  const allPitchItems = pitching.items || [];
-  const qualifyAt = (minOuts) => allPitchItems.filter((it) => isQualifiedPitcher(it, minOuts));
+  const battingPlayers = battingAll
+    .filter((it) => Number(it?.stats?.PA ?? 0) >= minPAForPlayer(it.teamId))
+    .map((it) => batterRow(it, sbByPlayerId));
 
-  let pitchingItems = qualifyAt(minOutsPitcher);
-  const minQualified = Math.max(0, Math.floor(Number(process.env.LEADER_MIN_QUALIFIED_PITCHERS ?? "8")));
-  const effectiveMinOuts =
-    pitchingItems.length < minQualified ? Math.min(minOutsPitcher, Math.max(relaxedMinOutsFloor, minOutsFloor)) : minOutsPitcher;
-
-  if (pitchingItems.length < minQualified && effectiveMinOuts !== minOutsPitcher) {
-    pitchingItems = qualifyAt(effectiveMinOuts);
-    console.warn("[update_league_leaders] relaxed ERA qualifier", {
-      from: minOutsPitcher,
-      to: effectiveMinOuts,
-      qualified: pitchingItems.length,
-    });
-  }
+  let pitchingItems = pitchingAll.filter((it) => {
+    const outs = Number(it?.stats?.OUTS_PITCHED ?? 0);
+    const bf = Number(it?.stats?.BF ?? 0);
+    if (bf <= 0 || outs <= 0) return false;
+    return outs >= minOutsForPlayer(it.teamId);
+  });
 
   pitchingItems.sort((a, b) => {
     const ea = Number(a?.stats?.RATES?.ERA ?? 999);

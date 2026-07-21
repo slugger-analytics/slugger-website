@@ -129,6 +129,7 @@ export interface LeagueStandingsData {
   updatedAt: string;
   year: string;
   standings: Standings;
+  clinched?: string[]; // team names that have clinched a playoff spot
 }
 
 export interface Standings {
