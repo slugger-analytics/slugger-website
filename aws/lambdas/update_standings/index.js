@@ -127,21 +127,23 @@ function tallyRecords(games, scoreMap) {
 }
 
 /**
- * Determine which teams have clinched a playoff spot.
+ * Determine which teams have clinched a playoff spot, separated by which half they clinched.
+ *
+ * Returns { firstHalf: string[], secondHalf: string[] } — team names per berth type.
  *
  * Rules:
- *  1. Once the first half has ended, the first-half division winner in each division is clinched.
- *  2. A team also clinches the second half when no other team in their division can reach
+ *  1. Once the first half has ended, the first-half division winner in each division has
+ *     clinched the first-half berth for that division.
+ *  2. A team clinches the second-half berth when no challenger in their division can reach
  *     their second-half win total given remaining games.
- *  3. If the same team wins both halves of a division, the runner-up (best second-half record
- *     in that division) earns the second playoff spot instead.
+ *  3. If the same team wins both halves of a division and clinches the second half,
+ *     the runner-up earns the first-half berth instead.
  */
 function computeClinched(h1Records, fullRecords, teamLookup, secondHalfStart, halfGames) {
   const now = new Date();
   const firstHalfOver = secondHalfStart && now >= new Date(secondHalfStart);
-  if (!firstHalfOver) return [];
+  if (!firstHalfOver) return { firstHalf: [], secondHalf: [] };
 
-  // Helper: find which division a team belongs to by name.
   const divOf = (name) => {
     for (const [div, members] of Object.entries(DIVISIONS)) {
       if (members.includes(name)) return div;
@@ -149,7 +151,6 @@ function computeClinched(h1Records, fullRecords, teamLookup, secondHalfStart, ha
     return null;
   };
 
-  // Build per-team stats for both halves, keyed by team name.
   const byName = new Map();
   for (const [id, info] of teamLookup) {
     const div = divOf(info.name);
@@ -165,40 +166,36 @@ function computeClinched(h1Records, fullRecords, teamLookup, secondHalfStart, ha
   }
 
   const allTeams = [...byName.values()];
-  const clinched = new Set();
+  const firstHalf = new Set();
+  const secondHalf = new Set();
 
   for (const divName of Object.keys(DIVISIONS)) {
     const divTeams = allTeams.filter((t) => t.div === divName);
     if (divTeams.length === 0) continue;
 
-    // ── First-half winner ────────────────────────────────────────────────────
     const h1Sorted = [...divTeams].sort((a, b) => b.h1W - a.h1W || a.h1L - b.h1L);
     const h1Winner = h1Sorted[0];
 
-    // ── Second-half leader and clinch check ──────────────────────────────────
     const h2Sorted = [...divTeams].sort((a, b) => b.h2W - a.h2W || a.h2L - b.h2L);
     const h2Leader = h2Sorted[0];
-
-    // Leader clinches second half when no challenger can match their wins.
     const h2LeaderClinched = h2Sorted.slice(1).every(
       (ch) => h2Leader.h2W > ch.h2W + ch.h2Remaining
     );
 
-    // If the first-half winner also leads the second half and has clinched it,
-    // the runner-up (h2Sorted[1]) earns the second playoff spot.
     if (h2LeaderClinched && h2Leader.name === h1Winner.name) {
-      clinched.add(h1Winner.name);
-      if (h2Sorted.length > 1) clinched.add(h2Sorted[1].name);
+      // Same team won both halves — they hold the second-half berth,
+      // runner-up gets the displaced first-half berth.
+      secondHalf.add(h1Winner.name);
+      if (h2Sorted.length > 1) firstHalf.add(h2Sorted[1].name);
     } else {
-      // First-half winner always holds their playoff spot.
-      clinched.add(h1Winner.name);
-      // Second-half leader is clinched only when mathematically locked in.
-      if (h2LeaderClinched) clinched.add(h2Leader.name);
+      firstHalf.add(h1Winner.name);
+      if (h2LeaderClinched) secondHalf.add(h2Leader.name);
     }
   }
 
-  console.log("update_standings: computed clinched teams:", [...clinched]);
-  return [...clinched];
+  const result = { firstHalf: [...firstHalf], secondHalf: [...secondHalf] };
+  console.log("update_standings: computed clinched teams:", result);
+  return result;
 }
 
 // Build the SLUGGER standings payload from computed W-L records.
@@ -227,12 +224,13 @@ function recordsToPayload(records, teamLookup, year, clinched) {
     standings: { conference: [{ name: "OVERALL", division: [{ name: "Atlantic League", team }] }] },
     year: String(year),
     updatedAt: new Date().toISOString(),
-    clinched: clinched.map(String),
+    clinchFirstHalf: clinched.firstHalf.map(String),
+    clinchSecondHalf: clinched.secondHalf.map(String),
   };
 }
 
 // Map the iScore aggregated standings response to the SLUGGER JSON shape.
-function toStandingsPayload(standingsResp, year, clinched = []) {
+function toStandingsPayload(standingsResp, year, clinched = { firstHalf: [], secondHalf: [] }) {
   const teams = (standingsResp && standingsResp.teams) || [];
   const team = teams.map((t) => {
     const w = Number(t.W ?? t.w ?? t.wins ?? 0);
@@ -257,7 +255,8 @@ function toStandingsPayload(standingsResp, year, clinched = []) {
     standings: { conference: [{ name: "OVERALL", division: [{ name: "Atlantic League", team }] }] },
     year: String(year),
     updatedAt: new Date().toISOString(),
-    clinched: clinched.map(String),
+    clinchFirstHalf: clinched.firstHalf.map(String),
+    clinchSecondHalf: clinched.secondHalf.map(String),
   };
 }
 
@@ -268,7 +267,8 @@ async function putS3(bucket, key, payload) {
     ContentType: "application/json",
     CacheControl: "no-cache",
   }));
-  console.log(`update_standings: wrote ${bucket}/${key} (${payload.standings.conference[0].division[0].team.length} teams, clinched: [${payload.clinched.join(", ")}])`);
+  const { clinchFirstHalf = [], clinchSecondHalf = [] } = payload;
+  console.log(`update_standings: wrote ${bucket}/${key} (${payload.standings.conference[0].division[0].team.length} teams, H1 clinched: [${clinchFirstHalf.join(", ")}], H2 clinched: [${clinchSecondHalf.join(", ")}])`);
 }
 
 const handler = async (event = {}) => {
@@ -286,8 +286,7 @@ const handler = async (event = {}) => {
     const fullRecords = buildFullRecords(standingsResp);
 
     if (!secondHalfStart || !leagueId) {
-      // No split-season config — just write full standings with no clinch data.
-      await putS3(bucket, `standings/${year}-standings.json`, toStandingsPayload(standingsResp, year, []));
+      await putS3(bucket, `standings/${year}-standings.json`, toStandingsPayload(standingsResp, year));
       if (!secondHalfStart) console.log("update_standings: SECOND_HALF_START not set, skipping split-season logic");
       if (!leagueId)        console.log("update_standings: LEAGUE_ID not set, skipping split-season logic");
       return { statusCode: 200, body: { success: true, message: `Updated standings for ${year}` } };
@@ -325,7 +324,7 @@ const handler = async (event = {}) => {
       await putS3(bucket, `standings/${year}-first-half-standings.json`, firstHalfPayload);
     }
 
-    return { statusCode: 200, body: { success: true, message: `Updated standings for ${year}`, clinched } };
+    return { statusCode: 200, body: { success: true, message: `Updated standings for ${year}`, clinchFirstHalf: clinched.firstHalf, clinchSecondHalf: clinched.secondHalf } };
   } catch (err) {
     console.error("update_standings error:", err);
     return { statusCode: 500, body: { success: false, message: String((err && err.message) || err) } };

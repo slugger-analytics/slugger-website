@@ -60,7 +60,8 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
   const [half, setHalf] = useState<Half>("full");
   const [fullTeams, setFullTeams] = useState<Team[]>([]);
   const [firstHalfTeams, setFirstHalfTeams] = useState<Team[] | null>(null);
-  const [clinched, setClinched] = useState<string[]>([]);
+  const [clinchFirstHalf, setClinchFirstHalf] = useState<string[]>([]);
+  const [clinchSecondHalf, setClinchSecondHalf] = useState<string[]>([]);
   const [lastUpdated, setLastUpdated] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,7 +84,8 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
 
       if (fullData.status === "fulfilled") {
         setFullTeams(extractTeams(fullData.value));
-        setClinched(fullData.value.clinched ?? []);
+        setClinchFirstHalf(fullData.value.clinchFirstHalf ?? []);
+        setClinchSecondHalf(fullData.value.clinchSecondHalf ?? []);
         const readableDate = new Date(fullData.value.updatedAt).toLocaleString("en-US", {
           year: "numeric", month: "long", day: "numeric",
           hour: "numeric", minute: "2-digit", hour12: true,
@@ -95,9 +97,6 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
 
       if (firstHalfData.status === "fulfilled") {
         setFirstHalfTeams(extractTeams(firstHalfData.value));
-        if (firstHalfData.value.clinched?.length) {
-          setClinched((prev) => (prev.length ? prev : (firstHalfData.value.clinched ?? [])));
-        }
       } else {
         setFirstHalfTeams(null);
       }
@@ -283,7 +282,11 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
                   </tr>
                 )}
                 {displayed.map((team, idx) => {
-                  const hasClinched = clinched.includes(team.teamname);
+                  const activeClinched =
+                    half === "first"  ? clinchFirstHalf :
+                    half === "second" ? clinchSecondHalf :
+                    [...new Set([...clinchFirstHalf, ...clinchSecondHalf])];
+                  const hasClinched = activeClinched.includes(team.teamname);
                   return (
                     <tr
                       key={idx}
@@ -292,17 +295,10 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
                       }`}
                     >
                       <td className={`${compact ? "px-2 py-2" : "px-4 py-3"} font-medium text-gray-800`}>
-                        <span className="inline-flex items-center gap-1.5">
-                          {team.teamname}
-                          {hasClinched && (
-                            <span
-                              title="Clinched playoff spot"
-                              className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-alpbBlue text-white text-[9px] font-bold leading-none shrink-0"
-                            >
-                              C
-                            </span>
-                          )}
-                        </span>
+                        {hasClinched
+                          ? <><span className="text-alpbBlue font-bold">x-</span>{team.teamname}</>
+                          : team.teamname
+                        }
                       </td>
                       <td className={`${compact ? "px-2 py-2 text-xs" : "px-3 py-3"} text-right tabular-nums text-gray-700`}>
                         {team.wins}
