@@ -76,6 +76,40 @@ test("buildRows maps games + latest-score to scores rows", async () => {
   assert.equal(rows[1].date, "2026-06-18T22:50:00Z");
 });
 
+test("filterSeason drops games whose season.id does not match the configured season", () => {
+  const real = "9843025b-3dd7-4b1b-8776-a6b53a3bdb7a";
+  const junk = "46808fcc-51d2-4f23-98ef-4e5de6cc5047";
+  const games = [
+    { gameGuid: "g-real", season: { id: real, name: "2026 Season" } },
+    { gameGuid: "g-junk", season: { id: junk, name: "DO-NOT-USE-2026 Season" } },
+  ];
+  const kept = mod.filterSeason(games, real);
+  assert.equal(kept.length, 1);
+  assert.equal(kept[0].gameGuid, "g-real");
+});
+
+test("filterSeason keeps every game when SEASON_ID is unset (deploy-safe default)", () => {
+  const games = [
+    { gameGuid: "g1", season: { id: "a" } },
+    { gameGuid: "g2", season: { id: "b" } },
+    { gameGuid: "g3" }, // no season field
+  ];
+  assert.equal(mod.filterSeason(games, "").length, 3);
+  assert.equal(mod.filterSeason(games, undefined).length, 3);
+});
+
+test("filterSeason drops games missing a season field when the filter is set (junk-data safety)", () => {
+  const real = "9843025b-3dd7-4b1b-8776-a6b53a3bdb7a";
+  const games = [
+    { gameGuid: "g-real", season: { id: real } },
+    { gameGuid: "g-noseason" }, // no season field at all
+    { gameGuid: "g-nullseason", season: null },
+  ];
+  const kept = mod.filterSeason(games, real);
+  assert.equal(kept.length, 1);
+  assert.equal(kept[0].gameGuid, "g-real");
+});
+
 test("UPSERT targets scores with ON CONFLICT (game_id) and rowParams ordering", () => {
   assert.match(mod.UPSERT, /INSERT INTO scores/);
   assert.match(mod.UPSERT, /ON CONFLICT \(game_id\) DO UPDATE/);

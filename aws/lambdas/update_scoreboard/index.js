@@ -9,6 +9,10 @@
  * Env vars (match the live Lambda):
  *   BASE_URL   iScore public base (e.g. https://api.microservices.iscoresports.com/api/public)
  *   LEAGUE_ID  iScore league GUID
+ *   SEASON_ID  iScore season GUID (optional). When set, only games whose
+ *              season.id matches are upserted; this drops iScore's junk
+ *              "DO-NOT-USE" season entities (games with no season field are
+ *              dropped too). Unset = keep every game (deploy-safe default).
  *   DB_HOST    Aurora host. NOTE: the live value is the read-only (`.cluster-ro-`)
  *              endpoint; we rewrite it to the writer endpoint before connecting.
  *   DB_PORT, DB_USER, DB_PASS, DB_NAME
@@ -63,6 +67,14 @@ async function fetchScore(gameGuid) {
   }
 }
 
+// Optional season filter. When seasonId is set, keep only games whose season.id
+// matches (games missing a season field are dropped as junk). Empty seasonId keeps all.
+function filterSeason(games, seasonId) {
+  const list = games || [];
+  if (!seasonId) return list;
+  return list.filter((g) => g && g.season && g.season.id === seasonId);
+}
+
 // Transform an iScore games array into `scores` upsert rows (one latest-score call per game).
 async function buildRows(games) {
   const rows = [];
@@ -104,11 +116,16 @@ function rowParams(r) {
 const handler = async (event = {}) => {
   const leagueId = String(event.leagueId || process.env.LEAGUE_ID || "").trim();
   if (!leagueId) throw new Error("update_scoreboard: missing LEAGUE_ID");
+  const seasonId = String(event.seasonId || process.env.SEASON_ID || "").trim();
   const now = event.now ? new Date(event.now) : new Date();
   const { from, to } = windowDates(now);
   const url = `${BASE_URL}/games?leagueId=${leagueId}&startDateFrom=${from}&startDateTo=${to}`;
   console.log("Fetching games:", url);
-  const games = await fetchJson(url);
+  const allGames = await fetchJson(url);
+  const games = filterSeason(allGames, seasonId);
+  if (seasonId) {
+    console.log(`Season filter ${seasonId}: kept ${games.length}, dropped ${(allGames || []).length - games.length}`);
+  }
   const rows = await buildRows(games);
 
   const pool = new Pool({
@@ -141,4 +158,4 @@ const handler = async (event = {}) => {
   return { statusCode: 200, body: { success: true, processed } };
 };
 
-module.exports = { handler, buildRows, rowParams, statusOf, writerHost, windowDates, num, UPSERT };
+module.exports = { handler, buildRows, filterSeason, rowParams, statusOf, writerHost, windowDates, num, UPSERT };

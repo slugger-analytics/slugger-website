@@ -7,6 +7,9 @@ score, and upserts into the Aurora `scores` table that the SLUGGER super-widget 
 ## Required env vars
 - `BASE_URL` — iScore public base (`https://api.microservices.iscoresports.com/api/public`)
 - `LEAGUE_ID` — iScore league GUID
+- `SEASON_ID` *(optional)* — iScore season GUID. When set, only games whose `season.id`
+  matches are upserted, dropping iScore's junk `DO-NOT-USE` season games (games with no
+  `season` field are dropped too). Unset = keep every game (default).
 - `DB_HOST` — Aurora host. The live value is the **read-only** (`.cluster-ro-`) endpoint;
   the code rewrites it to the writer endpoint before connecting (writes fail on the reader).
 - `DB_PORT`, `DB_USER`, `DB_PASS`, `DB_NAME`
