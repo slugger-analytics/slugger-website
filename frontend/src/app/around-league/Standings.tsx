@@ -56,6 +56,11 @@ type StandingsProps = {
   teamFilter?: string;
 };
 
+function extractTeams(data: { standings?: { conference?: Array<{ name: string; division?: Array<{ team?: Team[] }> }> } }): Team[] {
+  const overall = data?.standings?.conference?.find((c) => c.name === "OVERALL");
+  return overall?.division?.flatMap((d) => d.team ?? []) ?? [];
+}
+
 const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) => {
   const [half, setHalf] = useState<Half>("full");
   const [fullTeams, setFullTeams] = useState<Team[]>([]);
@@ -67,11 +72,6 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("pct");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-
-  const extractTeams = (data: { standings?: { conference?: Array<{ name: string; division?: Array<{ team?: Team[] }> }> } }) => {
-    const overall = data?.standings?.conference?.find((c) => c.name === "OVERALL");
-    return overall?.division?.flatMap((d) => d.team ?? []) ?? [];
-  };
 
   const load = useCallback(async () => {
     setLoading(true);
