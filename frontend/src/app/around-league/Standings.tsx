@@ -186,6 +186,11 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
 
   const hasHalfData = firstHalfTeams !== null;
 
+  const activeClinched: string[] =
+    half === "first"  ? clinchFirstHalf :
+    half === "second" ? clinchSecondHalf :
+    Array.from(new Set(clinchFirstHalf.concat(clinchSecondHalf)));
+
   if (loading) {
     return (
       <div className={`${compact ? "" : "bg-white rounded-xl shadow-sm border border-gray-100 p-6"}`}>
@@ -282,10 +287,6 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
                   </tr>
                 )}
                 {displayed.map((team, idx) => {
-                  const activeClinched =
-                    half === "first"  ? clinchFirstHalf :
-                    half === "second" ? clinchSecondHalf :
-                    [...new Set([...clinchFirstHalf, ...clinchSecondHalf])];
                   const hasClinched = activeClinched.includes(team.teamname);
                   return (
                     <tr
