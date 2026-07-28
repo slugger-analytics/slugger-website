@@ -97,6 +97,7 @@ const Standings = ({ season, maxTeams, compact, teamFilter }: StandingsProps) =>
 
       if (firstHalfData.status === "fulfilled") {
         setFirstHalfTeams(extractTeams(firstHalfData.value));
+        setHalf((prev) => (prev === "full" ? "second" : prev));
       } else {
         setFirstHalfTeams(null);
       }
