@@ -9,6 +9,7 @@ import {
   isPublicVisibility,
   shouldIncludeTeamAccessRule,
   widgetPassesGetAllWidgetsFilter,
+  widgetPassesNameFilter,
   filterWidgetsForGetAllWidgets,
   getGetAllWidgetsAccessPaths,
   resolveWidgetListViewer,
@@ -167,6 +168,78 @@ describe("filterWidgetsForGetAllWidgets — role / team / user_widget combinatio
       teamLinkedWidgetIds: [2],
     });
     assert.deepEqual(result.map((w) => w.widget_id).sort(), [1, 2, 5]);
+  });
+
+  test("Team B search Lineup does not return private Lineup Pro", () => {
+    const result = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 30,
+      userRole: "league",
+      userTeamId: 99,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [],
+      widgetName: "Lineup",
+    });
+    assert.ok(!result.some((w) => w.widget_id === 2));
+    assert.deepEqual(result.map((w) => w.widget_id).sort(), []);
+  });
+
+  test("Team A search Lineup returns team-linked Lineup Pro", () => {
+    const result = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 20,
+      userRole: "league",
+      userTeamId: 5,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [2],
+      widgetName: "Lineup",
+    });
+    assert.deepEqual(result.map((w) => w.widget_id).sort(), [2]);
+  });
+
+  test("search Public still returns public widgets for Team B", () => {
+    const result = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 30,
+      userRole: "league",
+      userTeamId: 99,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [],
+      widgetName: "Public",
+    });
+    assert.deepEqual(result.map((w) => w.widget_id).sort(), [1]);
+  });
+
+  test("no search string → same access results as today", () => {
+    const withEmpty = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 20,
+      userRole: "league",
+      userTeamId: 5,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [2],
+      widgetName: "",
+    });
+    const withoutName = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 20,
+      userRole: "league",
+      userTeamId: 5,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [2],
+    });
+    assert.deepEqual(
+      withEmpty.map((w) => w.widget_id).sort(),
+      withoutName.map((w) => w.widget_id).sort()
+    );
+    assert.deepEqual(withoutName.map((w) => w.widget_id).sort(), [1, 2, 5]);
+  });
+});
+
+describe("widgetPassesNameFilter", () => {
+  test("empty search matches every widget", () => {
+    assert.equal(widgetPassesNameFilter(WIDGETS.lineupPro, ""), true);
+    assert.equal(widgetPassesNameFilter(WIDGETS.lineupPro, null), true);
+  });
+
+  test("case-insensitive substring match", () => {
+    assert.equal(widgetPassesNameFilter(WIDGETS.lineupPro, "lineup"), true);
+    assert.equal(widgetPassesNameFilter(WIDGETS.lineupPro, "Pitching"), false);
   });
 });
 

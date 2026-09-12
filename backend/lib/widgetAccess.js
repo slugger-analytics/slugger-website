@@ -1,6 +1,6 @@
 /**
  * Pure helpers for getAllWidgets visibility rules (public / user_widget / team access).
- * Mirrors the OR conditions in widgetService.getAllWidgets without DB access.
+ * Access paths are OR'd; an optional name search is AND'd on top.
  */
 
 /**
@@ -62,13 +62,30 @@ export function widgetPassesGetAllWidgetsFilter(widget, context) {
 }
 
 /**
+ * Name search is an extra AND on top of access — never a substitute for it.
+ *
+ * @param {{ widget_name?: string | null }} widget
+ * @param {string | null | undefined} widgetName
+ */
+export function widgetPassesNameFilter(widget, widgetName) {
+  if (widgetName == null || String(widgetName).trim() === "") return true;
+  const haystack = String(widget.widget_name || "").toLowerCase();
+  return haystack.includes(String(widgetName).toLowerCase());
+}
+
+/**
  * Filter a widget list the same way getAllWidgets base query would (before pagination/categories).
  *
- * @param {Array<{ widget_id: number, visibility?: string | null }>} widgets
- * @param {Parameters<typeof widgetPassesGetAllWidgetsFilter>[1]} context
+ * @param {Array<{ widget_id: number, visibility?: string | null, widget_name?: string | null }>} widgets
+ * @param {Parameters<typeof widgetPassesGetAllWidgetsFilter>[1] & { widgetName?: string | null }} context
  */
 export function filterWidgetsForGetAllWidgets(widgets, context) {
-  return widgets.filter((widget) => widgetPassesGetAllWidgetsFilter(widget, context));
+  const { widgetName, ...accessContext } = context;
+  return widgets.filter(
+    (widget) =>
+      widgetPassesGetAllWidgetsFilter(widget, accessContext) &&
+      widgetPassesNameFilter(widget, widgetName)
+  );
 }
 
 /**

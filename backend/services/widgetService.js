@@ -416,22 +416,23 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
     }
 
     // Build base (lightweight) query: select widget rows only
-    // Visibility OR rules are mirrored in lib/widgetAccess.js for unit tests.
+    // Access paths are OR'd (public / user_widget / team). Name search is AND'd
+    // so matching a name cannot leak another team's private widget.
     const baseParams = [];
-    const baseConditions = ["(LOWER(w.visibility) = 'public' OR w.visibility IS NULL)"];
+    const accessConditions = ["(LOWER(w.visibility) = 'public' OR w.visibility IS NULL)"];
     if (userId) {
       baseParams.push(parseInt(userId, 10));
-      baseConditions.push(`EXISTS (SELECT 1 FROM user_widget uw2 WHERE uw2.widget_id = w.widget_id AND uw2.user_id = $${baseParams.length})`);
+      accessConditions.push(`EXISTS (SELECT 1 FROM user_widget uw2 WHERE uw2.widget_id = w.widget_id AND uw2.user_id = $${baseParams.length})`);
     }
     if (userTeamId && userRole !== 'widget developer') {
       baseParams.push(userTeamId);
-      baseConditions.push(`EXISTS (SELECT 1 FROM widget_team_access wta WHERE wta.widget_id = w.widget_id AND wta.team_id = $${baseParams.length})`);
+      accessConditions.push(`EXISTS (SELECT 1 FROM widget_team_access wta WHERE wta.widget_id = w.widget_id AND wta.team_id = $${baseParams.length})`);
     }
 
-    // Optional: filter by widget_name (simple ILIKE)
+    const filters = [`(${accessConditions.join(" OR ")})`];
     if (widget_name) {
       baseParams.push(`%${widget_name.toLowerCase()}%`);
-      baseConditions.push(`LOWER(w.widget_name) ILIKE $${baseParams.length}`);
+      filters.push(`LOWER(w.widget_name) ILIKE $${baseParams.length}`);
     }
 
     const baseQuery = `
@@ -447,7 +448,7 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
         w.public_id,
         w.restricted_access
       FROM widgets w
-      WHERE ${baseConditions.join(" OR ")}
+      WHERE ${filters.join(" AND ")}
       ORDER BY w.widget_id
       LIMIT $${baseParams.length + 1}
       OFFSET $${baseParams.length + 2}
