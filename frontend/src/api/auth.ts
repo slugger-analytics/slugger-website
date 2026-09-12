@@ -215,37 +215,57 @@ export const bootstrapUser = async (
   return res.data.user;
 };
 
-export const sendPasswordResetEmail = async (email: string, otp: string) => {
-  try {
-    const response = await fetch(
-      `${API_URL}/api/users/send-password-reset-email`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, otp }),
-      },
-    );
-    const res = await response.json();
-  } catch (error) {
-    console.error("Error sending password reset email:", error);
-    throw error;
-  }
-};
-
-export const resetPassword = async (email: string, password: string) => {
-  try {
-    const response = await fetch(`${API_URL}/api/users/reset-password`, {
+export const sendPasswordResetEmail = async (email: string) => {
+  const response = await fetch(
+    `${API_URL}/api/users/send-password-reset-email`,
+    {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
-    });
-    const res = await response.json();
-  } catch (error) {
-    console.error("Error resetting password:", error);
-    throw error;
+      body: JSON.stringify({ email }),
+    },
+  );
+  const res = await response.json();
+  if (!response.ok || res.success === false) {
+    throw new Error(res.message || "Failed to send reset email");
   }
+  return res;
+};
+
+export const verifyPasswordResetOtp = async (email: string, otp: string) => {
+  const response = await fetch(
+    `${API_URL}/api/users/verify-password-reset-otp`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, otp }),
+    },
+  );
+  const res = await response.json();
+  if (!response.ok || res.success === false) {
+    throw new Error(res.message || "Invalid or expired reset code");
+  }
+  return res;
+};
+
+export const resetPassword = async (
+  email: string,
+  password: string,
+  otp: string,
+) => {
+  const response = await fetch(`${API_URL}/api/users/reset-password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password, otp }),
+  });
+  const res = await response.json();
+  if (!response.ok || res.success === false) {
+    throw new Error(res.message || "Failed to reset password");
+  }
+  return res;
 };

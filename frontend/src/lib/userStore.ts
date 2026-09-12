@@ -33,12 +33,10 @@ export const $user = isBrowser
   ? persistentMap<UserType>("user_", emptyUser, booleanEncoder)
   : map<UserType>(emptyUser);
 
-export const $otpCode = atom<string>("");
 export const $passwordResetEmail = atom<string>("");
 
 export function clearUserStore() {
   $user.set(emptyUser);
-  $otpCode.set("");
   $passwordResetEmail.set("");
 }
 
@@ -73,10 +71,6 @@ export function updateStoreUser({
     ...(teamId !== undefined && { teamId }),
     ...(is_admin !== undefined && { is_admin }),
   });
-}
-
-export function setOtpCode(otp: string) {
-  $otpCode.set(otp);
 }
 
 export function setPasswordResetEmail(email: string) {

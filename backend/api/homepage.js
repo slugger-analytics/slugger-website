@@ -18,6 +18,7 @@ import {
 } from "../services/widgetService.js";
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
+import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
 
 const router = Router();
 
@@ -57,8 +58,12 @@ router.get(
   validationMiddleware({ querySchema: queryParamsSchema }),
   async (req, res) => {
     try {
-      const { widgetName, categories, page, limit, userId } = req.query;
-      const widgets = await getAllWidgets(widgetName, categories, page, limit, userId);
+      const { widgetName, categories, page, limit } = req.query;
+      const viewerId = resolveWidgetListViewer({
+        sessionUserId: req.session?.user?.user_id,
+        queryUserId: req.query.userId,
+      });
+      const widgets = await getAllWidgets(widgetName, categories, page, limit, viewerId);
       return res.status(200).json({
         success: true,
         message: "Widgets retrieved successfully.",

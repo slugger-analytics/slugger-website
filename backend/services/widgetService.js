@@ -392,6 +392,8 @@ export async function getTeamsWithWidgetAccess(widgetId) {
 }
 
 export async function getAllWidgets(widget_name, categories, page = 1, limit = 50, userId) {
+  // userId must be the logged-in session user (see resolveWidgetListViewer).
+  // Do not pass a client-supplied query/body id here.
   try {
     // simple pagination and param sanitization
     const pageInt = Math.max(1, parseInt(page || 1, 10));

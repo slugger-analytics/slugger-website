@@ -81,3 +81,18 @@ export function getGetAllWidgetsAccessPaths({ userId, userRole, userTeamId }) {
     teamAccess: shouldIncludeTeamAccessRule({ userRole, userTeamId }),
   };
 }
+
+/**
+ * Who the widget catalog is built for.
+ * Always use the logged-in session. A client-supplied query userId is ignored
+ * so Team B cannot fetch Team A's private widgets by impersonating an id.
+ *
+ * @param {{ sessionUserId?: unknown, queryUserId?: unknown }} [input]
+ * @returns {number | null}
+ */
+export function resolveWidgetListViewer({ sessionUserId, queryUserId } = {}) {
+  void queryUserId;
+  if (sessionUserId == null || sessionUserId === "") return null;
+  const parsed = Number(sessionUserId);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}

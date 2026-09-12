@@ -2,44 +2,41 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { generateOTP } from "@/lib/utils";
 import { sendPasswordResetEmail } from "@/api/auth";
 import {
   Card,
   CardHeader,
   CardTitle,
   CardContent,
-  CardDescription,
 } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import LogoButton from "../components/navbar/LogoButton";
-import { useStore } from "@nanostores/react";
-import { $otpCode, setOtpCode, setPasswordResetEmail } from "@/lib/userStore";
+import { setPasswordResetEmail } from "@/lib/userStore";
 import SubmitButton from "../components/input/SubmitButton";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
-  const otp = useStore($otpCode);
   const router = useRouter();
   const { setLoading } = useAuth();
+  const { toast } = useToast();
 
   const handleSendEmail = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Generate OTP
-      const generatedOtp = generateOTP(6);
-      setOtpCode(generatedOtp);
-
-      // Send password reset email with the email and OTP
-      await sendPasswordResetEmail(email, generatedOtp);
+      await sendPasswordResetEmail(email);
       setPasswordResetEmail(email);
       router.push("/enter-otp");
     } catch (error) {
       console.error("Error sending reset email:", error);
+      toast({
+        title: "Unable to send reset email",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -71,12 +68,6 @@ export default function ResetPasswordPage() {
                   className="w-full"
                 />
               </div>
-              {/* <Button
-                onClick={handleSendEmail}
-                className="w-full bg-alpbBlue"
-              >
-                Send email
-              </Button> */}
               <SubmitButton btnText="Send Email" />
             </div>
           </form>

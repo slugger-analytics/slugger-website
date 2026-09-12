@@ -90,8 +90,7 @@ export default function SuperWidgetParameterizedPage() {
   const loadWidgets = useCallback(async () => {
     try {
       setLoadingWidgets(true);
-      const userId = user?.id;
-      const widgets = await fetchWidgets(userId);
+      const widgets = await fetchWidgets();
       setAvailableWidgets(widgets);
     } catch (error) {
       console.error("Error loading widgets for parameterized analysis:", error);

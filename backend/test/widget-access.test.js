@@ -11,6 +11,7 @@ import {
   widgetPassesGetAllWidgetsFilter,
   filterWidgetsForGetAllWidgets,
   getGetAllWidgetsAccessPaths,
+  resolveWidgetListViewer,
 } from "../lib/widgetAccess.js";
 
 /** Fixture widgets matching typical DB rows */
@@ -194,5 +195,31 @@ describe("widgetPassesGetAllWidgetsFilter — individual widget cases", () => {
       }),
       true
     );
+  });
+});
+
+describe("resolveWidgetListViewer — catalog identity from session only", () => {
+  test("uses the session user even when query userId is someone else", () => {
+    assert.equal(
+      resolveWidgetListViewer({ sessionUserId: 20, queryUserId: 99 }),
+      20
+    );
+  });
+
+  test("no session → public catalog only, even if query userId is present", () => {
+    assert.equal(
+      resolveWidgetListViewer({ sessionUserId: null, queryUserId: 99 }),
+      null
+    );
+  });
+
+  test("accepts numeric string session ids", () => {
+    assert.equal(resolveWidgetListViewer({ sessionUserId: "20" }), 20);
+  });
+
+  test("rejects invalid session ids", () => {
+    assert.equal(resolveWidgetListViewer({ sessionUserId: 0 }), null);
+    assert.equal(resolveWidgetListViewer({ sessionUserId: -1 }), null);
+    assert.equal(resolveWidgetListViewer({ sessionUserId: "abc" }), null);
   });
 });

@@ -16,7 +16,15 @@ import {
 import { getUserData } from "../services/widgetService.js";
 import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
-import { sendPasswordResetEmail } from "../services/emailService.js";
+import {
+  consumePasswordResetOtp,
+  requestPasswordReset,
+  verifyPasswordResetOtp,
+} from "../services/passwordResetService.js";
+import {
+  GENERIC_INVALID_CODE_MESSAGE,
+  GENERIC_RESET_REQUEST_MESSAGE,
+} from "../lib/passwordReset.js";
 import { requireAuth, requireSiteAdmin } from "../middleware/permission-guards.js";
 import { shouldBlockLoginForPendingDeveloper } from "../lib/accountApproval.js";
 import jwt from "jsonwebtoken";
@@ -743,93 +751,90 @@ router.get('/search', requireSiteAdmin, async (req, res) => {
 
 router.post('/send-password-reset-email', async (req, res) => {
   try {
-    const { email, otp } = req.body;
-
-    await sendPasswordResetEmail(email, otp);
-
+    const { email } = req.body;
+    const result = await requestPasswordReset(email);
+    return res.json(result);
+  } catch (error) {
+    if (error.status === 400) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    console.error('Password reset email error:', error);
     return res.json({
       success: true,
-      message: "Email sent successfully!"
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Internal error: ${error.message}`
+      message: GENERIC_RESET_REQUEST_MESSAGE,
     });
   }
-})
+});
+
+router.post('/verify-password-reset-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const result = await verifyPasswordResetOtp(email, otp);
+    return res.json(result);
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      success: false,
+      message: error.status ? error.message : GENERIC_INVALID_CODE_MESSAGE,
+    });
+  }
+});
 
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, otp } = req.body;
 
-    // Validate input
-    if (!email || !password) {
+    if (!email || !password || !otp) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        message: 'Email, password, and reset code are required',
       });
     }
 
-    const query = `
-      SELECT cognito_user_id
-      FROM users
-      WHERE email = $1
-    `;
-
-    const result = await pool.query(query, [email.toLowerCase()]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    const username = result.rows[0].cognito_user_id;
+    const verified = await consumePasswordResetOtp(email, otp);
 
     try {
-      const resetResponse = await cognito.adminSetUserPassword({
+      await cognito.adminSetUserPassword({
         Password: password,
         UserPoolId: COGNITO_USER_POOL_ID,
-        Username: username,
+        Username: verified.cognitoUserId,
         Permanent: true,
-      }).promise(); // Use .promise() to handle the AWS SDK method correctly
-
-      // If we reach here, the password reset was successful
-      return res.status(200).json({
-        success: true,
-        message: 'Password reset successful'
-      });
-
+      }).promise();
     } catch (cognitoError) {
-      // Handle specific Cognito errors
       console.error('Cognito Password Reset Error:', cognitoError);
 
-      if (cognitoError.code === 'NotAuthorizedException') {
+      if (cognitoError.code === 'NotAuthorizedException' || cognitoError.code === 'InvalidPasswordException') {
         return res.status(400).json({
           success: false,
-          message: 'Password does not meet requirements'
-        });
-      } else if (cognitoError.code === 'UserNotFoundException') {
-        return res.status(404).json({
-          success: false,
-          message: 'Cognito user not found'
+          message: 'Password does not meet requirements',
         });
       }
 
-      // Generic error for other Cognito-related issues
       return res.status(500).json({
         success: false,
-        message: 'Failed to reset password'
+        message: 'Failed to reset password',
       });
     }
 
+    await verified.clearToken();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+    });
   } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({
+        success: false,
+        message: error.message,
+      });
+    }
     console.error('Password Reset Error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: `Internal error: ${error.message}`
+      message: GENERIC_INVALID_CODE_MESSAGE,
     });
   }
 });
