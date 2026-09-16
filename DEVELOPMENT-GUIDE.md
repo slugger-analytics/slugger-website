@@ -242,7 +242,16 @@ DB_USERNAME=postgres
 DB_PASSWORD=localpassword
 DB_NAME=slugger_local
 DB_PORT=5432
+LOCAL_DEV=true
+FRONTEND_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:3001
+COGNITO_APP_CLIENT_ID=6cttafm6nkv17saapu58a5gdns
+NEXT_PUBLIC_COGNITO_APP_CLIENT_ID=6cttafm6nkv17saapu58a5gdns
+COGNITO_USER_POOL_ID=us-east-2_tG7IQQ6G7
+AWS_REGION=us-east-2
 ```
+
+Local login authenticates against production Cognito. The local database only stores the user row after Cognito succeeds. If sign-in works on https://alpb-analytics.com but fails locally, confirm these Cognito variables are set and that `.env.local` is loaded (`export $(cat .env.local | grep -v '^#' | xargs) && npm run dev`).
 
 ## Working with Production Database Locally
 

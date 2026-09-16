@@ -1,7 +1,6 @@
 import { Router } from "express";
-import pkg from "aws-sdk";
-import dotenv from "dotenv";
 import pool from "../db.js";
+import cognito from "../cognito.js";
 import {
   encryptToken,
   favoriteWidget,
@@ -21,13 +20,6 @@ import { requireAuth, requireSiteAdmin } from "../middleware/permission-guards.j
 import { shouldBlockLoginForPendingDeveloper } from "../lib/accountApproval.js";
 import jwt from "jsonwebtoken";
 
-dotenv.config();
-const { CognitoIdentityServiceProvider } = pkg;
-const cognito = new CognitoIdentityServiceProvider({
-  region: "us-east-2",
-  accessKeyId: process.env.AWS_ACCESS_KEY,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
-});
 const JWT_SECRET = process.env.JWT_SECRET;
 const COGNITO_USER_POOL_ID = process.env.COGNITO_USER_POOL_ID;
 const router = Router();
@@ -96,6 +88,16 @@ router.post("/sign-in", async (req, res) => {
   email = email.toLowerCase();
   let inviteAccepted = false;
   let inviteTeamName = null;
+
+  if (!process.env.COGNITO_APP_CLIENT_ID) {
+    console.error("Sign-in error: COGNITO_APP_CLIENT_ID is not set");
+    return res.status(500).json({
+      success: false,
+      message:
+        "Local login is missing Cognito configuration. Set COGNITO_APP_CLIENT_ID in .env.local (same app client as production).",
+    });
+  }
+
   const params = {
     AuthFlow: "USER_PASSWORD_AUTH",
     ClientId: process.env.COGNITO_APP_CLIENT_ID,
@@ -288,6 +290,22 @@ router.post("/sign-in", async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Password reset required",
+      });
+    }
+
+    if (error.code === "MissingRequiredParameter") {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Local login is missing Cognito configuration. Set COGNITO_APP_CLIENT_ID in .env.local.",
+      });
+    }
+
+    if (error.code === "42P01") {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Local database is missing required tables. Apply backend/db/local-init/001_auth_schema.sql or recreate the local Postgres volume.",
       });
     }
 

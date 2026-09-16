@@ -101,8 +101,26 @@ DB_HOST=localhost
 DB_USERNAME=postgres
 DB_PASSWORD=localpassword
 DB_NAME=slugger_local
+DB_PORT=5432
+LOCAL_DEV=true
+FRONTEND_URL=http://localhost:3000
 NEXT_PUBLIC_API_URL=http://localhost:3001
+# Production Cognito (login uses the live user pool even with a local DB)
+COGNITO_APP_CLIENT_ID=6cttafm6nkv17saapu58a5gdns
+NEXT_PUBLIC_COGNITO_APP_CLIENT_ID=6cttafm6nkv17saapu58a5gdns
+COGNITO_USER_POOL_ID=us-east-2_tG7IQQ6G7
+AWS_REGION=us-east-2
+```
 
+Login uses **production Cognito**, not the local database. Without `COGNITO_APP_CLIENT_ID`, sign-in returns a generic 500. After a successful Cognito login, the backend looks up (or auto-creates) the user in local Postgres.
+
+If you skip `./pull-rds-data.sh`, the local DB still needs the auth tables. `npm run db:local:start` applies `backend/db/local-init/` on a **fresh** volume. For an existing local volume:
+
+```bash
+docker exec -i slugger-postgres-local psql -U postgres -d slugger_local < backend/db/local-init/001_auth_schema.sql
+```
+
+```env
 # .env - Production DB Access (when needed)
 DB_HOST=db host name
 DB_USERNAME=postgres

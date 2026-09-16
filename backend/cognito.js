@@ -1,3 +1,4 @@
+import "./loadEnv.js";
 import pkg from "aws-sdk";
 const { CognitoIdentityServiceProvider } = pkg;
 
