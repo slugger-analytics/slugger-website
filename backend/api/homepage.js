@@ -19,6 +19,7 @@ import {
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
 import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
+import { requireWidgetAccess } from "../middleware/widget-access-guard.js";
 
 const router = Router();
 
@@ -310,7 +311,7 @@ router.delete("/:widgetId/categories/:categoryId", requireWidgetOwnership, async
  * Get all collaborators (developers) on a widget.
  * NOTE: previously also existed as GET /:widgetId/developers — consolidated here.
  */
-router.get("/:widgetId/collaborators", requireAuth, async (req, res) => {
+router.get("/:widgetId/collaborators", requireAuth, requireWidgetAccess, async (req, res) => {
   const widgetId = parseId(req.params.widgetId);
   if (!widgetId) {
     return res.status(400).json({ success: false, message: "Invalid widget ID." });
@@ -390,7 +391,7 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
  * GET /widgets/:widgetId/teams
  * Get all teams with access to a widget.
  */
-router.get("/:widgetId/teams", requireAuth, async (req, res) => {
+router.get("/:widgetId/teams", requireAuth, requireWidgetAccess, async (req, res) => {
   const widgetId = parseId(req.params.widgetId);
   if (!widgetId) {
     return res.status(400).json({ success: false, message: "Invalid widget ID." });

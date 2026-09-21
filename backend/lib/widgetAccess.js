@@ -113,3 +113,33 @@ export function resolveWidgetListViewer({ sessionUserId, queryUserId } = {}) {
   const parsed = Number(sessionUserId);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
+
+/**
+ * Same catalog rules, plus site admins, for execute / export / listings.
+ * sessionUser is the Express session user (or null if not logged in).
+ *
+ * @param {{
+ *   sessionUser?: { user_id?: number, role?: string, team_id?: string } | null,
+ *   widget: { widget_id: number, visibility?: string | null },
+ *   userLinked?: boolean,
+ *   teamLinked?: boolean,
+ * }} input
+ */
+export function userCanAccessWidget({
+  sessionUser = null,
+  widget,
+  userLinked = false,
+  teamLinked = false,
+}) {
+  if (!widget) return false;
+  if (sessionUser?.role === "admin") return true;
+
+  const userId = sessionUser?.user_id ?? null;
+  return widgetPassesGetAllWidgetsFilter(widget, {
+    userId,
+    userRole: sessionUser?.role ?? null,
+    userTeamId: sessionUser?.team_id ?? null,
+    userLinkedWidgetIds: userLinked && userId != null ? [widget.widget_id] : [],
+    teamLinkedWidgetIds: teamLinked ? [widget.widget_id] : [],
+  });
+}

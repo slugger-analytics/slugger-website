@@ -23,6 +23,10 @@ import {
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
 import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
+import {
+  assertCanAccessWidget,
+  requireWidgetAccess,
+} from "../middleware/widget-access-guard.js";
 
 const selectWidgetById = `
     SELECT *
@@ -1464,7 +1468,7 @@ const fetchSluggerPitcherOptionsViaBrowser = async (redirectLink, { teamNames = 
   }
 };
 
-router.get("/:widgetId/selector-options", async (req, res) => {
+router.get("/:widgetId/selector-options", requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId, 10);
     if (Number.isNaN(widgetId)) {
@@ -4395,7 +4399,7 @@ router.get("/exports/:fileName", async (req, res) => {
   }
 });
 
-router.post("/:widgetId/export-pdf", async (req, res) => {
+router.post("/:widgetId/export-pdf", requireWidgetAccess, async (req, res) => {
   let browser;
   try {
     const widgetId = parseInt(req.params.widgetId, 10);
@@ -5140,6 +5144,9 @@ router.get(
 // Returns hitting statistics as JSON
 router.get("/93/hitting-data", async (req, res) => {
   try {
+    const allowed = await assertCanAccessWidget(req, res, 93);
+    if (!allowed) return;
+
     const playerIds = parseIdList(req.query.playerIds);
     const teamIds = parseIdList(req.query.teamIds);
 
@@ -5220,6 +5227,13 @@ router.get("/93/hitting-data", async (req, res) => {
 
 router.get("/pitching-data", async (req, res) => {
   try {
+    const pitchingLookup = await pool.query(
+      `SELECT widget_id FROM widgets WHERE widget_id IN (223, 268) ORDER BY widget_id DESC LIMIT 1`
+    );
+    const pitchingWidgetId = pitchingLookup.rows[0]?.widget_id ?? 268;
+    const allowed = await assertCanAccessWidget(req, res, pitchingWidgetId);
+    if (!allowed) return;
+
     const playerIds = parseIdList(req.query.playerIds);
     const teamIds = parseIdList(req.query.teamIds);
 
@@ -5293,7 +5307,7 @@ router.get("/pitching-data", async (req, res) => {
   }
 });
 
-router.get("/:widgetId/execute", async (req, res) => {
+router.get("/:widgetId/execute", requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId, 10);
     if (Number.isNaN(widgetId)) {
@@ -5933,7 +5947,7 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
 });
 
 // Get widget collaborators
-router.get("/:widgetId/collaborators", requireAuth, async (req, res) => {
+router.get("/:widgetId/collaborators", requireAuth, requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     
@@ -5967,7 +5981,7 @@ router.get("/:widgetId/collaborators", requireAuth, async (req, res) => {
 });
 
 // Get teams with access to a widget
-router.get("/:widgetId/teams", requireAuth, async (req, res) => {
+router.get("/:widgetId/teams", requireAuth, requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
 

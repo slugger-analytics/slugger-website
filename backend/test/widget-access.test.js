@@ -13,6 +13,7 @@ import {
   filterWidgetsForGetAllWidgets,
   getGetAllWidgetsAccessPaths,
   resolveWidgetListViewer,
+  userCanAccessWidget,
 } from "../lib/widgetAccess.js";
 
 /** Fixture widgets matching typical DB rows */
@@ -294,5 +295,96 @@ describe("resolveWidgetListViewer — catalog identity from session only", () =>
     assert.equal(resolveWidgetListViewer({ sessionUserId: 0 }), null);
     assert.equal(resolveWidgetListViewer({ sessionUserId: -1 }), null);
     assert.equal(resolveWidgetListViewer({ sessionUserId: "abc" }), null);
+  });
+});
+
+describe("userCanAccessWidget — execute/export style access", () => {
+  const teamA = { user_id: 20, role: "league", team_id: 5 };
+  const teamB = { user_id: 30, role: "league", team_id: 99 };
+  const owner = { user_id: 10, role: "widget developer", team_id: 5 };
+  const siteAdmin = { user_id: 1, role: "admin", team_id: null };
+
+  test("anonymous can use a public widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: null,
+        widget: WIDGETS.publicStats,
+        userLinked: false,
+        teamLinked: false,
+      }),
+      true
+    );
+  });
+
+  test("anonymous cannot use a private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: null,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: false,
+      }),
+      false
+    );
+  });
+
+  test("Team B cannot use Team A's private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: teamB,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: false,
+      }),
+      false
+    );
+  });
+
+  test("Team A can use a team-linked private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: teamA,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: true,
+      }),
+      true
+    );
+  });
+
+  test("owner can use a private widget via user_widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: owner,
+        widget: WIDGETS.devTool,
+        userLinked: true,
+        teamLinked: false,
+      }),
+      true
+    );
+  });
+
+  test("widget developer does not get team-only private widgets", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: owner,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: true,
+      }),
+      false
+    );
+  });
+
+  test("site admin can use a private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: siteAdmin,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: false,
+      }),
+      true
+    );
   });
 });
