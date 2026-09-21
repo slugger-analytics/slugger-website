@@ -659,13 +659,12 @@ router.post("/validate-session", requireAuth, async (req, res) => {
 router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSchema), async (req, res) => {
   const { userId, publicWidgetId } = req.body;
   try {
-    // Ensure session is valid (w/ corresponding user)
-    // if (req.session.user.user_id !== userId) {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: "Invalid session"
-    //   });
-    // }
+    if (Number(req.session.user.user_id) !== Number(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid session"
+      });
+    }
 
     const sessionIdRes = await pool.query(
       "SELECT sid FROM session WHERE (sess->'user'->>'user_id')::int = $1",
