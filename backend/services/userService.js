@@ -11,8 +11,6 @@ import cognito from "../cognito.js";
 
 dotenv.config();
 
-const TOKEN_SECRET = process.env.TOKEN_SECRET;
-
 export async function favoriteWidget(userId, widgetId) {
   const checkQuery = `
         SELECT fav_widgets_ids
@@ -82,13 +80,43 @@ export async function getFavorites(userId) {
 }
 
 const algorithm = 'aes-256-cbc';
-const iv = crypto.randomBytes(16); // Initialization vector
+
+function tokenKey() {
+  const secret = process.env.TOKEN_SECRET;
+  if (!secret || Buffer.byteLength(secret) !== 32) {
+    throw new Error("TOKEN_SECRET must be 32 bytes");
+  }
+  return secret;
+}
 
 export function encryptToken(payload) {
-  const cipher = crypto.createCipheriv(algorithm, TOKEN_SECRET, iv);
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(algorithm, tokenKey(), iv);
   let encrypted = cipher.update(JSON.stringify(payload), 'utf8', 'hex');
   encrypted += cipher.final('hex');
   return iv.toString('hex') + ':' + encrypted;
+}
+
+export function decryptToken(token) {
+  if (typeof token !== "string") {
+    throw new Error("Invalid token");
+  }
+  const splitAt = token.indexOf(":");
+  if (splitAt <= 0) {
+    throw new Error("Invalid token");
+  }
+  const iv = Buffer.from(token.slice(0, splitAt), "hex");
+  if (iv.length !== 16) {
+    throw new Error("Invalid token");
+  }
+  const decipher = crypto.createDecipheriv(algorithm, tokenKey(), iv);
+  let decrypted = decipher.update(token.slice(splitAt + 1), "hex", "utf8");
+  decrypted += decipher.final("utf8");
+  const payload = JSON.parse(decrypted);
+  if (!payload || typeof payload !== "object") {
+    throw new Error("Invalid token");
+  }
+  return payload;
 }
 
 export async function createUser(userData) {

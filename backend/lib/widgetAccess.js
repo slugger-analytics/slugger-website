@@ -143,3 +143,17 @@ export function userCanAccessWidget({
     teamLinkedWidgetIds: teamLinked ? [widget.widget_id] : [],
   });
 }
+
+/**
+ * The alpb_token is minted for one public_id. The widget the caller asked
+ * about must be that same widget.
+ *
+ * @param {unknown} publicWidgetId
+ * @param {{ public_id?: string | null } | null | undefined} widget
+ */
+export function tokenMatchesRequestedWidget(publicWidgetId, widget) {
+  if (publicWidgetId == null || publicWidgetId === "" || !widget?.public_id) {
+    return false;
+  }
+  return String(widget.public_id) === String(publicWidgetId);
+}

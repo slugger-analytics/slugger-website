@@ -29,32 +29,7 @@ export async function assertCanAccessWidget(req, res, widgetId) {
 
   const widget = widgetResult.rows[0];
   const sessionUser = req.session?.user ?? null;
-  const userId = sessionUser?.user_id ?? null;
-
-  let userLinked = false;
-  let teamLinked = false;
-  if (userId != null) {
-    const linked = await pool.query(
-      `SELECT 1 FROM user_widget WHERE widget_id = $1 AND user_id = $2 LIMIT 1`,
-      [parsed, userId]
-    );
-    userLinked = linked.rowCount > 0;
-
-    if (sessionUser.team_id) {
-      const teamRow = await pool.query(
-        `SELECT 1 FROM widget_team_access WHERE widget_id = $1 AND team_id = $2 LIMIT 1`,
-        [parsed, sessionUser.team_id]
-      );
-      teamLinked = teamRow.rowCount > 0;
-    }
-  }
-
-  const allowed = userCanAccessWidget({
-    sessionUser,
-    widget,
-    userLinked,
-    teamLinked,
-  });
+  const allowed = await userHasWidgetAccess(sessionUser, widget);
 
   if (allowed) return widget;
 
@@ -71,6 +46,40 @@ export async function assertCanAccessWidget(req, res, widgetId) {
     message: "Access denied",
   });
   return null;
+}
+
+/**
+ * Same catalog rules as assertCanAccessWidget, for a user row loaded from the
+ * database. Used when the caller is a widget backend, not the user's browser.
+ */
+export async function userHasWidgetAccess(user, widget) {
+  if (!widget) return false;
+
+  const userId = user?.user_id ?? null;
+  let userLinked = false;
+  let teamLinked = false;
+  if (userId != null) {
+    const linked = await pool.query(
+      `SELECT 1 FROM user_widget WHERE widget_id = $1 AND user_id = $2 LIMIT 1`,
+      [widget.widget_id, userId]
+    );
+    userLinked = linked.rowCount > 0;
+
+    if (user.team_id) {
+      const teamRow = await pool.query(
+        `SELECT 1 FROM widget_team_access WHERE widget_id = $1 AND team_id = $2 LIMIT 1`,
+        [widget.widget_id, user.team_id]
+      );
+      teamLinked = teamRow.rowCount > 0;
+    }
+  }
+
+  return userCanAccessWidget({
+    sessionUser: user,
+    widget,
+    userLinked,
+    teamLinked,
+  });
 }
 
 export async function requireWidgetAccess(req, res, next) {

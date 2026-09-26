@@ -13,8 +13,10 @@ import {
   filterWidgetsForGetAllWidgets,
   getGetAllWidgetsAccessPaths,
   resolveWidgetListViewer,
+  tokenMatchesRequestedWidget,
   userCanAccessWidget,
 } from "../lib/widgetAccess.js";
+import { decryptToken, encryptToken } from "../services/userService.js";
 
 /** Fixture widgets matching typical DB rows */
 const WIDGETS = {
@@ -386,5 +388,43 @@ describe("userCanAccessWidget — execute/export style access", () => {
       }),
       true
     );
+  });
+
+  test("a developer who is not on the widget cannot open another team's private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: { user_id: 11, role: "widget developer", team_id: 5 },
+        widget: WIDGETS.pitchingLab,
+        userLinked: false,
+        teamLinked: true,
+      }),
+      false
+    );
+  });
+});
+
+describe("alpb_token", () => {
+  const secret = "0123456789abcdef0123456789abcdef";
+
+  test("encrypt and decrypt round trip", () => {
+    process.env.TOKEN_SECRET = secret;
+    const payload = { userId: 20, publicWidgetId: "pub-lineup", sessionId: "sid-1" };
+    const token = encryptToken(payload);
+    assert.deepEqual(decryptToken(token), payload);
+  });
+
+  test("a changed token does not decrypt", () => {
+    process.env.TOKEN_SECRET = secret;
+    const token = encryptToken({ userId: 20, publicWidgetId: "pub-lineup", sessionId: "sid-1" });
+    const [iv, body] = token.split(":");
+    const flipped = body.slice(0, -1) + (body.endsWith("0") ? "1" : "0");
+    assert.throws(() => decryptToken(`${iv}:${flipped}`));
+  });
+
+  test("token public id must match the requested widget", () => {
+    const widget = { widget_id: 2, public_id: "pub-lineup", visibility: "private" };
+    assert.equal(tokenMatchesRequestedWidget("pub-lineup", widget), true);
+    assert.equal(tokenMatchesRequestedWidget("pub-other", widget), false);
+    assert.equal(tokenMatchesRequestedWidget("pub-lineup", { widget_id: 2, public_id: null }), false);
   });
 });
