@@ -1,9 +1,16 @@
 import { Router } from "express";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { streamToString } from "../utils/stream.js";
 
-dotenv.config({ path: "../.env" });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Load repo-root env before reading JSON_BUCKET_NAME. ESM imports this
+// module before server.js dotenv.config() runs, and cwd-relative "../.env"
+// misses .env.local when the process is started from backend/.
+dotenv.config({ path: path.join(__dirname, "../../.env.local") });
+dotenv.config({ path: path.join(__dirname, "../../.env") });
 
 const router = Router();
 
@@ -19,7 +26,9 @@ const CURRENT_YEAR = Number.isFinite(envSeasonYear)
 
 const BUCKET_NAME = process.env.JSON_BUCKET_NAME;
 if (!BUCKET_NAME) {
-  throw new Error("[league] JSON_BUCKET_NAME env var is missing.");
+  console.warn(
+    "[league] JSON_BUCKET_NAME env var is missing. Standings and leaders routes will return 503 until it is set.",
+  );
 }
 
 // ─── S3 Client ────────────────────────────────────────────────────────────────
@@ -48,6 +57,15 @@ const s3 = new S3Client(s3Config);
  * Fetch and parse a JSON file from S3.
  * Throws on any error — callers handle 404 vs 500 distinction.
  */
+function requireBucket(res) {
+  if (BUCKET_NAME) return true;
+  res.status(503).json({
+    success: false,
+    message: "League data is unavailable: JSON_BUCKET_NAME is not configured.",
+  });
+  return false;
+}
+
 async function fetchS3Json(key) {
   const command = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key });
   const response = await s3.send(command);
@@ -65,6 +83,18 @@ function handleS3Error(error, res, context) {
   if (isNotFound) {
     return res.status(404).json({ success: false, message: error._notFoundMessage ?? "Data not found." });
   }
+
+  const isDenied =
+    error.name === "AccessDenied" ||
+    error.name === "CredentialsProviderError" ||
+    error.$metadata?.httpStatusCode === 403;
+  if (isDenied) {
+    return res.status(503).json({
+      success: false,
+      message: `League data is unavailable: no AWS permission to read s3://${BUCKET_NAME}. Set AWS_ACCESS_KEY and AWS_SECRET_ACCESS_KEY for local development.`,
+    });
+  }
+
   return res.status(500).json({ success: false, message: "An unexpected error occurred." });
 }
 
@@ -114,6 +144,7 @@ router.get("/seasons", (req, res) => {
  * When half=first, loads the frozen first-half snapshot if available.
  */
 router.get("/standings", async (req, res) => {
+  if (!requireBucket(res)) return;
   const year = resolveYear(req.query.year, res);
   if (year === null) return;
 
@@ -142,6 +173,7 @@ router.get("/standings", async (req, res) => {
  * Returns league leaders data for the requested season.
  */
 router.get("/leaders", async (req, res) => {
+  if (!requireBucket(res)) return;
   const year = resolveYear(req.query.year, res);
   if (year === null) return;
 
