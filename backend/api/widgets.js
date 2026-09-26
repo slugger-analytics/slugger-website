@@ -4384,12 +4384,16 @@ const selectOutfielderBatterInPage = async (page, { playerNames = [] } = {}) => 
   };
 };
 
-router.get("/exports/:fileName", async (req, res) => {
+router.get("/exports/:fileName", requireAuth, async (req, res) => {
   try {
     const fileName = req.params.fileName;
-    if (!fileName || fileName.includes("/") || fileName.includes("..")) {
+    const match = /^w(\d+)-\d+\.pdf$/.exec(fileName || "");
+    if (!match || fileName.includes("/") || fileName.includes("..")) {
       return res.status(400).json({ success: false, message: "Invalid file name" });
     }
+
+    const widget = await assertCanAccessWidget(req, res, match[1]);
+    if (!widget) return;
 
     const filePath = path.join(widgetPdfDirectory, fileName);
     await fs.access(filePath);
@@ -4486,8 +4490,7 @@ router.post("/:widgetId/export-pdf", requireWidgetAccess, async (req, res) => {
     await fs.mkdir(widgetPdfDirectory, { recursive: true });
 
     const timestamp = Date.now();
-    const safeWidgetName = widgetName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-    const fileName = `${safeWidgetName || "widget"}-${widgetId}-${timestamp}.pdf`;
+    const fileName = `w${widgetId}-${timestamp}.pdf`;
     const filePath = path.join(widgetPdfDirectory, fileName);
 
     console.log(`[PDF Export] Launching headless browser...`);
@@ -5802,7 +5805,7 @@ router.post("/metrics", requireAuth, async (req, res) => { // TODO remove userId
   }
 })
 
-router.get('/:widgetId/developers', requireAuth, async (req, res) => {
+router.get('/:widgetId/developers', requireAuth, requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const response = await pool.query(`
