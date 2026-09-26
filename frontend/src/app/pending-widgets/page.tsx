@@ -18,6 +18,13 @@ import {
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
+function formatRequestTime(value?: string) {
+  if (!value) return "Unknown";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return date.toLocaleString();
+}
+
 export default function PendingWidgetsPage() {
   const [requests, setRequests] = useState<PendingWidget[]>([]);
   const [teamMap, setTeamMap] = useState<Map<string, string>>(new Map());
@@ -130,6 +137,9 @@ export default function PendingWidgetsPage() {
                         <span className="font-medium">Teams:</span> {getTeamNames(request.team_ids).join(", ")}
                       </div>
                     )}
+                    <p className="text-sm text-gray-500 mb-1">
+                      Requested: {formatRequestTime(request.created_at)}
+                    </p>
                     <p className="text-sm text-yellow-600 mb-4">
                       Status: {request.status}
                     </p>
