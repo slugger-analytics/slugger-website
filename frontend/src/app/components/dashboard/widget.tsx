@@ -41,6 +41,7 @@ export default function Widget({
   imageUrl,
   isDev,
   visibility,
+  status,
   redirectLink,
   publicId,
   restrictedAccess,
@@ -52,6 +53,10 @@ export default function Widget({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const { toggleFavWidget } = useMutationWidgets();
   const favWidgets = useStore($favWidgetIds);
+  const user = useStore($user);
+  const isSiteAdmin = user.role?.toLowerCase() === "admin";
+  const isHidden = (visibility || "").toLowerCase() === "private";
+  const isActive = (status || "").toLowerCase() === "approved";
   const isPitcherWidget = id === 268 || redirectLink?.includes("slugger-pitching-widget");
 
   // Character limit for truncated description
@@ -168,6 +173,24 @@ export default function Widget({
       {/* Content Section */}
       <CardContent className="flex-grow">
         <CardTitle className="mb-2 text-lg">{name}</CardTitle>
+        {isSiteAdmin && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            <span
+              className={
+                isActive
+                  ? "text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700"
+                  : "text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-600"
+              }
+            >
+              {isActive ? "Active" : "Inactive"}
+            </span>
+            {isHidden && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                Hidden
+              </span>
+            )}
+          </div>
+        )}
         <div className="text-sm text-gray-500">
           {isExpanded ? description : truncatedDescription}
           {isLongDescription && (

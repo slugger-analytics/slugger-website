@@ -545,6 +545,7 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
         widget_name: w.widget_name,
         description: w.description,
         visibility: w.visibility,
+        status: w.status,
         redirect_link: w.redirect_link,
         image_url: w.image_url,
         public_id: w.public_id,
