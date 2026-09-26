@@ -8,7 +8,7 @@ import {
   SidebarTrigger,
 } from "@/app/components/ui/sidebar";
 import ProtectedRoute from "../components/ProtectedRoutes";
-import { fetchAllDevelopersWithWidgets, fetchAllApprovedWidgets, ApprovedWidget } from "@/api/developer";
+import { fetchAllDevelopersWithWidgets, fetchAllApprovedWidgets, updateDeveloperWidgetRole, ApprovedWidget } from "@/api/developer";
 import { DeveloperWithWidgets } from "@/data/types";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
@@ -45,6 +45,8 @@ export default function WidgetDevelopmentPage() {
   const [assignDialogDev, setAssignDialogDev] = useState<DeveloperWithWidgets | null>(null);
   const [selectedWidgetId, setSelectedWidgetId] = useState<string>("");
   const [assigning, setAssigning] = useState(false);
+  const [sortBy, setSortBy] = useState<"default" | "widget-name">("default");
+  const [updatingRoleKey, setUpdatingRoleKey] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -111,12 +113,69 @@ export default function WidgetDevelopmentPage() {
     }
   };
 
+  const displayedDevelopers = [...developers]
+    .map((developer) => {
+      if (sortBy !== "widget-name" || !developer.widgets) return developer;
+      return {
+        ...developer,
+        widgets: [...developer.widgets].sort((a, b) =>
+          a.widget_name.localeCompare(b.widget_name),
+        ),
+      };
+    })
+    .sort((a, b) => {
+      if (sortBy !== "widget-name") return 0;
+      const aName = a.widgets?.[0]?.widget_name || "";
+      const bName = b.widgets?.[0]?.widget_name || "";
+      if (!aName && !bName) return 0;
+      if (!aName) return 1;
+      if (!bName) return -1;
+      return aName.localeCompare(bName);
+    });
+
   const assignableWidgets = assignDialogDev
     ? allWidgets.filter(
         (w) =>
           !assignDialogDev.widgets?.some((dw) => dw.widget_id === w.widget_id),
       )
     : [];
+
+  const handleAssignRole = async (
+    developer: DeveloperWithWidgets,
+    widgetId: number,
+    role: "member" | "owner",
+  ) => {
+    const key = `${developer.user_id}-${widgetId}`;
+    setUpdatingRoleKey(key);
+    try {
+      await updateDeveloperWidgetRole(developer.user_id, widgetId, role);
+      setDevelopers((prev) =>
+        prev.map((dev) =>
+          dev.user_id !== developer.user_id
+            ? dev
+            : {
+                ...dev,
+                widgets: (dev.widgets || []).map((widget) =>
+                  widget.widget_id === widgetId ? { ...widget, role } : widget,
+                ),
+              },
+        ),
+      );
+      toast({
+        title: "Role updated",
+        description: `${developer.first_name} ${developer.last_name} is now ${role} on this widget.`,
+        variant: "success",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Role update failed",
+        description: error.message || "There was a problem updating the role.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingRoleKey(null);
+    }
+  };
 
   const handleAssignWidget = async () => {
     if (!assignDialogDev || !selectedWidgetId) return;
@@ -153,6 +212,32 @@ export default function WidgetDevelopmentPage() {
           <div className="container mx-auto p-8">
             <h1 className="text-3xl mb-8 text-center">Widget Development</h1>
 
+            {!loading && developers.length > 0 && (
+              <div className="flex justify-end mb-6">
+                <Select
+                  value={sortBy}
+                  onValueChange={(value) => {
+                    setSortBy(value as "default" | "widget-name");
+                    setWidgetIndices((prev) => {
+                      const reset: Record<number, number> = {};
+                      Object.keys(prev).forEach((id) => {
+                        reset[Number(id)] = 0;
+                      });
+                      return reset;
+                    });
+                  }}
+                >
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue placeholder="Sort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Default order</SelectItem>
+                    <SelectItem value="widget-name">Sort by widget name</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             {error && (
               <p className="text-center text-red-600 mb-4 font-semibold">
                 {error}
@@ -167,7 +252,7 @@ export default function WidgetDevelopmentPage() {
               </p>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {developers.map((developer) => {
+                {displayedDevelopers.map((developer) => {
                   const currentIndex = widgetIndices[developer.user_id] || 0;
                   const hasWidgets = developer.widgets && developer.widgets.length > 0;
                   const currentWidget = hasWidgets && developer.widgets ? developer.widgets[currentIndex] : null;
@@ -265,6 +350,31 @@ export default function WidgetDevelopmentPage() {
                               {currentWidget.widget_name}
                             </h4>
                             <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2 text-gray-600">
+                                <span className="font-medium">Role:</span>
+                                <Select
+                                  value={currentWidget.role || "member"}
+                                  disabled={
+                                    updatingRoleKey ===
+                                    `${developer.user_id}-${currentWidget.widget_id}`
+                                  }
+                                  onValueChange={(value) =>
+                                    handleAssignRole(
+                                      developer,
+                                      currentWidget.widget_id,
+                                      value as "member" | "owner",
+                                    )
+                                  }
+                                >
+                                  <SelectTrigger className="h-8 w-[140px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="member">member</SelectItem>
+                                    <SelectItem value="owner">owner</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
                               <p className="text-gray-600">
                                 <span className="font-medium">Visibility:</span>{" "}
                                 <span
@@ -367,7 +477,10 @@ export default function WidgetDevelopmentPage() {
             <AlertDialogCancel disabled={assigning}>Cancel</AlertDialogCancel>
             {assignableWidgets.length > 0 && (
               <AlertDialogAction
-                onClick={handleAssignWidget}
+                onClick={(event) => {
+                  event.preventDefault();
+                  handleAssignWidget();
+                }}
                 disabled={!selectedWidgetId || assigning}
                 className="bg-blue-600 hover:bg-blue-700"
               >
