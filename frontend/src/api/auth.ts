@@ -1,14 +1,11 @@
 import { LoginAPIRes } from "@/data/types";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { API_URL } from "./config";
 
 /**
  * Frontend API utility functions for user authentication and management.
  * Includes functions to sign up and log in users via the backend API.
  */
 const DEBUG = false;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 export type RoleType = "admin" | "master" | "widget developer" | "league";
 
 /**

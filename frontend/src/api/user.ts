@@ -3,11 +3,7 @@
  * Includes functions to add, remove, and fetch favorite widgets for a user.
  */
 import { FavoritesAPIRes } from "@/data/types";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from "./config";
 
 /**
  * Adds a widget to a user's list of favorites.

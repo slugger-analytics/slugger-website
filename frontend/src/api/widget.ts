@@ -11,11 +11,7 @@ import {
   WidgetType,
   CategoryType,
 } from "@/data/types";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from "./config";
 
 export const registerWidget = async (
   widgetData: RegisterWidgetDataType,

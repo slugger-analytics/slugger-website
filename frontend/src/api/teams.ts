@@ -1,6 +1,5 @@
 import { TeamMember } from "@/data/types";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from "./config";
 
 interface Team {
   team_id: string;

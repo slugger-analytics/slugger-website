@@ -1,12 +1,11 @@
 import AWS from "aws-sdk";
+import { API_URL } from "@/api/config";
 
 const DEBUG = false;
 // Initialize the Cognito service provider with the specified region
 const cognito = new AWS.CognitoIdentityServiceProvider({
   region: "us-east-2",
 });
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // Function to sign up a new user
 export const signUpUser = async (
