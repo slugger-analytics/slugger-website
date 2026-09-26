@@ -23,6 +23,8 @@ export const queryParamsSchema = z.object({
     .positive()
     .max(100, "Limit must be <= 100")
     .optional(),
+  // userId is accepted so old clients do not 400, but list identity comes
+  // from the session — see resolveWidgetListViewer. Never use this value.
   userId: z.coerce.number().int().positive().optional(),
 });
 

@@ -11,11 +11,7 @@ import {
   WidgetType,
   CategoryType,
 } from "@/data/types";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from "./config";
 
 export const registerWidget = async (
   widgetData: RegisterWidgetDataType,
@@ -117,13 +113,11 @@ export const declineWidget = async (requestId: string): Promise<string> => {
   }
 };
 
-export const fetchWidgets = async (userId?: string): Promise<WidgetType[]> => {
+export const fetchWidgets = async (): Promise<WidgetType[]> => {
   try {
-    const url = userId 
-      ? `${API_URL}/api/widgets?userId=${userId}` 
-      : `${API_URL}/api/widgets`;
-      
-    const response = await fetch(url);
+    const response = await fetch(`${API_URL}/api/widgets`, {
+      credentials: "include",
+    });
     const res = await response.json();
     if (!res.success) {
       throw new Error(res.message);

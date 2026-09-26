@@ -54,8 +54,7 @@ import {
 } from "@/app/components/ui/alert-dialog"; // UI components for the alert dialog
 import { useToast } from "@/hooks/use-toast";
 import { TeamMember } from "@/data/types";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from "@/api/config";
 
 export default function TeamPage() {
   const [members, setMembers] = useState<TeamMember[]>([]);

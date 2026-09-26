@@ -22,6 +22,11 @@ import {
 } from "../services/widgetService.js";
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
+import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
+import {
+  assertCanAccessWidget,
+  requireWidgetAccess,
+} from "../middleware/widget-access-guard.js";
 
 const selectWidgetById = `
     SELECT *
@@ -1463,7 +1468,7 @@ const fetchSluggerPitcherOptionsViaBrowser = async (redirectLink, { teamNames = 
   }
 };
 
-router.get("/:widgetId/selector-options", async (req, res) => {
+router.get("/:widgetId/selector-options", requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId, 10);
     if (Number.isNaN(widgetId)) {
@@ -4379,12 +4384,16 @@ const selectOutfielderBatterInPage = async (page, { playerNames = [] } = {}) => 
   };
 };
 
-router.get("/exports/:fileName", async (req, res) => {
+router.get("/exports/:fileName", requireAuth, async (req, res) => {
   try {
     const fileName = req.params.fileName;
-    if (!fileName || fileName.includes("/") || fileName.includes("..")) {
+    const match = /^w(\d+)-\d+\.pdf$/.exec(fileName || "");
+    if (!match || fileName.includes("/") || fileName.includes("..")) {
       return res.status(400).json({ success: false, message: "Invalid file name" });
     }
+
+    const widget = await assertCanAccessWidget(req, res, match[1]);
+    if (!widget) return;
 
     const filePath = path.join(widgetPdfDirectory, fileName);
     await fs.access(filePath);
@@ -4394,7 +4403,7 @@ router.get("/exports/:fileName", async (req, res) => {
   }
 });
 
-router.post("/:widgetId/export-pdf", async (req, res) => {
+router.post("/:widgetId/export-pdf", requireWidgetAccess, async (req, res) => {
   let browser;
   try {
     const widgetId = parseInt(req.params.widgetId, 10);
@@ -4481,8 +4490,7 @@ router.post("/:widgetId/export-pdf", async (req, res) => {
     await fs.mkdir(widgetPdfDirectory, { recursive: true });
 
     const timestamp = Date.now();
-    const safeWidgetName = widgetName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-    const fileName = `${safeWidgetName || "widget"}-${widgetId}-${timestamp}.pdf`;
+    const fileName = `w${widgetId}-${timestamp}.pdf`;
     const filePath = path.join(widgetPdfDirectory, fileName);
 
     console.log(`[PDF Export] Launching headless browser...`);
@@ -5114,9 +5122,12 @@ router.get(
   validationMiddleware({ querySchema: queryParamsSchema }),
   async (req, res) => {
     try {
-      const { widgetName, categories, page, limit, userId } = req.query;
-
-      const widgets = await getAllWidgets(widgetName, categories, page, limit, userId);
+      const { widgetName, categories, page, limit } = req.query;
+      const viewerId = resolveWidgetListViewer({
+        sessionUserId: req.session?.user?.user_id,
+        queryUserId: req.query.userId,
+      });
+      const widgets = await getAllWidgets(widgetName, categories, page, limit, viewerId);
 
       res.status(200).json({
         success: true,
@@ -5136,6 +5147,9 @@ router.get(
 // Returns hitting statistics as JSON
 router.get("/93/hitting-data", async (req, res) => {
   try {
+    const allowed = await assertCanAccessWidget(req, res, 93);
+    if (!allowed) return;
+
     const playerIds = parseIdList(req.query.playerIds);
     const teamIds = parseIdList(req.query.teamIds);
 
@@ -5216,6 +5230,13 @@ router.get("/93/hitting-data", async (req, res) => {
 
 router.get("/pitching-data", async (req, res) => {
   try {
+    const pitchingLookup = await pool.query(
+      `SELECT widget_id FROM widgets WHERE widget_id IN (223, 268) ORDER BY widget_id DESC LIMIT 1`
+    );
+    const pitchingWidgetId = pitchingLookup.rows[0]?.widget_id ?? 268;
+    const allowed = await assertCanAccessWidget(req, res, pitchingWidgetId);
+    if (!allowed) return;
+
     const playerIds = parseIdList(req.query.playerIds);
     const teamIds = parseIdList(req.query.teamIds);
 
@@ -5289,7 +5310,7 @@ router.get("/pitching-data", async (req, res) => {
   }
 });
 
-router.get("/:widgetId/execute", async (req, res) => {
+router.get("/:widgetId/execute", requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId, 10);
     if (Number.isNaN(widgetId)) {
@@ -5784,7 +5805,7 @@ router.post("/metrics", requireAuth, async (req, res) => { // TODO remove userId
   }
 })
 
-router.get('/:widgetId/developers', requireAuth, async (req, res) => {
+router.get('/:widgetId/developers', requireAuth, requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const response = await pool.query(`
@@ -5929,7 +5950,7 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
 });
 
 // Get widget collaborators
-router.get("/:widgetId/collaborators", requireAuth, async (req, res) => {
+router.get("/:widgetId/collaborators", requireAuth, requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     
@@ -5963,7 +5984,7 @@ router.get("/:widgetId/collaborators", requireAuth, async (req, res) => {
 });
 
 // Get teams with access to a widget
-router.get("/:widgetId/teams", requireAuth, async (req, res) => {
+router.get("/:widgetId/teams", requireAuth, requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
 

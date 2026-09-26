@@ -26,8 +26,7 @@ import dynamic from "next/dynamic";
 import { useToast } from "@/hooks/use-toast";
 import { validatePassword } from "@/lib/utils";
 import Link from "next/link";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from "@/api/config";
 
 const initialSubmitStatus = {
   message: "",

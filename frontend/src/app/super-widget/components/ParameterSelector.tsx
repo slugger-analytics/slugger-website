@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Badge } from "@/app/components/ui/badge";
 import { ChevronDown, Loader2, Search, Target, X } from "lucide-react";
+import { API_URL as API_BASE_URL } from "@/api/config";
 
 interface Team {
   id: string | number;
@@ -31,9 +32,6 @@ interface ParameterSelectorProps {
   overridePlayers?: Player[];
   overrideLabel?: string;
 }
-
-const DEFAULT_API_BASE = "http://localhost:3001";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_BASE;
 
 const buildApiUrl = (path: string) => {
   if (!API_BASE_URL) return path;

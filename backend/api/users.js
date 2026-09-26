@@ -3,6 +3,7 @@ import pkg from "aws-sdk";
 import dotenv from "dotenv";
 import pool from "../db.js";
 import {
+  decryptToken,
   encryptToken,
   favoriteWidget,
   getFavorites,
@@ -16,8 +17,18 @@ import {
 import { getUserData } from "../services/widgetService.js";
 import { validationMiddleware } from "../middleware/validation-middleware.js";
 import { generateTokenSchema } from "../validators/schemas.js";
-import { sendPasswordResetEmail } from "../services/emailService.js";
+import {
+  consumePasswordResetOtp,
+  requestPasswordReset,
+  verifyPasswordResetOtp,
+} from "../services/passwordResetService.js";
+import {
+  GENERIC_INVALID_CODE_MESSAGE,
+  GENERIC_RESET_REQUEST_MESSAGE,
+} from "../lib/passwordReset.js";
 import { requireAuth, requireSiteAdmin } from "../middleware/permission-guards.js";
+import { userHasWidgetAccess } from "../middleware/widget-access-guard.js";
+import { tokenMatchesRequestedWidget } from "../lib/widgetAccess.js";
 import { shouldBlockLoginForPendingDeveloper } from "../lib/accountApproval.js";
 import jwt from "jsonwebtoken";
 
@@ -288,6 +299,13 @@ router.post("/sign-in", async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Password reset required",
+      });
+    }
+
+    if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        success: false,
+        message: "Local database is not running. Start it with: npm run db:local:start",
       });
     }
 
@@ -651,13 +669,12 @@ router.post("/validate-session", requireAuth, async (req, res) => {
 router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSchema), async (req, res) => {
   const { userId, publicWidgetId } = req.body;
   try {
-    // Ensure session is valid (w/ corresponding user)
-    // if (req.session.user.user_id !== userId) {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: "Invalid session"
-    //   });
-    // }
+    if (Number(req.session.user.user_id) !== Number(userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid session"
+      });
+    }
 
     const sessionIdRes = await pool.query(
       "SELECT sid FROM session WHERE (sess->'user'->>'user_id')::int = $1",
@@ -673,9 +690,8 @@ router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSc
 
     const sessionId = sessionIdRes.rows[0].sid;
 
-    // Lookup internal widget ID from public ID
     const widgetRes = await pool.query(
-      "SELECT widget_id FROM widgets WHERE public_id = $1",
+      "SELECT widget_id, public_id, visibility FROM widgets WHERE public_id = $1",
       [publicWidgetId]
     );
 
@@ -686,9 +702,14 @@ router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSc
       })
     }
 
-    const widgetId = widgetRes.rows[0].widget_id;
+    const allowed = await userHasWidgetAccess(req.session.user, widgetRes.rows[0]);
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
 
-    // const token = jwt.sign({ U: userId, p: publicWidgetId, s: sessionId }, JWT_SECRET, { expiresIn: "8h", algorithm: "HS256" });
     const token = encryptToken({
       userId,
       publicWidgetId,
@@ -709,6 +730,108 @@ router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSc
     });
   }
 })
+
+/**
+ * POST /validate-token
+ * Widget backends call this with the alpb_token from the iframe URL.
+ * Does not use the caller's browser session.
+ */
+router.post("/validate-token", async (req, res) => {
+  const { alpb_token: alpbToken, widget_id: widgetId } = req.body ?? {};
+  if (!alpbToken || widgetId == null || widgetId === "") {
+    return res.status(400).json({
+      success: false,
+      message: "alpb_token and widget_id are required",
+    });
+  }
+
+  let payload;
+  try {
+    payload = decryptToken(alpbToken);
+  } catch {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid token",
+    });
+  }
+
+  const { userId, publicWidgetId, sessionId } = payload;
+  if (!userId || !publicWidgetId || !sessionId) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid token",
+    });
+  }
+
+  try {
+    const requested = String(widgetId);
+    const widgetRes = await pool.query(
+      `SELECT widget_id, public_id, visibility
+       FROM widgets
+       WHERE public_id = $1 OR widget_id::text = $1`,
+      [requested]
+    );
+    const widget =
+      widgetRes.rows.find((row) => String(row.public_id) === requested) ??
+      widgetRes.rows.find((row) => String(row.widget_id) === requested);
+
+    if (!widget) {
+      return res.status(404).json({
+        success: false,
+        message: "Widget not found",
+      });
+    }
+
+    if (!tokenMatchesRequestedWidget(publicWidgetId, widget)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    const sessionRes = await pool.query(
+      `SELECT 1 FROM session
+       WHERE sid = $1 AND (sess->'user'->>'user_id')::int = $2`,
+      [sessionId, userId]
+    );
+    if (sessionRes.rowCount === 0) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
+    }
+
+    const userRes = await pool.query(
+      "SELECT user_id, role, team_id FROM users WHERE user_id = $1",
+      [userId]
+    );
+    if (userRes.rowCount === 0) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
+    const allowed = await userHasWidgetAccess(userRes.rows[0], widget);
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Access granted",
+    });
+  } catch (error) {
+    console.error("validate-token error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+});
 
 router.get('/search', requireSiteAdmin, async (req, res) => {
   try {
@@ -743,93 +866,90 @@ router.get('/search', requireSiteAdmin, async (req, res) => {
 
 router.post('/send-password-reset-email', async (req, res) => {
   try {
-    const { email, otp } = req.body;
-
-    await sendPasswordResetEmail(email, otp);
-
+    const { email } = req.body;
+    const result = await requestPasswordReset(email);
+    return res.json(result);
+  } catch (error) {
+    if (error.status === 400) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    console.error('Password reset email error:', error);
     return res.json({
       success: true,
-      message: "Email sent successfully!"
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: `Internal error: ${error.message}`
+      message: GENERIC_RESET_REQUEST_MESSAGE,
     });
   }
-})
+});
+
+router.post('/verify-password-reset-otp', async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    const result = await verifyPasswordResetOtp(email, otp);
+    return res.json(result);
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      success: false,
+      message: error.status ? error.message : GENERIC_INVALID_CODE_MESSAGE,
+    });
+  }
+});
 
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, otp } = req.body;
 
-    // Validate input
-    if (!email || !password) {
+    if (!email || !password || !otp) {
       return res.status(400).json({
         success: false,
-        message: 'Email and password are required'
+        message: 'Email, password, and reset code are required',
       });
     }
 
-    const query = `
-      SELECT cognito_user_id
-      FROM users
-      WHERE email = $1
-    `;
-
-    const result = await pool.query(query, [email.toLowerCase()]);
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
-    }
-
-    const username = result.rows[0].cognito_user_id;
+    const verified = await consumePasswordResetOtp(email, otp);
 
     try {
-      const resetResponse = await cognito.adminSetUserPassword({
+      await cognito.adminSetUserPassword({
         Password: password,
         UserPoolId: COGNITO_USER_POOL_ID,
-        Username: username,
+        Username: verified.cognitoUserId,
         Permanent: true,
-      }).promise(); // Use .promise() to handle the AWS SDK method correctly
-
-      // If we reach here, the password reset was successful
-      return res.status(200).json({
-        success: true,
-        message: 'Password reset successful'
-      });
-
+      }).promise();
     } catch (cognitoError) {
-      // Handle specific Cognito errors
       console.error('Cognito Password Reset Error:', cognitoError);
 
-      if (cognitoError.code === 'NotAuthorizedException') {
+      if (cognitoError.code === 'NotAuthorizedException' || cognitoError.code === 'InvalidPasswordException') {
         return res.status(400).json({
           success: false,
-          message: 'Password does not meet requirements'
-        });
-      } else if (cognitoError.code === 'UserNotFoundException') {
-        return res.status(404).json({
-          success: false,
-          message: 'Cognito user not found'
+          message: 'Password does not meet requirements',
         });
       }
 
-      // Generic error for other Cognito-related issues
       return res.status(500).json({
         success: false,
-        message: 'Failed to reset password'
+        message: 'Failed to reset password',
       });
     }
 
+    await verified.clearToken();
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password reset successful',
+    });
   } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({
+        success: false,
+        message: error.message,
+      });
+    }
     console.error('Password Reset Error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: `Internal error: ${error.message}`
+      message: GENERIC_INVALID_CODE_MESSAGE,
     });
   }
 });

@@ -9,9 +9,14 @@ import {
   isPublicVisibility,
   shouldIncludeTeamAccessRule,
   widgetPassesGetAllWidgetsFilter,
+  widgetPassesNameFilter,
   filterWidgetsForGetAllWidgets,
   getGetAllWidgetsAccessPaths,
+  resolveWidgetListViewer,
+  tokenMatchesRequestedWidget,
+  userCanAccessWidget,
 } from "../lib/widgetAccess.js";
+import { decryptToken, encryptToken } from "../services/userService.js";
 
 /** Fixture widgets matching typical DB rows */
 const WIDGETS = {
@@ -167,6 +172,78 @@ describe("filterWidgetsForGetAllWidgets — role / team / user_widget combinatio
     });
     assert.deepEqual(result.map((w) => w.widget_id).sort(), [1, 2, 5]);
   });
+
+  test("Team B search Lineup does not return private Lineup Pro", () => {
+    const result = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 30,
+      userRole: "league",
+      userTeamId: 99,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [],
+      widgetName: "Lineup",
+    });
+    assert.ok(!result.some((w) => w.widget_id === 2));
+    assert.deepEqual(result.map((w) => w.widget_id).sort(), []);
+  });
+
+  test("Team A search Lineup returns team-linked Lineup Pro", () => {
+    const result = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 20,
+      userRole: "league",
+      userTeamId: 5,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [2],
+      widgetName: "Lineup",
+    });
+    assert.deepEqual(result.map((w) => w.widget_id).sort(), [2]);
+  });
+
+  test("search Public still returns public widgets for Team B", () => {
+    const result = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 30,
+      userRole: "league",
+      userTeamId: 99,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [],
+      widgetName: "Public",
+    });
+    assert.deepEqual(result.map((w) => w.widget_id).sort(), [1]);
+  });
+
+  test("no search string → same access results as today", () => {
+    const withEmpty = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 20,
+      userRole: "league",
+      userTeamId: 5,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [2],
+      widgetName: "",
+    });
+    const withoutName = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 20,
+      userRole: "league",
+      userTeamId: 5,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [2],
+    });
+    assert.deepEqual(
+      withEmpty.map((w) => w.widget_id).sort(),
+      withoutName.map((w) => w.widget_id).sort()
+    );
+    assert.deepEqual(withoutName.map((w) => w.widget_id).sort(), [1, 2, 5]);
+  });
+});
+
+describe("widgetPassesNameFilter", () => {
+  test("empty search matches every widget", () => {
+    assert.equal(widgetPassesNameFilter(WIDGETS.lineupPro, ""), true);
+    assert.equal(widgetPassesNameFilter(WIDGETS.lineupPro, null), true);
+  });
+
+  test("case-insensitive substring match", () => {
+    assert.equal(widgetPassesNameFilter(WIDGETS.lineupPro, "lineup"), true);
+    assert.equal(widgetPassesNameFilter(WIDGETS.lineupPro, "Pitching"), false);
+  });
 });
 
 describe("widgetPassesGetAllWidgetsFilter — individual widget cases", () => {
@@ -194,5 +271,160 @@ describe("widgetPassesGetAllWidgetsFilter — individual widget cases", () => {
       }),
       true
     );
+  });
+});
+
+describe("resolveWidgetListViewer — catalog identity from session only", () => {
+  test("uses the session user even when query userId is someone else", () => {
+    assert.equal(
+      resolveWidgetListViewer({ sessionUserId: 20, queryUserId: 99 }),
+      20
+    );
+  });
+
+  test("no session → public catalog only, even if query userId is present", () => {
+    assert.equal(
+      resolveWidgetListViewer({ sessionUserId: null, queryUserId: 99 }),
+      null
+    );
+  });
+
+  test("accepts numeric string session ids", () => {
+    assert.equal(resolveWidgetListViewer({ sessionUserId: "20" }), 20);
+  });
+
+  test("rejects invalid session ids", () => {
+    assert.equal(resolveWidgetListViewer({ sessionUserId: 0 }), null);
+    assert.equal(resolveWidgetListViewer({ sessionUserId: -1 }), null);
+    assert.equal(resolveWidgetListViewer({ sessionUserId: "abc" }), null);
+  });
+});
+
+describe("userCanAccessWidget — execute/export style access", () => {
+  const teamA = { user_id: 20, role: "league", team_id: 5 };
+  const teamB = { user_id: 30, role: "league", team_id: 99 };
+  const owner = { user_id: 10, role: "widget developer", team_id: 5 };
+  const siteAdmin = { user_id: 1, role: "admin", team_id: null };
+
+  test("anonymous can use a public widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: null,
+        widget: WIDGETS.publicStats,
+        userLinked: false,
+        teamLinked: false,
+      }),
+      true
+    );
+  });
+
+  test("anonymous cannot use a private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: null,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: false,
+      }),
+      false
+    );
+  });
+
+  test("Team B cannot use Team A's private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: teamB,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: false,
+      }),
+      false
+    );
+  });
+
+  test("Team A can use a team-linked private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: teamA,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: true,
+      }),
+      true
+    );
+  });
+
+  test("owner can use a private widget via user_widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: owner,
+        widget: WIDGETS.devTool,
+        userLinked: true,
+        teamLinked: false,
+      }),
+      true
+    );
+  });
+
+  test("widget developer does not get team-only private widgets", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: owner,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: true,
+      }),
+      false
+    );
+  });
+
+  test("site admin can use a private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: siteAdmin,
+        widget: WIDGETS.lineupPro,
+        userLinked: false,
+        teamLinked: false,
+      }),
+      true
+    );
+  });
+
+  test("a developer who is not on the widget cannot open another team's private widget", () => {
+    assert.equal(
+      userCanAccessWidget({
+        sessionUser: { user_id: 11, role: "widget developer", team_id: 5 },
+        widget: WIDGETS.pitchingLab,
+        userLinked: false,
+        teamLinked: true,
+      }),
+      false
+    );
+  });
+});
+
+describe("alpb_token", () => {
+  const secret = "0123456789abcdef0123456789abcdef";
+
+  test("encrypt and decrypt round trip", () => {
+    process.env.TOKEN_SECRET = secret;
+    const payload = { userId: 20, publicWidgetId: "pub-lineup", sessionId: "sid-1" };
+    const token = encryptToken(payload);
+    assert.deepEqual(decryptToken(token), payload);
+  });
+
+  test("a changed token does not decrypt", () => {
+    process.env.TOKEN_SECRET = secret;
+    const token = encryptToken({ userId: 20, publicWidgetId: "pub-lineup", sessionId: "sid-1" });
+    const [iv, body] = token.split(":");
+    const flipped = body.slice(0, -1) + (body.endsWith("0") ? "1" : "0");
+    assert.throws(() => decryptToken(`${iv}:${flipped}`));
+  });
+
+  test("token public id must match the requested widget", () => {
+    const widget = { widget_id: 2, public_id: "pub-lineup", visibility: "private" };
+    assert.equal(tokenMatchesRequestedWidget("pub-lineup", widget), true);
+    assert.equal(tokenMatchesRequestedWidget("pub-other", widget), false);
+    assert.equal(tokenMatchesRequestedWidget("pub-lineup", { widget_id: 2, public_id: null }), false);
   });
 });

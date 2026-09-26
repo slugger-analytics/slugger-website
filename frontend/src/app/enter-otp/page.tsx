@@ -13,20 +13,18 @@ import {
   InputOTPSlot,
 } from "../components/ui/input-otp";
 import { useStore } from "@nanostores/react";
-import { $otpCode, $passwordResetEmail } from "@/lib/userStore";
-import { useState } from "react";
-import { Button } from "../components/ui/button";
+import { $passwordResetEmail } from "@/lib/userStore";
+import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { validatePassword } from "@/lib/utils";
-import { resetPassword } from "@/api/auth";
+import { resetPassword, verifyPasswordResetOtp } from "@/api/auth";
 import { useAuth } from "../contexts/AuthContext";
 import SubmitButton from "../components/input/SubmitButton";
 
 export default function EnterOtpPage() {
-  const otp = useStore($otpCode);
   const [enteredOtp, setEnteredOtp] = useState("");
   const [otpValidated, setOtpValidated] = useState(false);
   const { toast } = useToast();
@@ -36,18 +34,26 @@ export default function EnterOtpPage() {
   const email = useStore($passwordResetEmail);
   const { logout, setLoading } = useAuth();
 
-  const handleSubmitOtp = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!email) {
+      router.replace("/reset-password");
+    }
+  }, [email, router]);
+
+  const handleSubmitOtp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    if (enteredOtp !== otp) {
+    try {
+      await verifyPasswordResetOtp(email, enteredOtp);
+      setOtpValidated(true);
+    } catch (error) {
       toast({
         title: "Error: invalid code",
         variant: "destructive",
       });
-    } else {
-      setOtpValidated(true);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleResetPassword = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -71,7 +77,7 @@ export default function EnterOtpPage() {
         });
         return;
       }
-      await resetPassword(email, password);
+      await resetPassword(email, password, enteredOtp);
       await logout();
       toast({
         title: "Success!",
@@ -81,8 +87,9 @@ export default function EnterOtpPage() {
       router.push("/sign-in");
     } catch (error) {
       toast({
-        title: "Internal error",
-        description: "Please try again later",
+        title: "Unable to reset password",
+        description:
+          error instanceof Error ? error.message : "Please try again later",
         variant: "destructive",
       });
     } finally {

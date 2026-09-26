@@ -109,6 +109,7 @@ router.get(
 router.post(
   "/:teamId/members/:memberId/promote",
   requireTeamAdmin,
+  requireTeamMembership,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -147,6 +148,7 @@ router.post(
 router.post(
   "/:teamId/members/:memberId/demote",
   requireTeamAdmin,
+  requireTeamMembership,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -186,6 +188,7 @@ router.post(
 router.post(
   "/:teamId/members/:memberId/role",
   requireTeamAdmin,
+  requireTeamMembership,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -233,6 +236,7 @@ router.post(
 router.patch(
   "/:teamId/members/:memberId",
   requireTeamAdmin,
+  requireTeamMembership,
   validationMiddleware({ paramsSchema: getTeamMemberSchema }),
   async (req, res) => {
     try {
@@ -263,7 +267,7 @@ router.patch(
 );
 
 // invite a new member to a team
-router.post("/:teamId/invite", refreshUserAdminStatus, requireTeamAdmin, async (req, res) => {
+router.post("/:teamId/invite", refreshUserAdminStatus, requireTeamAdmin, requireTeamMembership, async (req, res) => {
   try {
     const teamId = req.params.teamId;
     
@@ -334,7 +338,7 @@ router.post("/validate-invite", async (req, res) => {
 });
 
 // remove a member from a team
-router.delete("/:teamId/members/:memberId", requireTeamAdmin, async (req, res) => {
+router.delete("/:teamId/members/:memberId", requireTeamAdmin, requireTeamMembership, async (req, res) => {
   const { teamId, memberId } = req.params;
   try {
     await getTeam(teamId); // Assert team exists

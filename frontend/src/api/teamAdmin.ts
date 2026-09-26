@@ -3,7 +3,7 @@
  * Handles fetching, approving, declining, and revoking team admin permissions
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+import { API_URL } from "./config";
 
 /**
  * Creates a team admin request for the authenticated user

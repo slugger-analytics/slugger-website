@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  // Next only inlines NEXT_PUBLIC_* at process start. Default so local
+  // fetches do not become "/undefined/api/..." if .env.local was missing.
+  env: {
+    NEXT_PUBLIC_API_URL:
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001",
+  },
   // Explicitly enable PostCSS processing
   experimental: {
     esmExternals: true,

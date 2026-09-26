@@ -26,6 +26,7 @@ import { prettyNumber } from "@based/pretty-number";
 import { callGetWidgetCollaborators } from "@/app/hooks/use-query-widgets";
 import { openWidgetTab } from "@/lib/tabStore";
 import { addRecentWidget } from "@/lib/widgetStore";
+import { API_URL } from "@/api/config";
 
 interface WidgetProps extends WidgetType {
   isDev: boolean;
@@ -90,7 +91,6 @@ export default function Widget({
 
     try {
       setIsExportingPdf(true);
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
       const response = await fetch(`${API_URL}/api/widgets/${id}/export-pdf`, {
         method: "POST",
         headers: {

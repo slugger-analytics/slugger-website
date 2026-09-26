@@ -77,7 +77,7 @@ export default function SuperWidgetPage() {
         setAvailableWidgets([]);
         return;
       }
-      const widgets = await fetchWidgets(user.id);
+      const widgets = await fetchWidgets();
       setAvailableWidgets(widgets);
     } catch (error) {
       console.error("Error loading widgets:", error);

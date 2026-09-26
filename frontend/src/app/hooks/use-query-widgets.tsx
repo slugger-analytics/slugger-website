@@ -29,7 +29,7 @@ function useQueryWidgets() {
     try {
       setWidgetsLoading(true);
       const [fetchedWidgets, categories] = await Promise.all([
-        fetchWidgets(user.id),
+        fetchWidgets(),
         getCategories(),
       ]);
       
