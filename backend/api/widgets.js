@@ -5833,6 +5833,29 @@ router.post('/:widgetId/developers', requireWidgetOwner, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const developerId = parseInt(req.body.developerId);
+    if (!Number.isInteger(developerId)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid developer is required.",
+      });
+    }
+
+    const developerResult = await pool.query(
+      `SELECT user_id, role FROM users WHERE user_id = $1`,
+      [developerId],
+    );
+    if (developerResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Developer not found.",
+      });
+    }
+    if (developerResult.rows[0].role !== "widget developer") {
+      return res.status(400).json({
+        success: false,
+        message: "Only widget developers can be assigned to a widget.",
+      });
+    }
 
     // Check if developer is already added to widget
     const alreadyDevRes = await pool.query(`
@@ -5882,13 +5905,20 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
     }
 
     // Look up user by email
-    const userQuery = 'SELECT user_id FROM users WHERE email = $1';
+    const userQuery = 'SELECT user_id, role FROM users WHERE email = $1';
     const userResult = await pool.query(userQuery, [email]);
     
     if (userResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "User not found with this email"
+      });
+    }
+
+    if (userResult.rows[0].role !== "widget developer") {
+      return res.status(400).json({
+        success: false,
+        message: "Only widget developers can be assigned to a widget.",
       });
     }
     

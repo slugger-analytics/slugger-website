@@ -355,12 +355,18 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
     const widget = await assertWidgetExists(widgetId, res, `addCollaborator(${widgetId})`);
     if (!widget) return;
 
-    const userResult = await pool.query("SELECT user_id, email FROM users WHERE email = $1", [email]);
+    const userResult = await pool.query("SELECT user_id, email, role FROM users WHERE email = $1", [email]);
     if (userResult.rowCount === 0) {
       return res.status(404).json({ success: false, message: "No user found with that email." });
     }
 
-    const { user_id: userId, email: userEmail } = userResult.rows[0];
+    const { user_id: userId, email: userEmail, role } = userResult.rows[0];
+    if (role !== "widget developer") {
+      return res.status(400).json({
+        success: false,
+        message: "Only widget developers can be assigned to a widget.",
+      });
+    }
 
     const existing = await pool.query(
       "SELECT 1 FROM user_widget WHERE user_id = $1 AND widget_id = $2",
