@@ -5,6 +5,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import Search from "./search";
 import FilterDropdown from "./filter-dropdown";
 import SortDropdown from "./sort-dropdown";
+import VisibilityFilter from "./visibility-filter";
 import ViewToggle from "./view-toggle";
 import Widgets from "./widgets";
 import RegisterWidget from "./register-widget";
@@ -23,6 +24,7 @@ export default function DashboardContent() {
             <h2 className="text-2xl font-semibold mb-6">Widgets</h2>
             <div className="flex justify-center w-full">
               <Search />
+              <VisibilityFilter />
               <FilterDropdown />
               <SortDropdown />
             </div>

@@ -12,6 +12,7 @@ import {
   $sortBy,
   $sortDirection,
   $timeFrame,
+  $visibilityFilter,
   $recentWidgetIds,
   clearRecentWidgets,
 } from "@/lib/widgetStore";
@@ -34,6 +35,7 @@ export default function Widgets() {
   const sortBy = useStore($sortBy);
   const sortDirection = useStore($sortDirection);
   const timeFrame = useStore($timeFrame);
+  const visibilityFilter = useStore($visibilityFilter);
   const recentWidgetIds = useStore($recentWidgetIds);
 
   /**
@@ -132,6 +134,16 @@ export default function Widgets() {
           return false;
         }
 
+        const isHidden = (widget.visibility || "").toLowerCase() === "private";
+        const isActive =
+          (widget.status || "").toLowerCase() === "approved" && !isHidden;
+        if (visibilityFilter === "active" && !isActive) {
+          return false;
+        }
+        if (visibilityFilter === "hidden" && !isHidden) {
+          return false;
+        }
+
         // Show all widgets that match the search and filtering criteria
         return true;
       })
@@ -172,6 +184,7 @@ export default function Widgets() {
     sortBy,
     sortDirection,
     timeFrame,
+    visibilityFilter,
     activeCategoryIds,
   ]);
 
