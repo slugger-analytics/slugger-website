@@ -420,6 +420,9 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
     // so matching a name cannot leak another team's private widget.
     const baseParams = [];
     const accessConditions = ["(LOWER(w.visibility) = 'public' OR w.visibility IS NULL)"];
+    if (userRole === "admin") {
+      accessConditions.push("TRUE");
+    }
     if (userId) {
       baseParams.push(parseInt(userId, 10));
       accessConditions.push(`EXISTS (SELECT 1 FROM user_widget uw2 WHERE uw2.widget_id = w.widget_id AND uw2.user_id = $${baseParams.length})`);
