@@ -15,6 +15,7 @@ import {
   createApprovedWidget,
   getAllWidgets,
   registerWidget,
+  resolveWidgetRegistration,
   updateWidget,
   deleteWidget,
   getPendingWidgets,
@@ -5612,15 +5613,19 @@ router.post(
   requireAuth,
   validationMiddleware({ bodySchema: registerWidgetSchema }),
   async (req, res) => {
-    const { widgetName, description, visibility, userId, teamIds } = req.body; // Extract widget details and userId from the request body
+    const { widgetName, description, visibility } = req.body;
 
     try {
+      const { userId, teamIds } = await resolveWidgetRegistration(req.session.user, {
+        visibility,
+        teamIds: req.body.teamIds,
+      });
       const requestedWidget = await registerWidget(
         userId,
         widgetName,
         description,
         visibility,
-        teamIds || [],
+        teamIds,
       );
       res.status(200).json({
         success: true,
@@ -5628,9 +5633,9 @@ router.post(
         data: requestedWidget,
       });
     } catch (error) {
-      res.status(500).json({
+      res.status(error.status || 500).json({
         success: false,
-        message: `Internal error: ${error.message}`,
+        message: error.status ? error.message : `Internal error: ${error.message}`,
       });
     }
   },

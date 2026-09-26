@@ -120,8 +120,8 @@ export const requireTeamMembership = async (req, res, next) => {
       return next();
     }
 
-    // Check if user belongs to the team
-    if (req.session?.user?.team_id !== teamId) {
+    // Params arrive as strings; the session stores the database id.
+    if (String(req.session?.user?.team_id) !== String(teamId)) {
       return res.status(403).json({
         success: false,
         message: "Access denied: You don't belong to this team"
