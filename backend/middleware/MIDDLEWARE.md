@@ -2,6 +2,8 @@
 
 This document describes all middleware functions available in the backend and their usage.
 
+Who may open a private widget, and which of these checks to put on a new route, is in [SECURITY.md](../../SECURITY.md).
+
 ## Overview
 
 Middleware functions are used to handle cross-cutting concerns such as authentication, authorization, validation, and resource ownership checks. They are executed before route handlers and can modify the request/response or terminate the request early.
