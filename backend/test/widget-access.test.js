@@ -71,6 +71,7 @@ describe("getGetAllWidgetsAccessPaths (mirrors getAllWidgets query branches)", (
       public: true,
       userWidget: false,
       teamAccess: false,
+      admin: false,
     });
   });
 
@@ -81,8 +82,27 @@ describe("getGetAllWidgetsAccessPaths (mirrors getAllWidgets query branches)", (
         userRole: "league",
         userTeamId: 5,
       }),
-      { public: true, userWidget: true, teamAccess: true }
+      { public: true, userWidget: true, teamAccess: true, admin: false }
     );
+  });
+
+  test("site admin → every widget, including private ones they are not linked to", () => {
+    assert.deepEqual(
+      getGetAllWidgetsAccessPaths({
+        userId: 1,
+        userRole: "admin",
+        userTeamId: null,
+      }),
+      { public: true, userWidget: true, teamAccess: false, admin: true }
+    );
+    const names = filterWidgetsForGetAllWidgets(ALL, {
+      userId: 1,
+      userRole: "admin",
+      userTeamId: null,
+      userLinkedWidgetIds: [],
+      teamLinkedWidgetIds: [],
+    }).map((w) => w.widget_name);
+    assert.deepEqual(names.sort(), ALL.map((w) => w.widget_name).sort());
   });
 
   test("widget developer → no team path even with team_id", () => {
@@ -92,7 +112,7 @@ describe("getGetAllWidgetsAccessPaths (mirrors getAllWidgets query branches)", (
         userRole: "widget developer",
         userTeamId: 5,
       }),
-      { public: true, userWidget: true, teamAccess: false }
+      { public: true, userWidget: true, teamAccess: false, admin: false }
     );
   });
 });

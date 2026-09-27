@@ -17,6 +17,7 @@ import {
   clearRecentWidgets,
 } from "@/lib/widgetStore";
 import { $user } from "@/lib/userStore";
+import { matchesVisibilityFilter } from "@/lib/widgetVisibility";
 import { useStore } from "@nanostores/react";
 
 export default function Widgets() {
@@ -134,13 +135,7 @@ export default function Widgets() {
           return false;
         }
 
-        const isHidden = (widget.visibility || "").toLowerCase() === "private";
-        const isActive =
-          (widget.status || "").toLowerCase() === "approved" && !isHidden;
-        if (visibilityFilter === "active" && !isActive) {
-          return false;
-        }
-        if (visibilityFilter === "hidden" && !isHidden) {
+        if (!matchesVisibilityFilter(widget, visibilityFilter)) {
           return false;
         }
 

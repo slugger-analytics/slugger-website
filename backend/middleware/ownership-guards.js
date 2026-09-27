@@ -4,6 +4,7 @@
  */
 
 import pool from "../db.js";
+import { sessionBelongsToTeam } from "../lib/teamMemberMove.js";
 
 /**
  * Middleware to require widget ownership or collaboration
@@ -115,13 +116,11 @@ export const requireTeamMembership = async (req, res, next) => {
   }
 
   try {
-    // Check if user is admin (admins can access any team)
-    if (req.session?.user?.role === 'admin') {
-      return next();
-    }
-
-    // Params arrive as strings; the session stores the database id.
-    if (String(req.session?.user?.team_id) !== String(teamId)) {
+    if (!sessionBelongsToTeam({
+      role: req.session?.user?.role,
+      sessionTeamId: req.session?.user?.team_id,
+      requestedTeamId: teamId,
+    })) {
       return res.status(403).json({
         success: false,
         message: "Access denied: You don't belong to this team"

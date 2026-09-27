@@ -43,6 +43,10 @@ export function widgetPassesGetAllWidgetsFilter(widget, context) {
   const userWidgets = new Set(userLinkedWidgetIds);
   const teamWidgets = new Set(teamLinkedWidgetIds);
 
+  if (userRole === "admin") {
+    return true;
+  }
+
   if (isPublicVisibility(widget.visibility)) {
     return true;
   }
@@ -96,6 +100,7 @@ export function getGetAllWidgetsAccessPaths({ userId, userRole, userTeamId }) {
     public: true,
     userWidget: userId != null,
     teamAccess: shouldIncludeTeamAccessRule({ userRole, userTeamId }),
+    admin: userRole === "admin",
   };
 }
 
@@ -142,6 +147,36 @@ export function userCanAccessWidget({
     userLinkedWidgetIds: userLinked && userId != null ? [widget.widget_id] : [],
     teamLinkedWidgetIds: teamLinked ? [widget.widget_id] : [],
   });
+}
+
+/**
+ * generate-token may only mint a token for the logged-in user.
+ * "4" and 4 are the same id.
+ */
+export function tokenRequestMatchesSession(sessionUserId, requestedUserId) {
+  const session = Number(sessionUserId);
+  const requested = Number(requestedUserId);
+  return Number.isInteger(session) && session === requested;
+}
+
+/**
+ * PDF downloads are named w{widgetId}-{timestamp}.pdf.
+ * Anything else, including a path, is rejected before the file is read.
+ */
+export function parseWidgetPdfFileName(fileName) {
+  if (typeof fileName !== "string" || fileName.includes("/") || fileName.includes("..")) {
+    return null;
+  }
+  const match = /^w(\d+)-\d+\.pdf$/.exec(fileName);
+  return match ? match[1] : null;
+}
+
+/**
+ * A launch is recorded for the session user. The request body cannot choose the id.
+ */
+export function launchRecordedUserId(sessionUserId) {
+  if (sessionUserId == null || sessionUserId === "") return null;
+  return sessionUserId;
 }
 
 /**

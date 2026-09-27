@@ -12,6 +12,7 @@ import {
   getAllWidgets,
   registerWidget,
   resolveWidgetRegistration,
+  resolveWidgetTeamAssignment,
   updateWidget,
   deleteWidget,
   getPendingWidgets,
@@ -20,6 +21,9 @@ import {
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
 import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
+import { canChangeWidgetVisibility } from "../lib/widgetAudience.js";
+import { launchRecordedUserId } from "../lib/widgetAccess.js";
+import { isWidgetDeveloperRole } from "../lib/widgetAssignment.js";
 import { assertCanAccessWidget, requireWidgetAccess } from "../middleware/widget-access-guard.js";
 
 const router = Router();
@@ -96,6 +100,20 @@ router.patch(
       if (!widget) return;
 
       const { name, description, redirectLink, visibility, imageUrl, publicId, restrictedAccess } = req.body;
+      if (
+        !canChangeWidgetVisibility({
+          role: req.session?.user?.role,
+          widgetRole: req.widgetUserRole,
+          currentVisibility: widget.visibility,
+          nextVisibility: visibility,
+        })
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Only an admin or the widget owner can change who can see this widget.",
+        });
+      }
+
       const updatedWidget = await updateWidget({ id, name, description, redirectLink, visibility, imageUrl, publicId, restrictedAccess });
 
       return res.status(200).json({
@@ -171,7 +189,7 @@ router.post(
  */
 router.post("/metrics", requireAuth, async (req, res) => {
   const { widgetId, metricType } = req.body;
-  const userId = req.session?.user?.user_id;
+  const userId = launchRecordedUserId(req.session?.user?.user_id);
 
   if (!widgetId || !userId) {
     return res.status(400).json({ success: false, message: "widgetId is required." });
@@ -372,7 +390,7 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
     }
 
     const { user_id: userId, email: userEmail, role } = userResult.rows[0];
-    if (role !== "widget developer") {
+    if (!isWidgetDeveloperRole(role)) {
       return res.status(400).json({
         success: false,
         message: "Only widget developers can be assigned to a widget.",
@@ -441,7 +459,7 @@ router.get("/:widgetId/teams", requireAuth, requireWidgetAccess, async (req, res
  * Replace the full set of teams with access to a private widget.
  * This is an atomic operation — if any insert fails, the whole update is rolled back.
  */
-router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
+router.put("/:widgetId/teams", requireWidgetOwner, async (req, res) => {
   const widgetId = parseId(req.params.widgetId);
   if (!widgetId) {
     return res.status(400).json({ success: false, message: "Invalid widget ID." });
@@ -460,13 +478,15 @@ router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
       return res.status(400).json({ success: false, message: "Only private widgets can have team access restrictions." });
     }
 
+    const allowedTeamIds = await resolveWidgetTeamAssignment(req.session.user, widgetId, teamIds);
+
     await pool.query("BEGIN");
 
     await pool.query("DELETE FROM widget_team_access WHERE widget_id = $1", [widgetId]);
 
     // All-or-nothing: if any teamId is invalid the transaction rolls back and the
     // client gets a clear error rather than a silent partial update.
-    for (const teamId of teamIds) {
+    for (const teamId of allowedTeamIds) {
       await pool.query(
         `INSERT INTO widget_team_access (widget_id, team_id) VALUES ($1, $2)`,
         [widgetId, teamId]
@@ -474,7 +494,7 @@ router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
     }
 
     await pool.query("COMMIT");
-    console.info(`[widgets] updateTeams — widget ${widgetId} team access updated (${teamIds.length} teams)`);
+    console.info(`[widgets] updateTeams — widget ${widgetId} team access updated (${allowedTeamIds.length} teams)`);
 
     return res.status(200).json({ success: true, message: "Widget team access updated successfully." });
   } catch (error) {
@@ -482,6 +502,9 @@ router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
       await pool.query("ROLLBACK");
     } catch (rollbackError) {
       console.error(`[widgets] updateTeams(${widgetId}) — rollback failed:`, rollbackError);
+    }
+    if (error.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
     }
     return handleError(error, res, `updateTeams(${widgetId})`);
   }

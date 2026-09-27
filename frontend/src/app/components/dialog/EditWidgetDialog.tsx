@@ -89,13 +89,18 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
   );
   const collaborators = useStore($targetWidgetCollaborators);
   const user = useStore($user);
+  const isSiteAdmin = user.role?.toLowerCase() === "admin";
   const canAssignDevelopers =
-    user.role?.toLowerCase() === "admin" ||
+    isSiteAdmin ||
     collaborators.some(
       (collaborator) =>
         String(collaborator.user_id) === String(user.id) &&
         collaborator.role === "owner",
     );
+  const canChangeAudience = canAssignDevelopers;
+  const canToggleTeam = (teamId: string) =>
+    canChangeAudience &&
+    (isSiteAdmin || String(teamId) === String(user.teamId));
 
   const { toast } = useToast();
 
@@ -216,8 +221,9 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
         },
       );
 
-      // Update team access if the widget is private
-      if (visibility === "Private" && targetWidget.id) {
+      // Update team access if the widget is private. Members cannot change
+      // which teams can see it.
+      if (canChangeAudience && visibility === "Private" && targetWidget.id) {
         
         try {
           // Pass the raw team IDs without any conversion
@@ -380,6 +386,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                   type="radio"
                   id="visibility-private"
                   checked={visibility === "Private"}
+                  disabled={!canChangeAudience}
                   onChange={() => handleSetVisibility("Private")}
                   className="h-4 w-4"
                 />
@@ -390,6 +397,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                   type="radio"
                   id="visibility-public"
                   checked={visibility === "Public"}
+                  disabled={!canChangeAudience}
                   onChange={() => handleSetVisibility("Public")}
                   className="h-4 w-4"
                 />
@@ -418,6 +426,7 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                       // Use the raw team_id value without conversion
                       const teamId = team.team_id;
                       const isChecked = selectedTeamIds.includes(teamId);
+                      const teamEnabled = canToggleTeam(teamId);
                      
                       return (
                         <div key={teamId} className="flex items-center space-x-2">
@@ -425,7 +434,9 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                             type="checkbox"
                             id={`team-${teamId}`}
                             checked={isChecked}
+                            disabled={!teamEnabled}
                             onChange={() => {
+                              if (!teamEnabled) return;
                               handleTeamSelection(teamId);
                             }}
                             className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
@@ -440,7 +451,11 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
                 )}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Select which teams can access this private widget
+                {isSiteAdmin
+                  ? "Select which teams can access this private widget"
+                  : canChangeAudience
+                    ? "You can change access for your own team. A site admin assigns other teams."
+                    : "Only an admin or the widget owner can change who can see this widget."}
               </p>
             </div>
           )}

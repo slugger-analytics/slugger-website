@@ -27,6 +27,8 @@ import {
   GENERIC_RESET_REQUEST_MESSAGE,
 } from "../lib/passwordReset.js";
 import { requireAuth, requireSiteAdmin } from "../middleware/permission-guards.js";
+import { resolveViewedUserId } from "../lib/accountLookup.js";
+import { tokenRequestMatchesSession } from "../lib/widgetAccess.js";
 import { userHasWidgetAccess } from "../middleware/widget-access-guard.js";
 import { tokenMatchesRequestedWidget } from "../lib/widgetAccess.js";
 import { shouldBlockLoginForPendingDeveloper } from "../lib/accountApproval.js";
@@ -50,18 +52,19 @@ const router = Router();
 router.get("/", requireAuth, async (req, res) => {
   const sessionUserId = req.session?.user?.user_id;
   const requestedId = req.body?.id ?? req.query?.id;
-  const isSiteAdmin = req.session?.user?.role === "admin";
-  if (
-    requestedId != null &&
-    String(requestedId) !== String(sessionUserId) &&
-    !isSiteAdmin
-  ) {
-    return res.status(403).json({
+  let id;
+  try {
+    id = resolveViewedUserId({
+      role: req.session?.user?.role,
+      sessionUserId,
+      requestedId,
+    });
+  } catch (error) {
+    return res.status(error.status || 500).json({
       success: false,
-      message: "You can only view your own account.",
+      message: error.message,
     });
   }
-  const id = isSiteAdmin && requestedId != null ? requestedId : sessionUserId;
   try {
     const user = await getUserData(id);
     res.status(200).json({
@@ -682,7 +685,7 @@ router.post("/validate-session", requireAuth, async (req, res) => {
 router.post("/generate-token", requireAuth, validationMiddleware(generateTokenSchema), async (req, res) => {
   const { userId, publicWidgetId } = req.body;
   try {
-    if (Number(req.session.user.user_id) !== Number(userId)) {
+    if (!tokenRequestMatchesSession(req.session.user.user_id, userId)) {
       return res.status(403).json({
         success: false,
         message: "Invalid session"

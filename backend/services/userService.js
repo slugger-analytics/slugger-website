@@ -7,6 +7,7 @@ import crypto from "crypto";
 import pool from "../db.js";
 import dotenv from "dotenv";
 import { createPendingDeveloper } from "./developerService.js";
+import { signupTeamFields } from "../lib/accountLookup.js";
 import cognito from "../cognito.js";
 
 dotenv.config();
@@ -202,14 +203,15 @@ export async function signUpUserWithCognito(userData) {
     // For all other users, create user in database immediately
     // Team membership is assigned only by a verified invite at sign-in,
     // or by an admin. The signup body cannot choose a team.
+    const { teamId, teamRole } = signupTeamFields();
     const newUser = await createUser({
       cognitoUserId,
       email,
       first: firstName,
       last: lastName,
       role,
-      teamId: null,
-      teamRole: null,
+      teamId,
+      teamRole,
     });
 
     return {

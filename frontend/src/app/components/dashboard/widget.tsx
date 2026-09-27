@@ -20,6 +20,7 @@ import { WidgetType } from "@/data/types";
 import { useStore } from "@nanostores/react";
 import { $favWidgetIds, setTargetWidget } from "@/lib/widgetStore";
 import { $user } from "@/lib/userStore";
+import { isApprovedWidget, isHiddenWidget } from "@/lib/widgetVisibility";
 import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
 import CategoryTag from "./category-tag";
 import { prettyNumber } from "@based/pretty-number";
@@ -55,8 +56,8 @@ export default function Widget({
   const favWidgets = useStore($favWidgetIds);
   const user = useStore($user);
   const isSiteAdmin = user.role?.toLowerCase() === "admin";
-  const isHidden = (visibility || "").toLowerCase() === "private";
-  const isActive = (status || "").toLowerCase() === "approved";
+  const isHidden = isHiddenWidget(visibility);
+  const isActive = isApprovedWidget(status);
   const isPitcherWidget = id === 268 || redirectLink?.includes("slugger-pitching-widget");
 
   // Character limit for truncated description

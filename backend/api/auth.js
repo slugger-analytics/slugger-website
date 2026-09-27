@@ -5,6 +5,7 @@ import { disableCognitoAccount } from "../services/developerService.js";
 import {
   resolvePendingDeveloperStatus,
   confirmSignupMarkedDeveloper,
+  canReadAccountStatus,
 } from "../lib/accountApproval.js";
 import { requireAuth } from "../middleware/permission-guards.js";
 
@@ -155,8 +156,11 @@ router.get("/check-status/:email", requireAuth, async (req, res) => {
   }
 
   const sessionEmail = normalizeEmail(req.session?.user?.email);
-  const isSiteAdmin = req.session?.user?.role === "admin";
-  if (!isSiteAdmin && sessionEmail !== email) {
+  if (!canReadAccountStatus({
+    role: req.session?.user?.role,
+    sessionEmail,
+    requestedEmail: email,
+  })) {
     return res.status(403).json({
       success: false,
       message: "You can only check your own account status.",

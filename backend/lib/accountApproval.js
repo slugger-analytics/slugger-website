@@ -8,6 +8,17 @@
  * @param {{ email_confirmed?: boolean } | null | undefined} row
  * @returns {"regular_user" | "pending_confirmation" | "pending_approval"}
  */
+/**
+ * check-status may reveal an email's pending state only to that person
+ * or to a site admin.
+ */
+export function canReadAccountStatus({ role, sessionEmail, requestedEmail }) {
+  if (role === "admin") return true;
+  const session = String(sessionEmail || "").trim().toLowerCase();
+  const requested = String(requestedEmail || "").trim().toLowerCase();
+  return session !== "" && session === requested;
+}
+
 export function resolvePendingDeveloperStatus(row) {
   if (!row) return "regular_user";
   return row.email_confirmed ? "pending_approval" : "pending_confirmation";
