@@ -163,7 +163,7 @@ export async function createUser(userData) {
 }
 
 export async function signUpUserWithCognito(userData) {
-  let { email, password, firstName, lastName, role, teamId, teamRole } = userData;
+  let { email, password, firstName, lastName, role } = userData;
   email = email.toLowerCase();
   
   const params = {
@@ -200,14 +200,16 @@ export async function signUpUserWithCognito(userData) {
     }
 
     // For all other users, create user in database immediately
+    // Team membership is assigned only by a verified invite at sign-in,
+    // or by an admin. The signup body cannot choose a team.
     const newUser = await createUser({
       cognitoUserId,
       email,
       first: firstName,
       last: lastName,
       role,
-      teamId,
-      teamRole
+      teamId: null,
+      teamRole: null,
     });
 
     return {

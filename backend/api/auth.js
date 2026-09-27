@@ -6,6 +6,7 @@ import {
   resolvePendingDeveloperStatus,
   confirmSignupMarkedDeveloper,
 } from "../lib/accountApproval.js";
+import { requireAuth } from "../middleware/permission-guards.js";
 
 const router = Router();
 
@@ -144,12 +145,22 @@ router.post("/confirm-signup", async (req, res) => {
 
 /**
  * GET /auth/check-status/:email
- * Return the approval status of a pending developer, or "regular_user".
+ * Return the approval status for the signed-in user, or for any email when
+ * the caller is a site admin.
  */
-router.get("/check-status/:email", async (req, res) => {
+router.get("/check-status/:email", requireAuth, async (req, res) => {
   const email = validateEmail(req.params?.email);
   if (!email) {
     return res.status(400).json({ success: false, message: "A valid email is required." });
+  }
+
+  const sessionEmail = normalizeEmail(req.session?.user?.email);
+  const isSiteAdmin = req.session?.user?.role === "admin";
+  if (!isSiteAdmin && sessionEmail !== email) {
+    return res.status(403).json({
+      success: false,
+      message: "You can only check your own account status.",
+    });
   }
 
   try {

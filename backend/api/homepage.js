@@ -11,6 +11,7 @@ import {
   createApprovedWidget,
   getAllWidgets,
   registerWidget,
+  resolveWidgetRegistration,
   updateWidget,
   deleteWidget,
   getPendingWidgets,
@@ -19,7 +20,7 @@ import {
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
 import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
-import { requireWidgetAccess } from "../middleware/widget-access-guard.js";
+import { assertCanAccessWidget, requireWidgetAccess } from "../middleware/widget-access-guard.js";
 
 const router = Router();
 
@@ -142,31 +143,38 @@ router.post(
   requireAuth,
   validationMiddleware({ bodySchema: registerWidgetSchema }),
   async (req, res) => {
-    const { widgetName, description, visibility, userId, teamIds } = req.body;
+    const { widgetName, description, visibility } = req.body;
 
     try {
-      const requestedWidget = await registerWidget(userId, widgetName, description, visibility, teamIds ?? []);
+      const { userId, teamIds } = await resolveWidgetRegistration(req.session.user, {
+        visibility,
+        teamIds: req.body.teamIds,
+      });
+      const requestedWidget = await registerWidget(userId, widgetName, description, visibility, teamIds);
       return res.status(200).json({
         success: true,
         message: "Widget registration request sent successfully.",
         data: requestedWidget,
       });
     } catch (error) {
-      return handleError(error, res, `registerWidget(user=${userId})`);
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      return handleError(error, res, "registerWidget");
     }
   },
 );
 
 /**
  * POST /widgets/metrics
- * Record a widget metric event (e.g. launch).
- * TODO: infer userId from auth store rather than body.
+ * Record a widget launch for the logged-in user.
  */
 router.post("/metrics", requireAuth, async (req, res) => {
-  const { widgetId, userId, metricType } = req.body;
+  const { widgetId, metricType } = req.body;
+  const userId = req.session?.user?.user_id;
 
   if (!widgetId || !userId) {
-    return res.status(400).json({ success: false, message: "widgetId and userId are required." });
+    return res.status(400).json({ success: false, message: "widgetId is required." });
   }
 
   if (metricType !== "launch") {
@@ -174,9 +182,12 @@ router.post("/metrics", requireAuth, async (req, res) => {
   }
 
   try {
+    const widget = await assertCanAccessWidget(req, res, widgetId);
+    if (!widget) return;
+
     const result = await pool.query(
       `INSERT INTO widget_launches (widget_id, user_id) VALUES ($1, $2) RETURNING *`,
-      [widgetId, userId]
+      [widget.widget_id, userId]
     );
     return res.status(201).json({
       success: true,
@@ -194,7 +205,7 @@ router.post("/metrics", requireAuth, async (req, res) => {
  * GET /widgets/:widgetId/categories
  * Get all categories for a widget.
  */
-router.get("/:widgetId/categories", async (req, res) => {
+router.get("/:widgetId/categories", requireAuth, requireWidgetAccess, async (req, res) => {
   const widgetId = parseId(req.params.widgetId);
   if (!widgetId) {
     return res.status(400).json({ success: false, message: "Invalid widget ID." });
@@ -355,12 +366,18 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
     const widget = await assertWidgetExists(widgetId, res, `addCollaborator(${widgetId})`);
     if (!widget) return;
 
-    const userResult = await pool.query("SELECT user_id, email FROM users WHERE email = $1", [email]);
+    const userResult = await pool.query("SELECT user_id, email, role FROM users WHERE email = $1", [email]);
     if (userResult.rowCount === 0) {
       return res.status(404).json({ success: false, message: "No user found with that email." });
     }
 
-    const { user_id: userId, email: userEmail } = userResult.rows[0];
+    const { user_id: userId, email: userEmail, role } = userResult.rows[0];
+    if (role !== "widget developer") {
+      return res.status(400).json({
+        success: false,
+        message: "Only widget developers can be assigned to a widget.",
+      });
+    }
 
     const existing = await pool.query(
       "SELECT 1 FROM user_widget WHERE user_id = $1 AND widget_id = $2",

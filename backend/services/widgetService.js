@@ -16,7 +16,53 @@ const selectWidgetById = `
 
 const DEBUG = true;
 
-// Function to register a widget
+/**
+ * The registering user comes from the session. A non-admin may only
+ * attach a private widget to the team stored on their own account.
+ */
+export async function resolveWidgetRegistration(sessionUser, { visibility, teamIds }) {
+  const sessionUserId = sessionUser?.user_id;
+  if (!sessionUserId) {
+    const error = new Error("Authentication required");
+    error.status = 401;
+    throw error;
+  }
+
+  const userResult = await pool.query(
+    "SELECT user_id, role, team_id FROM users WHERE user_id = $1",
+    [sessionUserId],
+  );
+  if (userResult.rowCount === 0) {
+    const error = new Error("User not found");
+    error.status = 401;
+    throw error;
+  }
+
+  const user = userResult.rows[0];
+  const requested = Array.isArray(teamIds) ? teamIds.map((id) => String(id)) : [];
+  let allowedTeamIds = [];
+
+  if (String(visibility || "").toLowerCase() === "private") {
+    if (user.role === "admin") {
+      allowedTeamIds = requested;
+    } else if (user.team_id != null) {
+      const ownTeamId = String(user.team_id);
+      if (requested.some((id) => id !== ownTeamId)) {
+        const error = new Error("You can only register a private widget for your own team.");
+        error.status = 403;
+        throw error;
+      }
+      allowedTeamIds = [user.team_id];
+    } else if (requested.length > 0) {
+      const error = new Error("You are not on a team, so you cannot assign this widget to a team.");
+      error.status = 403;
+      throw error;
+    }
+  }
+
+  return { userId: user.user_id, teamIds: allowedTeamIds };
+}
+
 export async function registerWidget(
   userId,
   widgetName,
@@ -545,6 +591,7 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
         widget_name: w.widget_name,
         description: w.description,
         visibility: w.visibility,
+        status: w.status,
         redirect_link: w.redirect_link,
         image_url: w.image_url,
         public_id: w.public_id,

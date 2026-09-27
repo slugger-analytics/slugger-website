@@ -19,6 +19,7 @@ import {
   $targetWidget,
   $targetWidgetCollaborators,
 } from "@/lib/widgetStore";
+import { $user } from "@/lib/userStore";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import useMutationWidgets from "@/app/hooks/use-mutation-widgets";
@@ -87,6 +88,14 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
     new Set<CategoryType>(),
   );
   const collaborators = useStore($targetWidgetCollaborators);
+  const user = useStore($user);
+  const canAssignDevelopers =
+    user.role?.toLowerCase() === "admin" ||
+    collaborators.some(
+      (collaborator) =>
+        String(collaborator.user_id) === String(user.id) &&
+        collaborator.role === "owner",
+    );
 
   const { toast } = useToast();
 
@@ -494,27 +503,29 @@ const EditWidgetDialog: React.FC<EditWidgetDialogProps> = ({
             </div>
           </div>
           <Separator></Separator>
-          <div>
-            <Label>Add Collaborator</Label>
-            <div className="flex items-center gap-2 mt-2">
-              <Input
-                placeholder="Enter email address"
-                value={newCollaboratorEmail}
-                onChange={(e) => setNewCollaboratorEmail(e.target.value)}
-              />
-              <Button
-                variant="outline"
-                onClick={handleAddCollaborator}
-                disabled={isAddingCollaborator}
-              >
-                {isAddingCollaborator ? (
-                  <div className="animate-spin">⌛</div>
-                ) : (
-                  "Add"
-                )}
-              </Button>
+          {canAssignDevelopers && (
+            <div>
+              <Label>Add Collaborator</Label>
+              <div className="flex items-center gap-2 mt-2">
+                <Input
+                  placeholder="Enter email address"
+                  value={newCollaboratorEmail}
+                  onChange={(e) => setNewCollaboratorEmail(e.target.value)}
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleAddCollaborator}
+                  disabled={isAddingCollaborator}
+                >
+                  {isAddingCollaborator ? (
+                    <div className="animate-spin">⌛</div>
+                  ) : (
+                    "Add"
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
           <Separator className="my-4" />
           <div>
             <Label>Widget Collaborators</Label>

@@ -15,6 +15,7 @@ import {
   createApprovedWidget,
   getAllWidgets,
   registerWidget,
+  resolveWidgetRegistration,
   updateWidget,
   deleteWidget,
   getPendingWidgets,
@@ -5612,15 +5613,19 @@ router.post(
   requireAuth,
   validationMiddleware({ bodySchema: registerWidgetSchema }),
   async (req, res) => {
-    const { widgetName, description, visibility, userId, teamIds } = req.body; // Extract widget details and userId from the request body
+    const { widgetName, description, visibility } = req.body;
 
     try {
+      const { userId, teamIds } = await resolveWidgetRegistration(req.session.user, {
+        visibility,
+        teamIds: req.body.teamIds,
+      });
       const requestedWidget = await registerWidget(
         userId,
         widgetName,
         description,
         visibility,
-        teamIds || [],
+        teamIds,
       );
       res.status(200).json({
         success: true,
@@ -5628,16 +5633,16 @@ router.post(
         data: requestedWidget,
       });
     } catch (error) {
-      res.status(500).json({
+      res.status(error.status || 500).json({
         success: false,
-        message: `Internal error: ${error.message}`,
+        message: error.status ? error.message : `Internal error: ${error.message}`,
       });
     }
   },
 );
 
 // Get categories for a widget
-router.get("/:widgetId/categories", async (req, res) => {
+router.get("/:widgetId/categories", requireAuth, requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
 
@@ -5778,16 +5783,27 @@ router.delete("/:widgetId/categories/:categoryId", requireWidgetOwnership, async
   }
 });
 
-router.post("/metrics", requireAuth, async (req, res) => { // TODO remove userId since should be inferred from user store
+router.post("/metrics", requireAuth, async (req, res) => {
   try {
-    const { widgetId, userId, metricType } = req.body;
+    const { widgetId, metricType } = req.body;
+    const userId = req.session?.user?.user_id;
+
+    if (!widgetId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: "widgetId is required.",
+      });
+    }
 
     if (metricType === "launch") {
+      const widget = await assertCanAccessWidget(req, res, widgetId);
+      if (!widget) return;
+
       const result = await pool.query(`
         INSERT INTO widget_launches (widget_id, user_id)
         VALUES ($1, $2)
         RETURNING *
-      `, [widgetId, userId]);
+      `, [widget.widget_id, userId]);
 
       return res.status(201).json({
         success: true,
@@ -5833,6 +5849,29 @@ router.post('/:widgetId/developers', requireWidgetOwner, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const developerId = parseInt(req.body.developerId);
+    if (!Number.isInteger(developerId)) {
+      return res.status(400).json({
+        success: false,
+        message: "A valid developer is required.",
+      });
+    }
+
+    const developerResult = await pool.query(
+      `SELECT user_id, role FROM users WHERE user_id = $1`,
+      [developerId],
+    );
+    if (developerResult.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Developer not found.",
+      });
+    }
+    if (developerResult.rows[0].role !== "widget developer") {
+      return res.status(400).json({
+        success: false,
+        message: "Only widget developers can be assigned to a widget.",
+      });
+    }
 
     // Check if developer is already added to widget
     const alreadyDevRes = await pool.query(`
@@ -5882,13 +5921,20 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
     }
 
     // Look up user by email
-    const userQuery = 'SELECT user_id FROM users WHERE email = $1';
+    const userQuery = 'SELECT user_id, role FROM users WHERE email = $1';
     const userResult = await pool.query(userQuery, [email]);
     
     if (userResult.rows.length === 0) {
       return res.status(404).json({
         success: false,
         message: "User not found with this email"
+      });
+    }
+
+    if (userResult.rows[0].role !== "widget developer") {
+      return res.status(400).json({
+        success: false,
+        message: "Only widget developers can be assigned to a widget.",
       });
     }
     

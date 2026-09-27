@@ -13,6 +13,13 @@ import { PendingDeveloper } from "@/data/types";
 import { Card } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 
+function formatRequestTime(value?: string) {
+  if (!value) return "Unknown";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unknown";
+  return date.toLocaleString();
+}
+
 export default function PendingDevelopersPage() {
   const [requests, setRequests] = useState<PendingDeveloper[]>([]);
   const [status, setStatus] = useState<string | null>(null);
@@ -98,6 +105,12 @@ export default function PendingDevelopersPage() {
                       {request.first_name} {request.last_name}
                     </h3>
                     <p className="text-gray-600 mb-2">{request.email}</p>
+                    <p className="text-sm text-gray-500 mb-1">
+                      Widget: Not assigned
+                    </p>
+                    <p className="text-sm text-gray-500 mb-1">
+                      Requested: {formatRequestTime(request.created_at)}
+                    </p>
                       <p className="text-sm text-yellow-600 mb-4">
                       Status: {request.status}
                     </p>

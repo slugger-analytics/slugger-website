@@ -5,6 +5,7 @@ import {
   getPendingDevelopers,
   getAllDevelopersWithWidgets,
   getAllApprovedWidgets,
+  updateDeveloperWidgetRole,
 } from "../services/developerService.js";
 import { requireSiteAdmin } from "../middleware/permission-guards.js";
 import { parseApprovalRequestId, mapApprovalServiceError } from "../lib/accountApproval.js";
@@ -104,6 +105,36 @@ router.get("/widgets", requireSiteAdmin, async (req, res) => {
  * GET /developers
  * Fetch all developers with their associated widgets.
  */
+const WIDGET_ROLES = new Set(["member", "owner"]);
+
+/**
+ * PATCH /developers/:userId/widgets/:widgetId/role
+ * Change a developer's role on one widget.
+ */
+router.patch("/:userId/widgets/:widgetId/role", requireSiteAdmin, async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  const widgetId = parseInt(req.params.widgetId, 10);
+  const role = typeof req.body?.role === "string" ? req.body.role : "";
+  if (!Number.isInteger(userId) || !Number.isInteger(widgetId) || !WIDGET_ROLES.has(role)) {
+    return res.status(400).json({
+      success: false,
+      message: "A valid developer, widget, and role (member or owner) are required.",
+    });
+  }
+  try {
+    const updated = await updateDeveloperWidgetRole(userId, widgetId, role);
+    if (!updated) {
+      return res.status(404).json({
+        success: false,
+        message: "That developer is not assigned to this widget.",
+      });
+    }
+    return res.status(200).json({ success: true, data: updated });
+  } catch (error) {
+    return handleServiceError(error, res, "updateDeveloperWidgetRole");
+  }
+});
+
 router.get("/", requireSiteAdmin, async (req, res) => {
   try {
     const result = await getAllDevelopersWithWidgets();

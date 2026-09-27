@@ -178,6 +178,7 @@ export async function getAllDevelopersWithWidgets() {
             'widget_name', w.widget_name,
             'visibility', w.visibility,
             'status', w.status,
+            'role', uw.role,
             'teams', (
               SELECT json_agg(
                 json_build_object(
@@ -203,4 +204,17 @@ export async function getAllDevelopersWithWidgets() {
   } finally {
     client.release();
   }
+}
+
+export async function updateDeveloperWidgetRole(userId, widgetId, role) {
+  const result = await pool.query(
+    `
+      UPDATE user_widget
+      SET role = $3
+      WHERE user_id = $1 AND widget_id = $2
+      RETURNING user_id, widget_id, role
+    `,
+    [userId, widgetId, role],
+  );
+  return result.rows[0] || null;
 }

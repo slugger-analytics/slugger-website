@@ -282,6 +282,7 @@ export interface DeveloperWidget {
   widget_name: string;
   visibility: string;
   status: string;
+  role: string;
   teams: WidgetTeam[] | null;
 }
 

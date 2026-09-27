@@ -15,6 +15,7 @@ import { streamToString } from "../utils/stream.js";
 import pool from "../db.js";
 import * as teamService from "../services/teamService.js";
 import * as pointstreakService from "../services/pointstreakService.js";
+import { requireAuth } from "../middleware/permission-guards.js";
 
 dotenv.config();
 
@@ -975,7 +976,7 @@ async function generateParameterizedAnalysis(teamIds, playerIds, analysisType, r
  * POST /api/super-widget/parameterized-analysis
  * Handles targeted analysis requests with real League data
  */
-router.post('/', async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const { teamIds = [], playerIds = [], analysisType = "group" } = req.body;
 
@@ -1183,7 +1184,7 @@ router.post('/', async (req, res) => {
  * GET /api/super-widget/parameterized-analysis
  * Returns API documentation and available teams/players
  */
-router.get('/', async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const { teamId } = req.query; // Optional filter parameter
 

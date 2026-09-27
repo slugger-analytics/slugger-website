@@ -132,6 +132,7 @@ export const fetchWidgets = async (): Promise<WidgetType[]> => {
       description: w.description || "",
       widgetId: w.widget_id || "",
       visibility: w.visibility || "Public",
+      status: w.status || "",
       redirectLink: w.redirect_link || "",
       imageUrl: w.image_url || undefined,
       developerIds: w.developer_ids || [],

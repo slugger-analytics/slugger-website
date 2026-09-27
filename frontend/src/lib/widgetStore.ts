@@ -76,6 +76,7 @@ export const $activeCategoryIds = atom<Set<number>>(new Set([]));
 export const $sortBy = atom<string>("launch_count");
 export const $sortDirection = atom<string>("asc");
 export const $timeFrame = atom<string>("weekly");
+export const $visibilityFilter = atom<"all" | "active" | "hidden">("all");
 
 export const $widgetsVersion = atom<number>(0);
 export const $filtersVersion = atom<number>(0);
@@ -97,6 +98,7 @@ export function clearWidgetStore() {
   $sortBy.set("launch_count");
   $sortDirection.set("asc");
   $timeFrame.set("weekly");
+  $visibilityFilter.set("all");
 
   $widgetsVersion.set(0);
   $filtersVersion.set(0);

@@ -48,7 +48,20 @@ const router = Router();
  * Retrieve user data by ID.
  */
 router.get("/", requireAuth, async (req, res) => {
-  const { id } = req.body;
+  const sessionUserId = req.session?.user?.user_id;
+  const requestedId = req.body?.id ?? req.query?.id;
+  const isSiteAdmin = req.session?.user?.role === "admin";
+  if (
+    requestedId != null &&
+    String(requestedId) !== String(sessionUserId) &&
+    !isSiteAdmin
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: "You can only view your own account.",
+    });
+  }
+  const id = isSiteAdmin && requestedId != null ? requestedId : sessionUserId;
   try {
     const user = await getUserData(id);
     res.status(200).json({
