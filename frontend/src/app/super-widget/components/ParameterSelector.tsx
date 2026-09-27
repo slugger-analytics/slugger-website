@@ -109,7 +109,9 @@ export function ParameterSelector({
     const fetchTeams = async () => {
       try {
         setLoadingTeams(true);
-        const response = await fetch(buildApiUrl('/api/super-widget/parameterized-analysis'));
+        const response = await fetch(buildApiUrl('/api/super-widget/parameterized-analysis'), {
+          credentials: "include",
+        });
         if (response.ok) {
           const data = await response.json();
           setAllTeams(data.availableTeams || []);
@@ -130,7 +132,9 @@ export function ParameterSelector({
     const fetchPlayers = async () => {
       try {
         setLoadingPlayers(true);
-        const response = await fetch(buildApiUrl('/api/super-widget/parameterized-analysis'));
+        const response = await fetch(buildApiUrl('/api/super-widget/parameterized-analysis'), {
+          credentials: "include",
+        });
         if (response.ok) {
           const data = await response.json();
           setAllPlayers(data.availablePlayers || []);

@@ -1,7 +1,9 @@
 import { API_URL } from "./config";
 
 export const checkAccountStatus = async (email: string) => {
-  const response = await fetch(`${API_URL}/api/auth/check-status/${email}`);
+  const response = await fetch(`${API_URL}/api/auth/check-status/${encodeURIComponent(email)}`, {
+    credentials: "include",
+  });
   const data = await response.json();
   return data.status;
 };

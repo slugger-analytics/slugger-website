@@ -20,7 +20,7 @@ import {
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
 import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
-import { requireWidgetAccess } from "../middleware/widget-access-guard.js";
+import { assertCanAccessWidget, requireWidgetAccess } from "../middleware/widget-access-guard.js";
 
 const router = Router();
 
@@ -167,14 +167,14 @@ router.post(
 
 /**
  * POST /widgets/metrics
- * Record a widget metric event (e.g. launch).
- * TODO: infer userId from auth store rather than body.
+ * Record a widget launch for the logged-in user.
  */
 router.post("/metrics", requireAuth, async (req, res) => {
-  const { widgetId, userId, metricType } = req.body;
+  const { widgetId, metricType } = req.body;
+  const userId = req.session?.user?.user_id;
 
   if (!widgetId || !userId) {
-    return res.status(400).json({ success: false, message: "widgetId and userId are required." });
+    return res.status(400).json({ success: false, message: "widgetId is required." });
   }
 
   if (metricType !== "launch") {
@@ -182,9 +182,12 @@ router.post("/metrics", requireAuth, async (req, res) => {
   }
 
   try {
+    const widget = await assertCanAccessWidget(req, res, widgetId);
+    if (!widget) return;
+
     const result = await pool.query(
       `INSERT INTO widget_launches (widget_id, user_id) VALUES ($1, $2) RETURNING *`,
-      [widgetId, userId]
+      [widget.widget_id, userId]
     );
     return res.status(201).json({
       success: true,
@@ -202,7 +205,7 @@ router.post("/metrics", requireAuth, async (req, res) => {
  * GET /widgets/:widgetId/categories
  * Get all categories for a widget.
  */
-router.get("/:widgetId/categories", async (req, res) => {
+router.get("/:widgetId/categories", requireAuth, requireWidgetAccess, async (req, res) => {
   const widgetId = parseId(req.params.widgetId);
   if (!widgetId) {
     return res.status(400).json({ success: false, message: "Invalid widget ID." });

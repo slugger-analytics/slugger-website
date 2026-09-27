@@ -294,6 +294,7 @@ export default function SuperWidgetParameterizedPage() {
 
         const response = await fetch(buildApiUrl("/api/super-widget/parameterized-analysis"), {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json"
           },

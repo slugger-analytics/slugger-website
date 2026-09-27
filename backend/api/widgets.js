@@ -5642,7 +5642,7 @@ router.post(
 );
 
 // Get categories for a widget
-router.get("/:widgetId/categories", async (req, res) => {
+router.get("/:widgetId/categories", requireAuth, requireWidgetAccess, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
 
@@ -5783,16 +5783,27 @@ router.delete("/:widgetId/categories/:categoryId", requireWidgetOwnership, async
   }
 });
 
-router.post("/metrics", requireAuth, async (req, res) => { // TODO remove userId since should be inferred from user store
+router.post("/metrics", requireAuth, async (req, res) => {
   try {
-    const { widgetId, userId, metricType } = req.body;
+    const { widgetId, metricType } = req.body;
+    const userId = req.session?.user?.user_id;
+
+    if (!widgetId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: "widgetId is required.",
+      });
+    }
 
     if (metricType === "launch") {
+      const widget = await assertCanAccessWidget(req, res, widgetId);
+      if (!widget) return;
+
       const result = await pool.query(`
         INSERT INTO widget_launches (widget_id, user_id)
         VALUES ($1, $2)
         RETURNING *
-      `, [widgetId, userId]);
+      `, [widget.widget_id, userId]);
 
       return res.status(201).json({
         success: true,
