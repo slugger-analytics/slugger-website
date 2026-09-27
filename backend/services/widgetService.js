@@ -6,6 +6,7 @@ const apiGateway = new APIGateway({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
 import pool from "../db.js";
+import { nextWidgetTeamIds } from "../lib/widgetAudience.js";
 import { logWithFunctionName } from "../utils/logging.js";
 
 const selectWidgetById = `
@@ -61,6 +62,43 @@ export async function resolveWidgetRegistration(sessionUser, { visibility, teamI
   }
 
   return { userId: user.user_id, teamIds: allowedTeamIds };
+}
+
+/**
+ * Team ids to store on a private widget.
+ * A site admin may replace the list. Anyone else may only add or remove
+ * their own team; teams already granted stay in place.
+ */
+export async function resolveWidgetTeamAssignment(sessionUser, widgetId, requestedTeamIds) {
+  const sessionUserId = sessionUser?.user_id;
+  if (!sessionUserId) {
+    const error = new Error("Authentication required");
+    error.status = 401;
+    throw error;
+  }
+
+  const userResult = await pool.query(
+    "SELECT user_id, role, team_id FROM users WHERE user_id = $1",
+    [sessionUserId],
+  );
+  if (userResult.rowCount === 0) {
+    const error = new Error("User not found");
+    error.status = 401;
+    throw error;
+  }
+
+  const user = userResult.rows[0];
+  const currentResult = await pool.query(
+    "SELECT team_id FROM widget_team_access WHERE widget_id = $1",
+    [widgetId],
+  );
+
+  return nextWidgetTeamIds({
+    role: user.role,
+    teamId: user.team_id,
+    currentTeamIds: currentResult.rows.map((row) => row.team_id),
+    requestedTeamIds,
+  });
 }
 
 export async function registerWidget(

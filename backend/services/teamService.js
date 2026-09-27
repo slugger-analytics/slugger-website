@@ -106,16 +106,16 @@ export async function demoteTeamMember(teamId, memberId) {
   }
 }
 
-export async function updateMemberTeam(newTeamId, memberId) {
+export async function updateMemberTeam(origTeamId, newTeamId, memberId) {
   try {
     const result = await pool.query(
       `
             UPDATE users
             SET team_id = $1
-            WHERE user_id = $2
+            WHERE user_id = $2 AND team_id = $3 AND role = 'league'
             RETURNING *
         `,
-      [newTeamId, memberId],
+      [newTeamId, memberId, origTeamId],
     );
     const updatedMember = result.rows[0];
     return updatedMember;

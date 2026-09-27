@@ -16,6 +16,7 @@ import {
   getAllWidgets,
   registerWidget,
   resolveWidgetRegistration,
+  resolveWidgetTeamAssignment,
   updateWidget,
   deleteWidget,
   getPendingWidgets,
@@ -24,6 +25,7 @@ import {
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
 import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
+import { canChangeWidgetVisibility } from "../lib/widgetAudience.js";
 import {
   assertCanAccessWidget,
   requireWidgetAccess,
@@ -5555,6 +5557,20 @@ router.patch(
         return;
       }
 
+      if (
+        !canChangeWidgetVisibility({
+          role: req.session?.user?.role,
+          widgetRole: req.widgetUserRole,
+          currentVisibility: targetWidgetRes.rows[0].visibility,
+          nextVisibility: visibility,
+        })
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Only an admin or the widget owner can change who can see this widget.",
+        });
+      }
+
       const updatedWidget = await updateWidget({
         id,
         name,
@@ -6070,7 +6086,7 @@ router.get("/:widgetId/teams", requireAuth, requireWidgetAccess, async (req, res
 });
 
 // Update teams with access to a widget
-router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
+router.put("/:widgetId/teams", requireWidgetOwner, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
     const { teamIds } = req.body;
@@ -6100,6 +6116,16 @@ router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
       });
     }
 
+    let allowedTeamIds;
+    try {
+      allowedTeamIds = await resolveWidgetTeamAssignment(req.session.user, widgetId, teamIds);
+    } catch (assignmentError) {
+      return res.status(assignmentError.status || 500).json({
+        success: false,
+        message: assignmentError.message,
+      });
+    }
+
     // Start a transaction
     await pool.query('BEGIN');
 
@@ -6110,8 +6136,8 @@ router.put("/:widgetId/teams", requireWidgetOwnership, async (req, res) => {
     );
 
     // Add new team access - using individual inserts to handle errors better
-    if (teamIds.length > 0) {
-      for (const teamId of teamIds) {
+    if (allowedTeamIds.length > 0) {
+      for (const teamId of allowedTeamIds) {
         try {
           await pool.query(
             `INSERT INTO widget_team_access (widget_id, team_id) 

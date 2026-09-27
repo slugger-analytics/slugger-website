@@ -16,6 +16,7 @@ import { getUserData } from "../services/widgetService.js";
 import pool from "../db.js";
 import { requireTeamAdmin, refreshUserAdminStatus } from "../middleware/permission-guards.js";
 import { requireTeamMembership } from "../middleware/ownership-guards.js";
+import { rejectTeamMemberMove } from "../lib/teamMemberMove.js";
 
 const router = Router();
 
@@ -250,8 +251,26 @@ router.patch(
           message: "Team not found"
         });
       }
-      await getTeamMember(origTeamId, memberId); // ensure team member exists
-      const updatedMember = await updateMemberTeam(newTeamId, memberId);
+      const member = await getTeamMember(origTeamId, memberId);
+      const rejected = rejectTeamMemberMove({
+        isSiteAdmin: req.session?.user?.role === "admin",
+        origTeamId,
+        newTeamId,
+        memberFound: Boolean(member),
+      });
+      if (rejected) {
+        return res.status(rejected.status).json({
+          success: false,
+          message: rejected.message,
+        });
+      }
+      const updatedMember = await updateMemberTeam(origTeamId, newTeamId, memberId);
+      if (!updatedMember) {
+        return res.status(404).json({
+          success: false,
+          message: "Team member not found",
+        });
+      }
       res.status(200).json({
         success: true,
         message: `Team member's team changed successfully`,
