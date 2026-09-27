@@ -6,7 +6,7 @@ const apiGateway = new APIGateway({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
 });
 import pool from "../db.js";
-import { nextWidgetTeamIds } from "../lib/widgetAudience.js";
+import { nextWidgetTeamIds, registrationTeamIds } from "../lib/widgetAudience.js";
 import { logWithFunctionName } from "../utils/logging.js";
 
 const selectWidgetById = `
@@ -40,28 +40,15 @@ export async function resolveWidgetRegistration(sessionUser, { visibility, teamI
   }
 
   const user = userResult.rows[0];
-  const requested = Array.isArray(teamIds) ? teamIds.map((id) => String(id)) : [];
-  let allowedTeamIds = [];
-
-  if (String(visibility || "").toLowerCase() === "private") {
-    if (user.role === "admin") {
-      allowedTeamIds = requested;
-    } else if (user.team_id != null) {
-      const ownTeamId = String(user.team_id);
-      if (requested.some((id) => id !== ownTeamId)) {
-        const error = new Error("You can only register a private widget for your own team.");
-        error.status = 403;
-        throw error;
-      }
-      allowedTeamIds = [user.team_id];
-    } else if (requested.length > 0) {
-      const error = new Error("You are not on a team, so you cannot assign this widget to a team.");
-      error.status = 403;
-      throw error;
-    }
-  }
-
-  return { userId: user.user_id, teamIds: allowedTeamIds };
+  return {
+    userId: user.user_id,
+    teamIds: registrationTeamIds({
+      role: user.role,
+      teamId: user.team_id,
+      visibility,
+      requestedTeamIds: teamIds,
+    }),
+  };
 }
 
 /**

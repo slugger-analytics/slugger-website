@@ -22,6 +22,8 @@ import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.j
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
 import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
 import { canChangeWidgetVisibility } from "../lib/widgetAudience.js";
+import { launchRecordedUserId } from "../lib/widgetAccess.js";
+import { isWidgetDeveloperRole } from "../lib/widgetAssignment.js";
 import { assertCanAccessWidget, requireWidgetAccess } from "../middleware/widget-access-guard.js";
 
 const router = Router();
@@ -187,7 +189,7 @@ router.post(
  */
 router.post("/metrics", requireAuth, async (req, res) => {
   const { widgetId, metricType } = req.body;
-  const userId = req.session?.user?.user_id;
+  const userId = launchRecordedUserId(req.session?.user?.user_id);
 
   if (!widgetId || !userId) {
     return res.status(400).json({ success: false, message: "widgetId is required." });
@@ -388,7 +390,7 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
     }
 
     const { user_id: userId, email: userEmail, role } = userResult.rows[0];
-    if (role !== "widget developer") {
+    if (!isWidgetDeveloperRole(role)) {
       return res.status(400).json({
         success: false,
         message: "Only widget developers can be assigned to a widget.",

@@ -9,6 +9,7 @@ import {
 } from "../services/developerService.js";
 import { requireSiteAdmin } from "../middleware/permission-guards.js";
 import { parseApprovalRequestId, mapApprovalServiceError } from "../lib/accountApproval.js";
+import { isAssignableWidgetRole } from "../lib/widgetAssignment.js";
 
 const router = Router();
 
@@ -102,12 +103,6 @@ router.get("/widgets", requireSiteAdmin, async (req, res) => {
 });
 
 /**
- * GET /developers
- * Fetch all developers with their associated widgets.
- */
-const WIDGET_ROLES = new Set(["member", "owner"]);
-
-/**
  * PATCH /developers/:userId/widgets/:widgetId/role
  * Change a developer's role on one widget.
  */
@@ -115,7 +110,7 @@ router.patch("/:userId/widgets/:widgetId/role", requireSiteAdmin, async (req, re
   const userId = parseInt(req.params.userId, 10);
   const widgetId = parseInt(req.params.widgetId, 10);
   const role = typeof req.body?.role === "string" ? req.body.role : "";
-  if (!Number.isInteger(userId) || !Number.isInteger(widgetId) || !WIDGET_ROLES.has(role)) {
+  if (!Number.isInteger(userId) || !Number.isInteger(widgetId) || !isAssignableWidgetRole(role)) {
     return res.status(400).json({
       success: false,
       message: "A valid developer, widget, and role (member or owner) are required.",

@@ -24,7 +24,8 @@ import {
 } from "../services/widgetService.js";
 import { requireSiteAdmin, requireAuth } from "../middleware/permission-guards.js";
 import { requireWidgetOwnership, requireWidgetOwner } from "../middleware/ownership-guards.js";
-import { resolveWidgetListViewer } from "../lib/widgetAccess.js";
+import { launchRecordedUserId, parseWidgetPdfFileName, resolveWidgetListViewer } from "../lib/widgetAccess.js";
+import { isWidgetDeveloperRole, parseAssigneeId } from "../lib/widgetAssignment.js";
 import { canChangeWidgetVisibility } from "../lib/widgetAudience.js";
 import {
   assertCanAccessWidget,
@@ -4390,12 +4391,12 @@ const selectOutfielderBatterInPage = async (page, { playerNames = [] } = {}) => 
 router.get("/exports/:fileName", requireAuth, async (req, res) => {
   try {
     const fileName = req.params.fileName;
-    const match = /^w(\d+)-\d+\.pdf$/.exec(fileName || "");
-    if (!match || fileName.includes("/") || fileName.includes("..")) {
+    const widgetIdFromFile = parseWidgetPdfFileName(fileName);
+    if (!widgetIdFromFile) {
       return res.status(400).json({ success: false, message: "Invalid file name" });
     }
 
-    const widget = await assertCanAccessWidget(req, res, match[1]);
+    const widget = await assertCanAccessWidget(req, res, widgetIdFromFile);
     if (!widget) return;
 
     const filePath = path.join(widgetPdfDirectory, fileName);
@@ -5802,7 +5803,7 @@ router.delete("/:widgetId/categories/:categoryId", requireWidgetOwnership, async
 router.post("/metrics", requireAuth, async (req, res) => {
   try {
     const { widgetId, metricType } = req.body;
-    const userId = req.session?.user?.user_id;
+    const userId = launchRecordedUserId(req.session?.user?.user_id);
 
     if (!widgetId || !userId) {
       return res.status(400).json({
@@ -5864,8 +5865,8 @@ router.get('/:widgetId/developers', requireAuth, requireWidgetAccess, async (req
 router.post('/:widgetId/developers', requireWidgetOwner, async (req, res) => {
   try {
     const widgetId = parseInt(req.params.widgetId);
-    const developerId = parseInt(req.body.developerId);
-    if (!Number.isInteger(developerId)) {
+    const developerId = parseAssigneeId(req.body.developerId);
+    if (developerId == null) {
       return res.status(400).json({
         success: false,
         message: "A valid developer is required.",
@@ -5882,7 +5883,7 @@ router.post('/:widgetId/developers', requireWidgetOwner, async (req, res) => {
         message: "Developer not found.",
       });
     }
-    if (developerResult.rows[0].role !== "widget developer") {
+    if (!isWidgetDeveloperRole(developerResult.rows[0].role)) {
       return res.status(400).json({
         success: false,
         message: "Only widget developers can be assigned to a widget.",
@@ -5947,7 +5948,7 @@ router.post("/:widgetId/collaborators", requireWidgetOwner, async (req, res) => 
       });
     }
 
-    if (userResult.rows[0].role !== "widget developer") {
+    if (!isWidgetDeveloperRole(userResult.rows[0].role)) {
       return res.status(400).json({
         success: false,
         message: "Only widget developers can be assigned to a widget.",
