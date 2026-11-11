@@ -14,6 +14,7 @@ import {
 import { Input } from "@/app/components/ui/input";
 import LogoButton from "../components/navbar/LogoButton";
 import { setUser } from "@/lib/userStore";
+import { permissionsForSeat, resolveAccountSeat } from "@/lib/accountPermissions";
 import { LoginType, UserAPIResType } from "@/data/types";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -66,10 +67,19 @@ const LoginForm = () => {
       }
 
       // Handle successful login and redirect based on user role
-      if (result.user.role === "admin") {
-        router.push("/pending-developers"); // Redirect to pending developers page for admin role
+      const signedInSeat = resolveAccountSeat({
+        role: result.user.role,
+        is_admin: result.user.is_admin,
+        teamId: result.user.teamId,
+        teamRole: typeof result.user.teamRole === "string" ? result.user.teamRole : undefined,
+      });
+      const signedInPerms = permissionsForSeat(signedInSeat);
+      if (signedInPerms.approveSite) {
+        router.push("/pending-developers");
+      } else if (signedInPerms.home) {
+        router.push("/homepage");
       } else {
-        router.push("/homepage"); // Redirect to homepage for other roles
+        router.push("/around-league");
       }
     } catch (error) {
       toast({

@@ -7,6 +7,7 @@ const apiGateway = new APIGateway({
 });
 import pool from "../db.js";
 import { nextWidgetTeamIds, registrationTeamIds } from "../lib/widgetAudience.js";
+import { permissionsForUser } from "../lib/accountPermissions.js";
 import { logWithFunctionName } from "../utils/logging.js";
 
 const selectWidgetById = `
@@ -40,6 +41,12 @@ export async function resolveWidgetRegistration(sessionUser, { visibility, teamI
   }
 
   const user = userResult.rows[0];
+  const perms = permissionsForUser(user);
+  if (perms.createPrivateWidget && !perms.registerPublicWidget && String(visibility || "").toLowerCase() !== "private") {
+    const error = new Error("Private widget developers can only create widgets that stay private to their team.");
+    error.status = 403;
+    throw error;
+  }
   return {
     userId: user.user_id,
     teamIds: registrationTeamIds({
@@ -474,12 +481,14 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
     // Determine user's team & role (reuse existing logic if available)
     let userTeamId = null;
     let userRole = null;
+    let userRecord = null;
     if (userId) {
       try {
-        const userResult = await pool.query("SELECT team_id, role FROM users WHERE user_id = $1", [parseInt(userId, 10)]);
+        const userResult = await pool.query("SELECT team_id, role, is_admin, team_role FROM users WHERE user_id = $1", [parseInt(userId, 10)]);
         if (userResult.rows.length > 0) {
           userTeamId = userResult.rows[0].team_id || null;
           userRole = userResult.rows[0].role || null;
+          userRecord = userResult.rows[0];
         }
       } catch (err) {
         console.error("Error fetching user team/role:", err);
@@ -498,12 +507,24 @@ export async function getAllWidgets(widget_name, categories, page = 1, limit = 5
       baseParams.push(parseInt(userId, 10));
       accessConditions.push(`EXISTS (SELECT 1 FROM user_widget uw2 WHERE uw2.widget_id = w.widget_id AND uw2.user_id = $${baseParams.length})`);
     }
-    if (userTeamId && userRole !== 'widget developer') {
+    const accountPerms = permissionsForUser({
+      role: userRole,
+      is_admin: userRecord?.is_admin,
+      team_role: userRecord?.team_role,
+      team_id: userTeamId,
+    });
+    if (userTeamId && accountPerms.widgets && !accountPerms.clubhouseOnly && userRole !== "widget developer" && userRole !== "public widget developer") {
       baseParams.push(userTeamId);
       accessConditions.push(`EXISTS (SELECT 1 FROM widget_team_access wta WHERE wta.widget_id = w.widget_id AND wta.team_id = $${baseParams.length})`);
     }
+    if (accountPerms.everyRoster) {
+      accessConditions.push(`EXISTS (SELECT 1 FROM widget_team_access wta_all WHERE wta_all.widget_id = w.widget_id)`);
+    }
 
     const filters = [`(${accessConditions.join(" OR ")})`];
+    if (accountPerms.clubhouseOnly) {
+      filters.push(`(w.widget_name ILIKE '%clubhouse%' OR w.redirect_link ILIKE '%clubhouse%')`);
+    }
     if (widget_name) {
       baseParams.push(`%${widget_name.toLowerCase()}%`);
       filters.push(`LOWER(w.widget_name) ILIKE $${baseParams.length}`);

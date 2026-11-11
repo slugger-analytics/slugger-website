@@ -9,7 +9,7 @@ import { AppSidebar } from "../components/app-sidebar";
 
 export default function Home() {
   return (
-    <ProtectedRoute role="widget developer">
+    <ProtectedRoute permission="registerPublicWidget">
       <SidebarProvider>
         {" "}
         {/* Ensures the route is protected and only accessible to authorized users */}

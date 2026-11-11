@@ -89,12 +89,22 @@ router.post("/sign-up", async (req, res) => {
     const { role } = req.body;
 
     // Only allow non-privileged roles for public sign-up
-    const allowedRoles = ["widget developer", "league"];
+    const allowedRoles = [
+      "widget developer",
+      "league",
+      "league office",
+      "team side",
+      "public",
+      "player",
+      "coach",
+      "clubhouse manager",
+      "private widget developer",
+    ];
 
     if (!role || !allowedRoles.includes(role)) {
       res.status(400).json({
         success: false,
-        message: "Invalid role. Allowed roles: widget developer, league"
+        message: "Choose League Office, a Team Side seat, or Public Widget Developer."
       });
       return;
     }
@@ -107,7 +117,7 @@ router.post("/sign-up", async (req, res) => {
       data: result.user
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error.status || 500).json({
       success: false,
       message: error.message || "Error registering user"
     });
@@ -400,10 +410,23 @@ router.post('/refresh-token', async (req, res) => {
   }
 });
 
+function clearLoginCookies(res) {
+  const useSecureCookies = process.env.NODE_ENV === 'production' && process.env.LOCAL_DEV !== 'true';
+  const base = {
+    path: '/',
+    secure: useSecureCookies,
+    sameSite: useSecureCookies ? 'none' : 'lax',
+  };
+  res.clearCookie('connect.sid', { ...base, httpOnly: true });
+  res.clearCookie('accessToken', { ...base, httpOnly: true });
+  res.clearCookie('sluggerUserName', { ...base, httpOnly: false });
+}
+
 router.post('/logout', async (req, res) => {
   try {
     // If there's no data in the session, nothing to do
     if (!req.session || !req.session.user) {
+      clearLoginCookies(res);
       return res.status(200).json({
         success: true,
         message: 'Already logged out'
@@ -417,13 +440,7 @@ router.post('/logout', async (req, res) => {
         return res.status(500).json({ error: 'Failed to complete logout' });
       }
 
-      // Clear the session cookie
-      res.clearCookie('connect.sid', {
-        path: '/',
-        httpOnly: true,
-        secure: false, // TODO change to true for prod
-        sameSite: 'strict'
-      });
+      clearLoginCookies(res);
 
       res.status(200).json({
         success: true,

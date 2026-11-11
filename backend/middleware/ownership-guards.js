@@ -120,6 +120,8 @@ export const requireTeamMembership = async (req, res, next) => {
       role: req.session?.user?.role,
       sessionTeamId: req.session?.user?.team_id,
       requestedTeamId: teamId,
+      isAdmin: req.session?.user?.is_admin,
+      teamRole: req.session?.user?.team_role,
     })) {
       return res.status(403).json({
         success: false,

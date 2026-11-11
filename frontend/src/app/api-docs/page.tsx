@@ -25,7 +25,7 @@ export default function APIDocs() {
   }, []);
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission="apiDocs">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

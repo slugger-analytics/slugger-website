@@ -98,7 +98,7 @@ export default function PendingWidgetsPage() {
   };
 
   return (
-    <ProtectedRoute role="admin">
+    <ProtectedRoute permission="approveSite">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

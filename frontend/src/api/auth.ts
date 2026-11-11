@@ -6,7 +6,19 @@ import { API_URL } from "./config";
  * Includes functions to sign up and log in users via the backend API.
  */
 const DEBUG = false;
-export type RoleType = "admin" | "master" | "widget developer" | "league";
+export type RoleType =
+  | "admin"
+  | "master"
+  | "widget developer"
+  | "league"
+  | "player"
+  | "coach"
+  | "clubhouse manager"
+  | "private widget developer"
+  | "team admin"
+  | "league office"
+  | "team side"
+  | "public";
 
 /**
  * Signs up a new user by sending their details to the backend API.

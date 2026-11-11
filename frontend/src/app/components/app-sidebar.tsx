@@ -19,12 +19,33 @@ import Image from "next/image";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/userStore";
 import { Users } from "lucide-react";
+import {
+  readViewAs,
+  resolveAccountSeat,
+  seatLabel,
+  SEATS,
+  VIEW_AS_SEATS,
+  writeViewAs,
+  type AccountSeat,
+} from "@/lib/accountPermissions";
+import { useRouter } from "next/navigation";
 // This is sample data.
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const user = useStore($user);
+  const router = useRouter();
   const [roleDisplay, setRoleDisplay] = React.useState("");
-  const [navMain, setNavMain] = React.useState([
+  const [viewAs, setViewAs] = React.useState<AccountSeat | "">("");
+  const [mounted, setMounted] = React.useState(false);
+  const realSeat = resolveAccountSeat({
+    role: user.role,
+    is_admin: user.is_admin,
+    teamId: user.teamId,
+    teamRole: typeof user.teamRole === "string" ? user.teamRole : undefined,
+  });
+  const effectiveSeat =
+    realSeat === SEATS.WEBSITE_ADMIN && viewAs ? viewAs : realSeat;
+  const navMain = [
     {
       title: "Home",
       url: "/homepage",
@@ -74,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: false,
     },
     {
-      title: "My Team",
+      title: effectiveSeat === SEATS.LEAGUE_OFFICE ? "Teams" : "My Team",
       url: "/team-page",
       icon: Users,
       isActive: false,
@@ -91,18 +112,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       icon: Bug,
       isActive: false,
     },
-  ]);
+  ];
   React.useEffect(() => {
-    if (user.role === "widget developer") {
-      setRoleDisplay("Developer Account");
-    } else if (user.role.toLowerCase() === "master") {
-      setRoleDisplay("Master Account");
-    } else if (user.role.toLowerCase() === "admin") {
-      setRoleDisplay("Admin Account");
-    } else {
-      setRoleDisplay("League Account");
-    }
-  }, [user.role]);
+    const preview = realSeat === SEATS.WEBSITE_ADMIN ? readViewAs() : null;
+    setViewAs(preview || "");
+    setRoleDisplay(seatLabel(preview || realSeat));
+    setMounted(true);
+  }, [realSeat, user.role, user.is_admin, user.teamId, user.teamRole]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -132,6 +148,32 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />
+        {mounted && realSeat === SEATS.WEBSITE_ADMIN && (
+          <div className="px-3 pb-3">
+            <label className="mb-1 block text-xs text-gray-500" htmlFor="view-as">
+              View site as
+            </label>
+            <select
+              id="view-as"
+              className="w-full rounded border bg-white px-2 py-1 text-sm"
+              value={viewAs}
+              onChange={(event) => {
+                const next = event.target.value as AccountSeat | "";
+                writeViewAs(next || null);
+                setViewAs(next);
+                setRoleDisplay(seatLabel(next || SEATS.WEBSITE_ADMIN));
+                router.push("/around-league");
+              }}
+            >
+              <option value="">Website Admin</option>
+              {VIEW_AS_SEATS.filter((seat) => seat !== SEATS.WEBSITE_ADMIN).map((seat) => (
+                <option key={seat} value={seat}>
+                  {seatLabel(seat)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser />

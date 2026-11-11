@@ -213,15 +213,17 @@ export function setWidgetQuery(query: string) {
 
 // Adds a widget ID to the $favWidgetIds store and increments the filters version
 export function addFavWidgetId(id: number) {
-  $favWidgetIds.set($favWidgetIds.get().add(id));
+  const next = new Set($favWidgetIds.get());
+  next.add(id);
+  $favWidgetIds.set(next);
   incrementFiltersVersion();
 }
 
 // Removes a widget ID from the $favWidgetIds store and increments the filters version
 export function removeFavWidgetId(id: number) {
-  const favWidgetIds = $favWidgetIds.get();
-  favWidgetIds.delete(id);
-  $favWidgetIds.set(favWidgetIds);
+  const next = new Set($favWidgetIds.get());
+  next.delete(id);
+  $favWidgetIds.set(next);
   incrementFiltersVersion();
 }
 
@@ -238,29 +240,33 @@ export function getFavWidgetIds() {
 
 // Adds a filter to the $filters store and increments the filters version
 export function addFilter(filter: string) {
-  $filters.set($filters.get().add(filter));
+  const next = new Set($filters.get());
+  next.add(filter);
+  $filters.set(next);
   incrementFiltersVersion();
 }
 
 // Removes a filter from the $filters store and increments the filters version
 export function removeFilter(filter: string) {
-  const filters = $filters.get();
-  filters.delete(filter);
-  $filters.set(filters);
+  const next = new Set($filters.get());
+  next.delete(filter);
+  $filters.set(next);
   incrementFiltersVersion();
 }
 
 // Adds a category ID to the $activeCategoryIds store and increments the filters version
 export function addCategoryId(id: number) {
-  $activeCategoryIds.set($activeCategoryIds.get().add(id));
+  const next = new Set($activeCategoryIds.get());
+  next.add(id);
+  $activeCategoryIds.set(next);
   incrementFiltersVersion();
 }
 
 // Removes a category ID from the $activeCategoryIds store and increments the filters version
 export function removeCategoryId(id: number) {
-  const categories = $activeCategoryIds.get();
-  categories.delete(id);
-  $activeCategoryIds.set(categories);
+  const next = new Set($activeCategoryIds.get());
+  next.delete(id);
+  $activeCategoryIds.set(next);
   incrementFiltersVersion();
 }
 

@@ -10,7 +10,6 @@ import {
   SetStateAction,
   useRef,
 } from "react";
-import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
 import { clearStores } from "@/lib/utils";
 import { $user, setUser } from "@/lib/userStore";
@@ -86,7 +85,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Use auth-store for authentication state
   const tokens = useStore($authTokens);
   const user = useStore($user);
-  const router = useRouter();
   const sessionChecked = useRef(false);
 
   // Check for existing session on initial load (handles page refresh)
@@ -218,18 +216,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
+    // Keep the protected page from treating a cleared profile as Public Access.
+    setLoading(true);
+    setIsAuthenticated(false);
     try {
-      setLoading(true);
       await logoutUser();
-      clearAuthTokens(); // Clear auth-store tokens
-      clearStores();
-      router.push("/"); // Redirect to home page on logout
-      setAccessToken("");
-      setIdToken("");
     } catch (error) {
       console.error(error);
     } finally {
-      setLoading(false);
+      clearAuthTokens();
+      clearStores();
+      setAccessToken("");
+      setIdToken("");
+      window.location.assign("/");
     }
   };
 

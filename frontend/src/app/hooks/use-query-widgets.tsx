@@ -1,5 +1,5 @@
 import { fetchWidgets, getWidgetCollaborators } from "@/api/widget";
-import { WidgetCollaboratorsType, WidgetType } from "@/data/types";
+import { WidgetCollaboratorsType } from "@/data/types";
 import {
   setWidgets,
   $widgets,
@@ -12,13 +12,7 @@ import { useStore } from "@nanostores/react";
 import { useEffect, useState } from "react";
 import { getFavorites } from "@/api/user";
 import { getCategories } from "@/api/categories";
-
-interface FilteredOutWidget {
-  id: number;
-  name: string;
-  visibility?: string;
-  reason: string;
-}
+import { catalogVisibleToWidgetDeveloper } from "@/lib/widgetVisibility";
 
 function useQueryWidgets() {
   const widgets = useStore($widgets);
@@ -33,42 +27,16 @@ function useQueryWidgets() {
         getCategories(),
       ]);
       
-      // Check if the user is a Widget Developer
-      const isDev = user.role === "widget developer" ? true : false;
+      const isPublicWidgetDeveloper =
+        user.role === "widget developer" ||
+        user.role === "public widget developer" ||
+        user.role === "site side";
 
-      // Modified filter logic to keep track of why widgets are filtered out
-      const filteredWidgets: WidgetType[] = [];
-      const filteredOutWidgets: FilteredOutWidget[] = [];
-      
-      fetchedWidgets.forEach((widget) => {
-        // For Widget Developers: only include widgets they're associated with
-        if (isDev) {
-          if (user.id && widget.developerIds?.includes(parseInt(user.id))) {
-            filteredWidgets.push(widget);
-          } else {
-            filteredOutWidgets.push({
-              id: widget.id,
-              name: widget.name,
-              visibility: widget.visibility,
-              reason: 'Not in developer IDs'
-            });
-          }
-        } 
-        // For non-developers: include all widgets
-        else {
-          filteredWidgets.push(widget);
-        }
-      });
-
-      /*console.log("Filtered widgets:", filteredWidgets.map(w => ({
-        id: w.id,
-        name: w.name,
-        visibility: w.visibility
-      })));
-      
-      if (filteredOutWidgets.length > 0) {
-        console.log("Filtered OUT widgets:", filteredOutWidgets);
-      }*/
+      const filteredWidgets = isPublicWidgetDeveloper
+        ? fetchedWidgets.filter((widget) =>
+            catalogVisibleToWidgetDeveloper(widget, user.id),
+          )
+        : fetchedWidgets;
 
       setWidgets([...filteredWidgets]);
       

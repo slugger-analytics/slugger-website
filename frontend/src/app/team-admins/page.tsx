@@ -120,7 +120,7 @@ export default function TeamAdminsPage() {
   };
 
   return (
-    <ProtectedRoute role="admin">
+    <ProtectedRoute permission="approveSite">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

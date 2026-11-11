@@ -51,7 +51,7 @@ export default function HomePage() {
   );
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission="home">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

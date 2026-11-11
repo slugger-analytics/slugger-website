@@ -100,7 +100,7 @@ export default function Widgets() {
    * Filters the widgets based on:
    * - Search query: widget name or description must match the query.
    * - Favorites filter: only favorite widgets will be shown if the "favorites" filter is active.
-   * - Developer filter: if the user is a widget developer, only widgets created by the user will be shown.
+   * - Public widget developers see public widgets and the private widgets they own.
    * @returns {WidgetType[]} - Filtered list of widgets based on the active filters.
    */
   const filteredWidgets = useMemo(() => {
@@ -188,7 +188,9 @@ export default function Widgets() {
   }
   if (!filteredWidgets.length) {
     return (
-      <p className="px-4 text-sm text-muted-foreground">No widgets found.</p>
+      <p className="px-4 text-sm text-muted-foreground">
+        {filters.has("favorites") ? "No favorites yet." : "No widgets found."}
+      </p>
     );
   }
 
@@ -224,7 +226,12 @@ export default function Widgets() {
               <Widget
                 key={widget.id}
                 {...widget}
-                isDev={isDev}
+                isDev={
+                  isDev &&
+                  (widget.developerIds ?? []).some(
+                    (id) => Number(id) === Number(user.id),
+                  )
+                }
                 visibility={widget.visibility ?? "Private"}
                 isFavorite={favWidgetIds.has(widget.id)}
                 categories={widget.categories}
@@ -235,21 +242,28 @@ export default function Widgets() {
       )}
 
       {/* All section – 4 across at xl */}
-      <section>
-        <h2 className="px-4 mb-4 text-lg font-semibold">All</h2>
-        <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {allWidgets.map((widget: WidgetType) => (
-            <Widget
-              key={widget.id}
-              {...widget}
-              isDev={isDev}
-              visibility={widget.visibility ?? "Private"}
-              isFavorite={favWidgetIds.has(widget.id)}
-              categories={widget.categories}
-            />
-          ))}
-        </div>
-      </section>
+      {allWidgets.length > 0 && (
+        <section>
+          <h2 className="px-4 mb-4 text-lg font-semibold">All</h2>
+          <div className="grid gap-10 p-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {allWidgets.map((widget: WidgetType) => (
+              <Widget
+                key={widget.id}
+                {...widget}
+                isDev={
+                  isDev &&
+                  (widget.developerIds ?? []).some(
+                    (id) => Number(id) === Number(user.id),
+                  )
+                }
+                visibility={widget.visibility ?? "Private"}
+                isFavorite={favWidgetIds.has(widget.id)}
+                categories={widget.categories}
+              />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

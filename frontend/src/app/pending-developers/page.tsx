@@ -74,7 +74,7 @@ export default function PendingDevelopersPage() {
   };
 
   return (
-    <ProtectedRoute role="admin">
+    <ProtectedRoute permission="approveSite">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

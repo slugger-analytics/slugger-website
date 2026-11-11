@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  catalogVisibleToWidgetDeveloper,
   isActiveWidget,
   isApprovedWidget,
   isHiddenWidget,
@@ -27,6 +28,24 @@ describe("admin catalog visibility", () => {
     expect(isActiveWidget("approved", "public")).toBe(true);
     expect(isActiveWidget("Approved", "Private")).toBe(false);
     expect(isActiveWidget("pending", "public")).toBe(false);
+  });
+
+  it("shows a public widget developer every public widget and only their private widgets", () => {
+    expect(
+      catalogVisibleToWidgetDeveloper({ visibility: "Public", developerIds: [] }, 12),
+    ).toBe(true);
+    expect(
+      catalogVisibleToWidgetDeveloper(
+        { visibility: "private", developerIds: [12] },
+        "12",
+      ),
+    ).toBe(true);
+    expect(
+      catalogVisibleToWidgetDeveloper(
+        { visibility: "private", developerIds: [99] },
+        12,
+      ),
+    ).toBe(false);
   });
 
   it("filters all, active, and hidden widgets", () => {

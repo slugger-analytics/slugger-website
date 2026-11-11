@@ -4,10 +4,12 @@
  */
 
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import pool from "../db.js";
 import dotenv from "dotenv";
 import { createPendingDeveloper } from "./developerService.js";
 import { signupTeamFields } from "../lib/accountLookup.js";
+import { teamSignupLabel } from "../lib/accountPermissions.js";
 import cognito from "../cognito.js";
 
 dotenv.config();
@@ -19,22 +21,25 @@ export async function favoriteWidget(userId, widgetId) {
         WHERE user_id = $1
     `;
 
-  const addQuery = `
-        UPDATE users
-        SET fav_widgets_ids = array_append(fav_widgets_ids, $1)
-        WHERE user_id = $2
-    `;
-
   try {
     // Check if the widget is already in the user's favorites
     const { rows } = await pool.query(checkQuery, [userId]);
 
-    if (rows[0]?.fav_widgets_ids.includes(widgetId)) {
+    const currentFavorites = rows[0]?.fav_widgets_ids || [];
+    if (currentFavorites.includes(widgetId)) {
       return { rows, message: "Widget already exists in favorites" };
     }
 
-    // Add the widget to the user's favorites
-    const result = await pool.query(addQuery, [widgetId, userId]);
+    // Add the widget to the user's favorites. A null list stays null
+    // under array_append, so start from an empty list.
+    const result = await pool.query(
+      `
+        UPDATE users
+        SET fav_widgets_ids = array_append(COALESCE(fav_widgets_ids, '{}'), $1)
+        WHERE user_id = $2
+      `,
+      [widgetId, userId],
+    );
     return {
       result,
       message: `Successfully added widget ${widgetId} as a favorite for user ${userId}`,
@@ -48,7 +53,7 @@ export async function favoriteWidget(userId, widgetId) {
 export async function unfavoriteWidget(userId, widgetId) {
   const removeQuery = `
         UPDATE users
-        SET fav_widgets_ids = array_remove(fav_widgets_ids, $1)
+        SET fav_widgets_ids = array_remove(COALESCE(fav_widgets_ids, '{}'), $1)
         WHERE user_id = $2
     `;
 
@@ -163,10 +168,43 @@ export async function createUser(userData) {
   return result.rows[0];
 }
 
+async function teamIdFromVerifiedInvite(inviteToken) {
+  let decoded;
+  try {
+    decoded = jwt.verify(inviteToken, process.env.SESSION_SECRET);
+  } catch {
+    const error = new Error("Invalid or expired invite link");
+    error.status = 400;
+    throw error;
+  }
+
+  const teamId = decoded?.teamId;
+  if (!teamId) {
+    const error = new Error("Invite link is missing team information");
+    error.status = 400;
+    throw error;
+  }
+
+  const team = await pool.query("SELECT team_id FROM team WHERE team_id = $1", [teamId]);
+  if (team.rowCount === 0) {
+    const error = new Error("Team not found");
+    error.status = 404;
+    throw error;
+  }
+  return teamId;
+}
+
 export async function signUpUserWithCognito(userData) {
-  let { email, password, firstName, lastName, role } = userData;
+  let { email, password, firstName, lastName, role, inviteToken } = userData;
   email = email.toLowerCase();
-  
+
+  // A team seat can join one team only through a verified invite.
+  // The request body cannot name a team.
+  const teamRole = teamSignupLabel(role);
+  const invitedTeamId = teamRole && inviteToken
+    ? await teamIdFromVerifiedInvite(inviteToken)
+    : null;
+
   const params = {
     ClientId: process.env.COGNITO_APP_CLIENT_ID,
     Username: email,
@@ -200,18 +238,18 @@ export async function signUpUserWithCognito(userData) {
       };
     }
 
-    // For all other users, create user in database immediately
-    // Team membership is assigned only by a verified invite at sign-in,
-    // or by an admin. The signup body cannot choose a team.
-    const { teamId, teamRole } = signupTeamFields();
+    // League office and site accounts stay off every team.
+    // A team seat keeps the seat chosen at registration, and a verified
+    // invite is the only way that seat is attached to a team here.
+    const untrustedTeam = signupTeamFields();
     const newUser = await createUser({
       cognitoUserId,
       email,
       first: firstName,
       last: lastName,
       role,
-      teamId,
-      teamRole,
+      teamId: invitedTeamId ?? untrustedTeam.teamId,
+      teamRole: teamRole ?? untrustedTeam.teamRole,
     });
 
     return {

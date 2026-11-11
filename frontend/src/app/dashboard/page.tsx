@@ -19,7 +19,7 @@ import ProtectedRoute from "../components/ProtectedRoutes";
  */
 export default function Page() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute permission="widgets">
       {/* 
        * Dashboard content is rendered by PersistentDashboardContainer.
        * This empty div serves as a placeholder for the route.

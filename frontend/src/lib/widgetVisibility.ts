@@ -4,6 +4,16 @@ export function isHiddenWidget(visibility?: string | null) {
   return (visibility || "").toLowerCase() === "private";
 }
 
+/** Public widget developers see every public widget, plus private widgets they own. */
+export function catalogVisibleToWidgetDeveloper(
+  widget: { visibility?: string | null; developerIds?: Array<number | string> },
+  userId?: number | string | null,
+) {
+  if (!isHiddenWidget(widget.visibility)) return true;
+  if (userId == null || userId === "") return false;
+  return (widget.developerIds ?? []).some((id) => Number(id) === Number(userId));
+}
+
 export function isApprovedWidget(status?: string | null) {
   return (status || "").toLowerCase() === "approved";
 }

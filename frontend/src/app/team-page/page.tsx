@@ -31,8 +31,10 @@ import {
   demoteTeamMember,
   removeTeamMember,
   getTeam,
+  getTeams,
   updateMemberRole,
 } from "@/api/teams";
+import { permissionsForSeat, resolveAccountSeat, seatLabel } from "@/lib/accountPermissions";
 import { createTeamAdminRequest } from "@/api/teamAdmin";
 import {
   DropdownMenu,
@@ -65,11 +67,22 @@ export default function TeamPage() {
   const [hasPendingRequest, setHasPendingRequest] = useState<boolean>(false);
   const { toast } = useToast();
   const user = useStore($user);
+  const seat = resolveAccountSeat({
+    role: user.role,
+    is_admin: user.is_admin,
+    teamId: user.teamId,
+    teamRole: typeof user.teamRole === "string" ? user.teamRole : undefined,
+  });
+  const perms = permissionsForSeat(seat);
+  const [teams, setTeams] = useState<{ team_id: string; team_name: string }[]>([]);
+  const [selectedTeamId, setSelectedTeamId] = useState("");
+  const activeTeamId = perms.everyRoster ? selectedTeamId : user.teamId;
+  const waitingForTeam = !perms.everyRoster && (!user.teamId || String(user.teamId) === "null");
 
   const fetchTeamMembers = useCallback(async () => {
-    if (!user.teamId) return;
+    if (!activeTeamId) return;
     try {
-      const membersData = await getTeamMembers(user.teamId);
+      const membersData = await getTeamMembers(activeTeamId);
       setMembers(membersData);
 
       // Update user store if current user's admin status changed
@@ -85,10 +98,20 @@ export default function TeamPage() {
         variant: "destructive",
       });
     }
-  }, [toast, user.id, user.is_admin, user.teamId]);
+  }, [toast, user.id, user.is_admin, activeTeamId]);
 
   useEffect(() => {
     const fetchTeamData = async () => {
+      if (perms.everyRoster) {
+        try {
+          const allTeams = await getTeams();
+          setTeams(allTeams);
+          if (!selectedTeamId && allTeams[0]) setSelectedTeamId(String(allTeams[0].team_id));
+        } catch (error) {
+          console.error("Error fetching teams:", error);
+        }
+        return;
+      }
       if (user.teamId && user.teamId !== "null") {
         try {
           const teamData = await getTeam(user.teamId);
@@ -105,7 +128,14 @@ export default function TeamPage() {
     };
 
     fetchTeamData();
-  }, [fetchTeamMembers, toast, user.teamId]);
+  }, [fetchTeamMembers, toast, user.teamId, perms.everyRoster, selectedTeamId]);
+
+  useEffect(() => {
+    if (!perms.everyRoster || !selectedTeamId) return;
+    const team = teams.find((item) => String(item.team_id) === String(selectedTeamId));
+    setTeamName(team?.team_name || "Roster");
+    fetchTeamMembers();
+  }, [perms.everyRoster, selectedTeamId, teams, fetchTeamMembers]);
 
   const handleClickRemove = (e: React.MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -222,13 +252,13 @@ export default function TeamPage() {
   };
 
   const getMemberRole = (member: TeamMember): string => {
-    if (member.is_admin) {
-      return "Team Admin";
-    } else if (member.team_role === "Clubhouse Manager") {
-      return "Clubhouse Manager";
-    } else {
-      return "Member";
-    }
+    return seatLabel(
+      resolveAccountSeat({
+        is_admin: member.is_admin,
+        team_role: member.team_role,
+        teamId: activeTeamId,
+      }),
+    );
   };
 
   const removeMember = async (
@@ -306,7 +336,7 @@ export default function TeamPage() {
   }, [members]);
 
   return (
-    <ProtectedRoute role="league">
+    <ProtectedRoute permission="myTeam">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
@@ -314,10 +344,30 @@ export default function TeamPage() {
           <div className="container mx-auto p-8">
             <div className="max-w-4xl mx-auto">
               <div className="mb-8 text-center">
-                <h1 className="text-3xl font-bold mb-2">{teamName}</h1>
+                <h1 className="text-3xl font-bold mb-2">{waitingForTeam ? "My Team" : teamName}</h1>
                 <p className="text-gray-500">
-                  Manage your team members and permissions
+                  {waitingForTeam
+                    ? "This account is not on a team yet. Sign in from your team admin’s invite link to join one team."
+                    : perms.setSeats
+                      ? "Manage your team members and permissions"
+                      : "Roster"}
                 </p>
+                {perms.everyRoster && (
+                  <div className="mt-4 flex justify-center">
+                    <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                      <SelectTrigger className="w-[260px]">
+                        <SelectValue placeholder="Choose a team" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teams.map((team) => (
+                          <SelectItem key={team.team_id} value={String(team.team_id)}>
+                            {team.team_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white rounded-lg shadow-sm border mb-8 max-w-[calc(100%-2rem)] min-w-[360px]">
@@ -325,9 +375,13 @@ export default function TeamPage() {
                   <h2 className="text-xl font-semibold">Team Members</h2>
                 </div>
                 <div className="divide-y">
-                  {members.length === 0 ? (
+                  {waitingForTeam || members.length === 0 ? (
                     <div className="p-8 text-center">
-                      <p className="text-gray-500">No team members found.</p>
+                      <p className="text-gray-500">
+                        {waitingForTeam
+                          ? "No roster until this account joins its team."
+                          : "No team members found."}
+                      </p>
                     </div>
                   ) : (
                     members.map((member) => (
@@ -366,7 +420,7 @@ export default function TeamPage() {
                           <div className="flex items-center gap-2">
                             {/* Role selector for larger screens */}
                             <div className="hidden md:flex gap-2">
-                              {member.user_id != user.id && user.is_admin && (
+                              {member.user_id != user.id && perms.setSeats && (
                                 <Select
                                   value={getMemberRole(member)}
                                   onValueChange={(value) =>
@@ -377,18 +431,16 @@ export default function TeamPage() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="Member">Member</SelectItem>
-                                    <SelectItem value="Clubhouse Manager">
-                                      Clubhouse Manager
-                                    </SelectItem>
-                                    <SelectItem value="Team Admin">
-                                      Team Admin
-                                    </SelectItem>
+                                    <SelectItem value="Player">Player</SelectItem>
+                                    <SelectItem value="Coach">Coach</SelectItem>
+                                    <SelectItem value="Clubhouse Manager">Clubhouse Manager</SelectItem>
+                                    <SelectItem value="Team Admin">Team Admin</SelectItem>
+                                    <SelectItem value="Private Widget Developer">Private Widget Developer</SelectItem>
                                   </SelectContent>
                                 </Select>
                               )}
                               <AlertDialog>
-                                {member.user_id != user.id && user.is_admin && (
+                                {member.user_id != user.id && perms.setSeats && (
                                   <AlertDialogTrigger asChild>
                                     <Button size="sm" variant="destructive">
                                       Remove
@@ -449,14 +501,21 @@ export default function TeamPage() {
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  {member.user_id != user.id && user.is_admin && (
+                                  {member.user_id != user.id && perms.setSeats && (
                                     <>
                                       <DropdownMenuItem
                                         onClick={() =>
-                                          handleRoleChange(member.user_id, "Member")
+                                          handleRoleChange(member.user_id, "Player")
                                         }
                                       >
-                                        Set as Member
+                                        Set as Player
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleRoleChange(member.user_id, "Coach")
+                                        }
+                                      >
+                                        Set as Coach
                                       </DropdownMenuItem>
                                       <DropdownMenuItem
                                         onClick={() =>
@@ -474,6 +533,13 @@ export default function TeamPage() {
                                         }
                                       >
                                         Set as Team Admin
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        onClick={() =>
+                                          handleRoleChange(member.user_id, "Private Widget Developer")
+                                        }
+                                      >
+                                        Set as Private Widget Developer
                                       </DropdownMenuItem>
                                     </>
                                   )}
@@ -537,7 +603,7 @@ export default function TeamPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow-sm border p-6">
+              {perms.invites && <div className="bg-white rounded-lg shadow-sm border p-6">
                 <div className="flex flex-col items-center gap-4">
                   <h2 className="text-xl font-semibold">Invite New Members</h2>
                   <p className="text-gray-500 text-center max-w-md">
@@ -581,10 +647,9 @@ export default function TeamPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              </div>}
 
-              {/* Request Team Admin Section - Only show if user is not admin and has a team */}
-              {!user.is_admin && user.teamId && user.teamId !== "null" && user.teamId !== "" && (
+              {false && user.teamId && (
                 <div className="bg-white rounded-lg shadow-sm border p-6 mt-8">
                   <div className="flex flex-col items-center gap-4">
                     <h2 className="text-xl font-semibold">Request Team Admin Access</h2>

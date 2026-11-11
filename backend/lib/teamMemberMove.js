@@ -1,3 +1,5 @@
+import { permissionsForUser } from "./accountPermissions.js";
+
 /**
  * Whether a team-admin request may change a member's team.
  * Returns null when the move may proceed, or { status, message } to reject it.
@@ -8,8 +10,14 @@
  * Ids may arrive as a number from the session and a string from the URL.
  * A site admin may act on any team.
  */
-export function sessionBelongsToTeam({ role, sessionTeamId, requestedTeamId }) {
-  if (role === "admin") return true;
+export function sessionBelongsToTeam({ role, sessionTeamId, requestedTeamId, isAdmin, teamRole }) {
+  const perms = permissionsForUser({
+    role,
+    is_admin: isAdmin,
+    team_role: teamRole,
+    team_id: sessionTeamId,
+  });
+  if (role === "admin" || perms.everyRoster) return true;
   return String(sessionTeamId) === String(requestedTeamId);
 }
 

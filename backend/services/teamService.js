@@ -1,4 +1,5 @@
 import pool from "../db.js";
+import { roleFieldsForAssignedSeat } from "../lib/accountPermissions.js";
 
 export async function getTeams() {
   try {
@@ -127,34 +128,18 @@ export async function updateMemberTeam(origTeamId, newTeamId, memberId) {
 
 export async function updateMemberRole(teamId, memberId, role) {
   try {
-    let isAdmin = false;
-    let teamRole = null;
-
-    // Set is_admin and team_role based on the role
-    switch (role) {
-      case 'Team Admin':
-        isAdmin = true;
-        teamRole = 'Team Admin';
-        break;
-      case 'Clubhouse Manager':
-        isAdmin = false;
-        teamRole = 'Clubhouse Manager';
-        break;
-      case 'Member':
-        isAdmin = false;
-        teamRole = null;
-        break;
-      default:
-        throw new Error(`Invalid role: ${role}`);
+    const fields = roleFieldsForAssignedSeat(role);
+    if (!fields) {
+      throw new Error(`Invalid role: ${role}`);
     }
 
     const result = await pool.query(
       `
             UPDATE users
-            SET is_admin = $1, team_role = $2
-            WHERE team_id = $3 AND user_id = $4
+            SET role = $1, is_admin = $2, team_role = $3
+            WHERE team_id = $4 AND user_id = $5
             RETURNING *`,
-      [isAdmin, teamRole, teamId, memberId],
+      [fields.role, fields.isAdmin, fields.teamRole, teamId, memberId],
     );
     const updatedMember = result.rows[0];
     return updatedMember;

@@ -4,6 +4,7 @@
  */
 
 import pool from "../db.js";
+import { resolveAccountSeat, SEATS } from "../lib/accountPermissions.js";
 
 /**
  * Middleware to refresh user's is_admin status from database
@@ -16,18 +17,27 @@ export const refreshUserAdminStatus = async (req, res, next) => {
 
   try {
     const result = await pool.query(
-      'SELECT is_admin, team_role FROM users WHERE user_id = $1',
+      'SELECT role, is_admin, team_role, team_id FROM users WHERE user_id = $1',
       [req.session.user.user_id]
     );
 
     if (result.rows.length > 0) {
       const dbIsAdmin = result.rows[0].is_admin;
       const dbTeamRole = result.rows[0].team_role;
+      const dbRole = result.rows[0].role;
+      const dbTeamId = result.rows[0].team_id;
       
       // Only update if values have changed
-      if (req.session.user.is_admin !== dbIsAdmin || req.session.user.team_role !== dbTeamRole) {
+      if (
+        req.session.user.is_admin !== dbIsAdmin ||
+        req.session.user.team_role !== dbTeamRole ||
+        req.session.user.role !== dbRole ||
+        req.session.user.team_id !== dbTeamId
+      ) {
         req.session.user.is_admin = dbIsAdmin;
         req.session.user.team_role = dbTeamRole;
+        req.session.user.role = dbRole;
+        req.session.user.team_id = dbTeamId;
         
         // Save the session to persist changes
         req.session.save((err) => {
@@ -47,7 +57,7 @@ export const refreshUserAdminStatus = async (req, res, next) => {
  * Checks if the authenticated user has role = 'admin'
  */
 export const requireSiteAdmin = (req, res, next) => {
-  if (req.session?.user?.role === 'admin') {
+  if (resolveAccountSeat(req.session?.user) === SEATS.WEBSITE_ADMIN) {
     return next();
   }
 
@@ -67,7 +77,7 @@ export const requireTeamAdmin = (req, res, next) => {
     user_id: req.session?.user?.user_id,
     full_user: req.session?.user
   });
-  if (req.session?.user?.is_admin) {
+  if (resolveAccountSeat(req.session?.user) === SEATS.TEAM_ADMIN) {
     return next();
   }
 

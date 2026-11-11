@@ -204,7 +204,7 @@ export default function WidgetDevelopmentPage() {
   };
 
   return (
-    <ProtectedRoute role="admin">
+    <ProtectedRoute permission="approveSite">
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>

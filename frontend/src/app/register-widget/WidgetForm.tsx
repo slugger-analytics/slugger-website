@@ -26,6 +26,7 @@ import { Separator } from "@/app/components/ui/separator";
 import LogoButton from "../components/navbar/LogoButton";
 import { Textarea } from "../components/ui/textarea";
 import { $user } from "@/lib/userStore";
+import { permissionsForSeat, resolveAccountSeat } from "@/lib/accountPermissions";
 import { useToast } from "@/hooks/use-toast";
 import { getTeams } from "@/api/teams";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -44,6 +45,21 @@ export function WidgetForm() {
   const { idToken } = useAuth();
   const user = useStore($user);
   const { toast } = useToast();
+  const seatPerms = permissionsForSeat(
+    resolveAccountSeat({
+      role: user.role,
+      is_admin: user.is_admin,
+      teamId: user.teamId,
+      teamRole: typeof user.teamRole === "string" ? user.teamRole : undefined,
+    }),
+  );
+  const privateOnly = seatPerms.createPrivateWidget && !seatPerms.registerPublicWidget;
+
+  useEffect(() => {
+    if (!privateOnly) return;
+    setVisibility("private");
+    if (user.teamId) setSelectedTeams([String(user.teamId)]);
+  }, [privateOnly, user.teamId]);
 
   useEffect(() => {
     const fetchTeams = async () => {
@@ -157,6 +173,7 @@ export function WidgetForm() {
               <Select
                 name="account-type"
                 required={true}
+                value={privateOnly ? "private" : undefined}
                 onValueChange={(vis) => {
                   setVisibility(vis as "public" | "private");
                   // Clear selected teams if switching to public
@@ -170,7 +187,7 @@ export function WidgetForm() {
                 </SelectTrigger>
                 <SelectContent className="z-50">
                   <SelectGroup>
-                    <SelectItem value="public">Public</SelectItem>
+                    {!privateOnly && <SelectItem value="public">Public</SelectItem>}
                     <SelectItem value="private">Private</SelectItem>
                   </SelectGroup>
                 </SelectContent>

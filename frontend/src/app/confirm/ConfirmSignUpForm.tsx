@@ -98,11 +98,12 @@ export function ConfirmSignUpForm() {
         });
       } else {
         // Regular users get redirected to sign-in
+        const invite = searchParams.get("invite");
         setSubmitStatus({
           message: "Account confirmed! Redirecting to login...",
           textClass: "text-green-600",
         });
-        setTimeout(() => router.push("/sign-in"), 200);
+        setTimeout(() => router.push(invite ? `/sign-in?invite=${encodeURIComponent(invite)}` : "/sign-in"), 200);
       }
     } catch (error: unknown) {
       // Update submission status on failure

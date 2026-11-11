@@ -46,6 +46,7 @@ export function SignupForm() {
     team_id: string;
   } | null>(null);
   const { toast } = useToast();
+  const [accountType, setAccountType] = useState("");
 
   useEffect(() => {
     const fetchInvitedTeam = async () => {
@@ -246,22 +247,29 @@ export function SignupForm() {
             <Separator className="my-4" />
             {!invitedTeam ? (
               <div className="flex flex-col space-y-1.5">
-                <Select name="account-type" required={true}>
+                <Select
+                  value={accountType || undefined}
+                  onValueChange={setAccountType}
+                  required={true}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select an account type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="widget developer">
-                        Widget Developer
+                      <SelectItem value="league office">
+                        League Office Accounts
                       </SelectItem>
-                      <SelectItem value="league">League</SelectItem>
+                      <SelectItem value="team side">Team Side</SelectItem>
+                      <SelectItem value="widget developer">Site Side</SelectItem>
+                      <SelectItem value="public">Public Access Account</SelectItem>
                       {/*<SelectItem value="master">Master</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                       */}
                     </SelectGroup>
                   </SelectContent>
                 </Select>
+                <input type="hidden" name="account-type" value={accountType} />
               </div>
             ) : (
               <div className="flex flex-col space-y-1.5">

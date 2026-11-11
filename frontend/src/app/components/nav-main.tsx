@@ -11,6 +11,12 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@nanostores/react";
 import { $user } from "@/lib/userStore";
 import { useAuth } from "../contexts/AuthContext";
+import {
+  permissionsForSeat,
+  readViewAs,
+  resolveAccountSeat,
+  SEATS,
+} from "@/lib/accountPermissions";
 
 type Item = {
   title: string;
@@ -27,16 +33,27 @@ export function NavMain({ items }: { items: Item[] }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const role = useMemo(
-    () => (user?.role ? String(user.role).toLowerCase() : ""),
-    [user?.role]
+  const realSeat = useMemo(
+    () =>
+      resolveAccountSeat({
+        role: user?.role,
+        is_admin: user?.is_admin,
+        teamId: user?.teamId,
+        teamRole: user?.teamRole,
+      }),
+    [user?.role, user?.is_admin, user?.teamId, user?.teamRole],
   );
+  const preview = mounted && realSeat === SEATS.WEBSITE_ADMIN ? readViewAs() : null;
+  const perms = permissionsForSeat(preview || realSeat);
 
   const shouldShowItem = (title: string) => {
-    if (title === "Register Widget" || title === "API Documentation") return role === "widget developer";
-    if (title === "My Team") return role === "league";
-    if (["Pending Developers", "Pending Widgets", "Team Admins", "Widget Development"].includes(title)) return role === "admin";
-    if (title === "Home") return role !== "admin";
+    if (title === "Register Widget") return perms.registerPublicWidget || perms.createPrivateWidget;
+    if (title === "API Documentation") return perms.apiDocs;
+    if (title === "My Team" || title === "Teams") return perms.myTeam;
+    if (["Pending Developers", "Pending Widgets", "Team Admins", "Widget Development"].includes(title)) return perms.approveSite;
+    if (title === "Home") return perms.home;
+    if (title === "Widgets") return perms.widgets;
+    if (title === "Around the League") return perms.aroundLeague;
     return true;
   };
 
