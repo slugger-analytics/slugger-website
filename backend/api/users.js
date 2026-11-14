@@ -88,11 +88,12 @@ router.post("/sign-up", async (req, res) => {
   try {
     const { role } = req.body;
 
-    // Only allow non-privileged roles for public sign-up
+    // Only allow non-privileged roles for public sign-up.
+    // League Office can read every team's roster, so a website admin
+    // assigns it; it is not offered here.
     const allowedRoles = [
       "widget developer",
       "league",
-      "league office",
       "team side",
       "public",
       "player",
@@ -104,7 +105,7 @@ router.post("/sign-up", async (req, res) => {
     if (!role || !allowedRoles.includes(role)) {
       res.status(400).json({
         success: false,
-        message: "Choose League Office, a Team Side seat, or Public Widget Developer."
+        message: "Choose a Team Side seat, Public Access, or Public Widget Developer."
       });
       return;
     }
@@ -235,8 +236,12 @@ router.post("/sign-in", async (req, res) => {
           `
             UPDATE users
             SET team_id = $1,
+                -- chk_role_team_id: an account with a team must be 'league'.
+                -- A seat chosen at signup is already in team_role.
                 role = CASE
-                  WHEN role = 'user' THEN 'league'
+                  WHEN role IN ('user', 'team side', 'player', 'coach',
+                                'clubhouse manager', 'private widget developer')
+                    THEN 'league'
                   ELSE role
                 END
             WHERE user_id = $2

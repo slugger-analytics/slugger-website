@@ -9,7 +9,7 @@ import pool from "../db.js";
 import dotenv from "dotenv";
 import { createPendingDeveloper } from "./developerService.js";
 import { signupTeamFields } from "../lib/accountLookup.js";
-import { teamSignupLabel } from "../lib/accountPermissions.js";
+import { teamSignupLabel, TEAM_MEMBER_ROLE } from "../lib/accountPermissions.js";
 import cognito from "../cognito.js";
 
 dotenv.config();
@@ -241,13 +241,15 @@ export async function signUpUserWithCognito(userData) {
     // League office and site accounts stay off every team.
     // A team seat keeps the seat chosen at registration, and a verified
     // invite is the only way that seat is attached to a team here.
+    // An account with a team must keep role "league" (chk_role_team_id);
+    // the seat is stored in team_role.
     const untrustedTeam = signupTeamFields();
     const newUser = await createUser({
       cognitoUserId,
       email,
       first: firstName,
       last: lastName,
-      role,
+      role: invitedTeamId ? TEAM_MEMBER_ROLE : role,
       teamId: invitedTeamId ?? untrustedTeam.teamId,
       teamRole: teamRole ?? untrustedTeam.teamRole,
     });

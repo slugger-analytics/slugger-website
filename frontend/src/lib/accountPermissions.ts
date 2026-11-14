@@ -69,7 +69,9 @@ export function resolveAccountSeat(user: {
   if (TEAM_SEATS.has(role)) return role as AccountSeat;
 
   if (role === "league" || role === "user" || role === "") {
-    if (!onTeam && (role === "league" || role === "league office")) return SEATS.LEAGUE_OFFICE;
+    // League Office is only ever the explicit "league office" role above.
+    // A league account with no team, such as a removed member, is public.
+    if (!onTeam) return SEATS.PUBLIC;
     if (isAdmin || teamRole === "team admin") return SEATS.TEAM_ADMIN;
     if (teamRole === "clubhouse manager") return SEATS.CLUBHOUSE_MANAGER;
     if (teamRole === "player") return SEATS.PLAYER;

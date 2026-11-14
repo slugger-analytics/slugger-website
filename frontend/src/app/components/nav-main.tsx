@@ -39,7 +39,7 @@ export function NavMain({ items }: { items: Item[] }) {
         role: user?.role,
         is_admin: user?.is_admin,
         teamId: user?.teamId,
-        teamRole: user?.teamRole,
+        teamRole: typeof user?.teamRole === "string" ? user.teamRole : undefined,
       }),
     [user?.role, user?.is_admin, user?.teamId, user?.teamRole],
   );

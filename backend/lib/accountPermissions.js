@@ -52,7 +52,9 @@ export function resolveAccountSeat(user = {}) {
   if (TEAM_SEATS.has(role)) return role;
 
   if (role === "league" || role === "user" || role === "") {
-    if (!onTeam && (role === "league" || role === "league office")) return SEATS.LEAGUE_OFFICE;
+    // League Office is only ever the explicit "league office" role above.
+    // A league account with no team, such as a removed member, is public.
+    if (!onTeam) return SEATS.PUBLIC;
     if (isAdmin || teamRole === "team admin") return SEATS.TEAM_ADMIN;
     if (teamRole === "clubhouse manager") return SEATS.CLUBHOUSE_MANAGER;
     if (teamRole === "player") return SEATS.PLAYER;
@@ -184,17 +186,23 @@ export function teamSignupLabel(role) {
   return labels[seat] || null;
 }
 
+/**
+ * The users table check chk_role_team_id requires role "league" on any
+ * account with a team, so a team seat lives in team_role, not role.
+ */
+export const TEAM_MEMBER_ROLE = "league";
+
 export function roleFieldsForAssignedSeat(label) {
   const seat = text(label);
   const map = {
-    player: ["player", false, "Player"],
-    coach: ["coach", false, "Coach"],
-    member: ["coach", false, "Coach"],
-    "clubhouse manager": ["clubhouse manager", false, "Clubhouse Manager"],
-    "team admin": ["team admin", true, "Team Admin"],
-    "private widget developer": ["private widget developer", false, "Private Widget Developer"],
+    player: [false, "Player"],
+    coach: [false, "Coach"],
+    member: [false, "Coach"],
+    "clubhouse manager": [false, "Clubhouse Manager"],
+    "team admin": [true, "Team Admin"],
+    "private widget developer": [false, "Private Widget Developer"],
   };
   const fields = map[seat];
   if (!fields) return null;
-  return { role: fields[0], isAdmin: fields[1], teamRole: fields[2] };
+  return { role: TEAM_MEMBER_ROLE, isAdmin: fields[0], teamRole: fields[1] };
 }

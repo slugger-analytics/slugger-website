@@ -6,11 +6,36 @@ import {
   SEATS,
   roleFieldsForAssignedSeat,
   teamSignupLabel,
+  ASSIGNABLE_TEAM_SEATS,
 } from "../lib/accountPermissions.js";
 
 describe("resolveAccountSeat", () => {
-  test("legacy league with no team is league office", () => {
-    assert.equal(resolveAccountSeat({ role: "league", team_id: null }), SEATS.LEAGUE_OFFICE);
+  test("legacy league with no team is public, not league office", () => {
+    assert.equal(resolveAccountSeat({ role: "league", team_id: null }), SEATS.PUBLIC);
+  });
+
+  test("a member removed from a team does not gain every roster", () => {
+    const removed = { role: "league", team_id: null, is_admin: true, team_role: "Team Admin" };
+    assert.equal(resolveAccountSeat(removed), SEATS.PUBLIC);
+    assert.equal(permissionsForSeat(resolveAccountSeat(removed)).everyRoster, false);
+  });
+
+  test("only the explicit league office role is league office", () => {
+    assert.equal(resolveAccountSeat({ role: "league office", team_id: null }), SEATS.LEAGUE_OFFICE);
+  });
+
+  test("each seat stored as league plus team_role resolves to that seat", () => {
+    const onTeam = { role: "league", team_id: 3 };
+    assert.equal(resolveAccountSeat({ ...onTeam, team_role: "Player" }), SEATS.PLAYER);
+    assert.equal(resolveAccountSeat({ ...onTeam, team_role: "Coach" }), SEATS.COACH);
+    assert.equal(
+      resolveAccountSeat({ ...onTeam, team_role: "Private Widget Developer" }),
+      SEATS.PRIVATE_WIDGET_DEVELOPER,
+    );
+    assert.equal(
+      resolveAccountSeat({ ...onTeam, team_role: "Team Admin", is_admin: true }),
+      SEATS.TEAM_ADMIN,
+    );
   });
 
   test("legacy league on a team is a coach", () => {
@@ -99,9 +124,26 @@ describe("teamSignupLabel", () => {
 describe("roleFieldsForAssignedSeat", () => {
   test("member maps to coach", () => {
     assert.deepEqual(roleFieldsForAssignedSeat("Member"), {
-      role: "coach",
+      role: "league",
       isAdmin: false,
       teamRole: "Coach",
     });
+  });
+
+  test("every assignable seat keeps role league so chk_role_team_id passes", () => {
+    for (const seat of ASSIGNABLE_TEAM_SEATS) {
+      const fields = roleFieldsForAssignedSeat(seat);
+      assert.equal(fields.role, "league", seat);
+      assert.equal(fields.teamRole, seat);
+      assert.equal(fields.isAdmin, seat === "Team Admin");
+    }
+  });
+
+  test("a stored seat resolves back to the seat that was assigned", () => {
+    for (const seat of ASSIGNABLE_TEAM_SEATS) {
+      const fields = roleFieldsForAssignedSeat(seat);
+      const stored = { role: fields.role, is_admin: fields.isAdmin, team_role: fields.teamRole, team_id: 3 };
+      assert.equal(resolveAccountSeat(stored), seat.toLowerCase(), seat);
+    }
   });
 });

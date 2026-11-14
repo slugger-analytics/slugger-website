@@ -257,9 +257,6 @@ export function SignupForm() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectGroup>
-                      <SelectItem value="league office">
-                        League Office Accounts
-                      </SelectItem>
                       <SelectItem value="team side">Team Side</SelectItem>
                       <SelectItem value="widget developer">Site Side</SelectItem>
                       <SelectItem value="public">Public Access Account</SelectItem>
