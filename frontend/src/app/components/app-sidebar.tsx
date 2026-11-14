@@ -95,7 +95,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       isActive: false,
     },
     {
-      title: effectiveSeat === SEATS.LEAGUE_OFFICE ? "Teams" : "My Team",
+      title:
+        effectiveSeat === SEATS.LEAGUE_OFFICE || effectiveSeat === SEATS.WEBSITE_ADMIN
+          ? "Teams"
+          : "My Team",
       url: "/team-page",
       icon: Users,
       isActive: false,

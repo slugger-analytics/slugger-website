@@ -13,7 +13,7 @@ import {
   confirmSignupMarkedDeveloper,
   mapApprovalServiceError,
 } from "../lib/accountApproval.js";
-import { requireSiteAdmin } from "../middleware/permission-guards.js";
+import { requireSiteAdmin, requireTeamAdmin } from "../middleware/permission-guards.js";
 
 describe("resolvePendingDeveloperStatus (GET /auth/check-status/:email)", () => {
   test("no pending row → regular_user", () => {
@@ -131,6 +131,48 @@ describe("requireSiteAdmin (approval APIs require role=admin)", () => {
     const { nextCalled, statusCode } = runGuard(null);
     assert.equal(nextCalled, false);
     assert.equal(statusCode, 403);
+  });
+});
+
+describe("requireTeamAdmin (team invite, remove, and seat APIs)", () => {
+  function runGuard(sessionUser) {
+    const req = { session: sessionUser ? { user: sessionUser } : {} };
+    let statusCode;
+    const res = {
+      status(code) {
+        statusCode = code;
+        return this;
+      },
+      json() {
+        return this;
+      },
+    };
+    let nextCalled = false;
+    requireTeamAdmin(req, res, () => {
+      nextCalled = true;
+    });
+    return { statusCode, nextCalled };
+  }
+
+  test("team admin passes", () => {
+    const { nextCalled } = runGuard({ role: "league", team_id: 3, is_admin: true, team_role: "Team Admin" });
+    assert.equal(nextCalled, true);
+  });
+
+  test("website admin passes", () => {
+    const { nextCalled } = runGuard({ role: "admin", user_id: 1 });
+    assert.equal(nextCalled, true);
+  });
+
+  test("coach and league office get 403", () => {
+    for (const user of [
+      { role: "league", team_id: 3, team_role: "Coach" },
+      { role: "league office", team_id: null },
+    ]) {
+      const { nextCalled, statusCode } = runGuard(user);
+      assert.equal(nextCalled, false);
+      assert.equal(statusCode, 403);
+    }
   });
 });
 

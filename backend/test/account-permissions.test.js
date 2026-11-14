@@ -103,6 +103,15 @@ describe("permissionsForSeat", () => {
     assert.equal(perms.registerPublicWidget, false);
   });
 
+  test("website admin can manage every team's roster and seats", () => {
+    const perms = permissionsForSeat(SEATS.WEBSITE_ADMIN);
+    assert.equal(perms.approveSite, true);
+    assert.equal(perms.everyRoster, true);
+    assert.equal(perms.invites, true);
+    assert.equal(perms.setSeats, true);
+    assert.equal(perms.home, false);
+  });
+
   test("league office can read every roster and cannot change seats", () => {
     const perms = permissionsForSeat(SEATS.LEAGUE_OFFICE);
     assert.equal(perms.everyRoster, true);

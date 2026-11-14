@@ -28,11 +28,17 @@ export async function getTeam(id) {
   }
 }
 
+// Only the fields the roster page shows. Rosters are readable by teammates,
+// League Office and website admins, so private account fields stay out.
+const MEMBER_COLUMNS = `
+  user_id, first_name, last_name, email, role, is_admin, team_role, team_id
+`;
+
 export async function getTeamMembers(teamId) {
   try {
     const result = await pool.query(
       `
-      SELECT * FROM users WHERE team_id = $1
+      SELECT ${MEMBER_COLUMNS} FROM users WHERE team_id = $1
       `,
       [teamId]
     );
@@ -55,8 +61,8 @@ export async function getTeamMember(teamId, memberId) {
   try {
     const result = await pool.query(
       `
-            SELECT *
-            FROM users 
+            SELECT ${MEMBER_COLUMNS}
+            FROM users
             WHERE role = 'league' AND team_id = $1 AND user_id = $2`,
       [teamId, memberId],
     );

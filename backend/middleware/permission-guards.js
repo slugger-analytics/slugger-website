@@ -77,7 +77,9 @@ export const requireTeamAdmin = (req, res, next) => {
     user_id: req.session?.user?.user_id,
     full_user: req.session?.user
   });
-  if (resolveAccountSeat(req.session?.user) === SEATS.TEAM_ADMIN) {
+  // Website admins may manage any team, as they could before account seats.
+  const seat = resolveAccountSeat(req.session?.user);
+  if (seat === SEATS.TEAM_ADMIN || seat === SEATS.WEBSITE_ADMIN) {
     return next();
   }
 
