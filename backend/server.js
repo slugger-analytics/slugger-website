@@ -21,7 +21,6 @@ import league from "./api/league.js";
 import auth from "./api/auth.js";
 import teamAdmins from "./api/team-admins.js";
 import games from "./api/scores.js";
-import superWidget from "./api/super-widget-parameterized.js";
 const SESSION_SECRET = process.env.SESSION_SECRET;
 
 // Initialize the Express app
@@ -147,8 +146,6 @@ app.use("/api/widget-categories", categories);
 app.use("/api/developers", developers);
 
 app.use("/api/league", league);
-
-app.use("/api/super-widget/parameterized-analysis", superWidget);
 
 app.use("/api/auth", auth);
 
