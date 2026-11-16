@@ -100,7 +100,7 @@ export function permissionsForSeat(seat) {
     case SEATS.CLUBHOUSE_MANAGER:
       return {
         ...teamView,
-        home: false,
+        home: true,
         widgets: true,
         clubhouseOnly: true,
         myTeam: false,
@@ -132,7 +132,7 @@ export function permissionsForSeat(seat) {
       };
     default:
       return {
-        home: false,
+        home: true,
         aroundLeague: true,
         widgets: true,
         clubhouseOnly: false,

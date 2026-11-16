@@ -78,11 +78,19 @@ describe("resolveAccountSeat", () => {
 });
 
 describe("permissionsForSeat", () => {
-  test("clubhouse manager sees the clubhouse widget and around the league only", () => {
+  test("every seat can open Home and Around the League", () => {
+    for (const seat of [...Object.values(SEATS), "unknown seat"]) {
+      const perms = permissionsForSeat(seat);
+      assert.equal(perms.home, true, seat);
+      assert.equal(perms.aroundLeague, true, seat);
+    }
+  });
+
+  test("clubhouse manager sees Home, the clubhouse widget and around the league", () => {
     const perms = permissionsForSeat(SEATS.CLUBHOUSE_MANAGER);
     assert.equal(perms.aroundLeague, true);
     assert.equal(perms.clubhouseOnly, true);
-    assert.equal(perms.home, false);
+    assert.equal(perms.home, true);
     assert.equal(perms.myTeam, false);
     assert.equal(perms.invites, false);
   });
