@@ -74,10 +74,10 @@ const LoginForm = () => {
         teamRole: typeof result.user.teamRole === "string" ? result.user.teamRole : undefined,
       });
       const signedInPerms = permissionsForSeat(signedInSeat);
-      if (signedInPerms.approveSite) {
-        router.push("/pending-developers");
-      } else if (signedInPerms.home) {
+      if (signedInPerms.home) {
         router.push("/homepage");
+      } else if (signedInPerms.approveSite) {
+        router.push("/pending-developers");
       } else {
         router.push("/around-league");
       }

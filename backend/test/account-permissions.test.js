@@ -109,7 +109,7 @@ describe("permissionsForSeat", () => {
     assert.equal(perms.everyRoster, true);
     assert.equal(perms.invites, true);
     assert.equal(perms.setSeats, true);
-    assert.equal(perms.home, false);
+    assert.equal(perms.home, true);
   });
 
   test("league office can read every roster and cannot change seats", () => {

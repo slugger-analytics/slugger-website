@@ -128,10 +128,10 @@ export function permissionsForSeat(seat: AccountSeat): AccountPermissions {
         apiDocs: true,
       };
     case SEATS.WEBSITE_ADMIN:
-      // A website admin can also manage any team's roster and seats.
+      // A website admin lands on Home and can also manage any team's roster and seats.
       return {
         ...teamView,
-        home: false,
+        home: true,
         myTeam: true,
         rosterRead: true,
         everyRoster: true,
